@@ -1,0 +1,109 @@
+/* Shared field chrome: label, control shell, hint / error.
+   Used by Input, Select, RangeSlider and FileUpload. */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Every field carries a visible persistent label; a required marker must not be
+   the only signal, so it is paired with text for assistive technology. */
+.required {
+  color: var(--text-accent);
+  margin-left: 4px;
+}
+
+.shell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-input);
+  transition: var(--transition-control);
+}
+
+/* Focus is styled on the shell rather than the inner control so the whole field
+   reads as focused. The inner control drops its own outline. */
+.shell:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: var(--glow-orange-xs);
+}
+
+.shell.invalid,
+.shell.invalid:focus-within {
+  border-color: var(--status-danger);
+  box-shadow: none;
+}
+
+.shell.disabled {
+  background: var(--interactive-disabled-surface);
+  border-color: var(--interactive-disabled-border);
+}
+
+.sm { height: var(--control-height-sm); }
+.md { height: var(--control-height-md); }
+.lg { height: var(--control-height-lg); }
+
+.control {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--text-primary);
+  font: var(--type-body);
+  letter-spacing: var(--ls-body);
+}
+
+.control::placeholder {
+  color: var(--text-muted);
+}
+
+.control:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.technical {
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+}
+
+.adornment {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.suffix {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.message {
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--type-body-sm);
+  color: var(--status-danger);
+}

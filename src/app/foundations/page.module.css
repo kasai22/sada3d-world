@@ -172,3 +172,11 @@
   text-transform: uppercase;
   color: var(--text-muted);
 }
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-6);
+  margin-bottom: var(--spacing-7);
+  align-items: start;
+}

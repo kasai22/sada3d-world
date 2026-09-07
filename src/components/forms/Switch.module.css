@@ -1,0 +1,66 @@
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  min-height: 32px;
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+  cursor: pointer;
+}
+
+.switch:has(.input:disabled) {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex: 0 0 auto;
+  /* A track is a capsule by function, not decoration — the design system's
+     no-pill rule governs buttons. */
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-panel);
+  transition: var(--transition-control);
+}
+
+.thumb {
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: var(--text-muted);
+  transform: translateY(-50%);
+  transition: transform var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.input:checked + .track {
+  background: var(--surface-accent-soft);
+  border-color: var(--orange-500);
+}
+
+.input:checked + .track .thumb {
+  background: var(--orange-500);
+  transform: translate(16px, -50%);
+}
+
+.input:focus-visible + .track {
+  box-shadow: var(--focus-ring);
+}
+
+.input:disabled + .track {
+  background: var(--interactive-disabled-surface);
+  border-color: var(--interactive-disabled-border);
+}

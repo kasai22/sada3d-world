@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import { Button, Icon, IconButton, StatusDot, Tag } from "@/components/core";
 
+import { FormsGallery } from "./FormsGallery";
+
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -168,6 +170,15 @@ export default function FoundationsPage() {
           <Icon name="thermometer" size={24} />
           <Icon name="wrench" size={24} />
         </div>
+      </section>
+
+
+      <section className={styles.block}>
+        <div className={styles.blockHead}>
+          <h2 className="t-h3">Forms</h2>
+          <span className="orange-line" aria-hidden="true" />
+        </div>
+        <FormsGallery />
       </section>
 
       <section className={styles.block}>

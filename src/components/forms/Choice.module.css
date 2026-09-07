@@ -1,0 +1,94 @@
+/* Checkbox and Radio share one layout: hidden native control, drawn mark,
+   flexible label, optional trailing count. */
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+  cursor: pointer;
+}
+
+.choice:has(.input:disabled) {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.mark {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-on-accent);
+  transition: var(--transition-control);
+}
+
+.box  { border-radius: var(--radius-xs); }
+.disc { border-radius: var(--radius-pill); }
+
+.choice:hover .input:not(:disabled) + .mark {
+  border-color: var(--white);
+}
+
+.input:checked + .mark,
+.input:indeterminate + .mark {
+  border-color: var(--orange-500);
+  background: var(--orange-500);
+}
+
+/* Radio uses a solid inner disc rather than a tick. */
+.disc.checked {
+  background: transparent;
+  border-color: var(--orange-500);
+}
+
+.discInner {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--orange-500);
+}
+
+.dash {
+  width: 8px;
+  height: 2px;
+  background: var(--text-on-accent);
+}
+
+.input:focus-visible + .mark {
+  box-shadow: var(--focus-ring);
+}
+
+.input:disabled + .mark {
+  border-color: var(--interactive-disabled-border);
+  background: var(--interactive-disabled-surface);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}
+
+.checked .text {
+  color: var(--text-primary);
+}
+
+.count {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}

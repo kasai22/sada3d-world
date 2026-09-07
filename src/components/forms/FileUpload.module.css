@@ -1,0 +1,119 @@
+.zone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3);
+  min-height: 220px;
+  padding: var(--spacing-9) var(--spacing-6);
+  text-align: center;
+  background: var(--surface-panel);
+  /* Dashed hairline is the one place the system draws a non-solid rule: it
+     reads as a drop target rather than as a container. */
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.zone:hover:not(.disabled) {
+  border-color: var(--white);
+  background: var(--interactive-hover-surface);
+}
+
+.zone:focus-within {
+  box-shadow: var(--focus-ring);
+}
+
+.dragging {
+  border-style: solid;
+  border-color: var(--orange-500);
+  background: var(--surface-accent-soft);
+}
+
+.invalid {
+  border-color: var(--status-danger);
+  border-style: solid;
+}
+
+.disabled {
+  cursor: not-allowed;
+  background: var(--interactive-disabled-surface);
+  border-color: var(--interactive-disabled-border);
+  color: var(--text-disabled);
+}
+
+.input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.glyph {
+  color: var(--text-muted);
+}
+
+.dragging .glyph {
+  color: var(--text-accent);
+}
+
+.headline {
+  font: var(--type-h4);
+  color: var(--text-primary);
+}
+
+.formats {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: var(--spacing-3);
+  font: var(--type-body-sm);
+  color: var(--status-danger);
+}
+
+/* ---- selected file ---- */
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  background: var(--surface-card);
+  border: var(--border-card);
+  border-radius: var(--radius-card);
+}
+
+.fileMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.fileName {
+  font: var(--type-body);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

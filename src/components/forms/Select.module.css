@@ -1,0 +1,31 @@
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.select {
+  appearance: none;
+  width: 100%;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.select:disabled {
+  cursor: not-allowed;
+}
+
+.chevron {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* Native option lists are painted by the OS; give them the carbon surface
+   where the platform honours it. */
+.select option {
+  background: var(--carbon);
+  color: var(--text-primary);
+}
