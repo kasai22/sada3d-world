@@ -1,0 +1,136 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  /* Technical panel geometry — this is an engineering readout, not a card. */
+  border-radius: var(--radius-panel-technical);
+}
+
+.invalid {
+  border-color: var(--status-danger);
+}
+
+.header {
+  padding: var(--spacing-4) var(--spacing-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.headerLabel {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: var(--spacing-5);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+}
+
+.key {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.value {
+  margin: 0;
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+  transition: opacity var(--motion-fast) var(--ease-standard);
+}
+
+/* While recalculating, values dim to 40% rather than disappearing, so the
+   panel does not reflow under the pointer. */
+.busy .value {
+  opacity: 0.4;
+}
+
+.total {
+  padding: var(--spacing-5);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
+}
+
+.totalLabel {
+  display: block;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: var(--spacing-2);
+}
+
+.price {
+  font-family: var(--font-technical);
+  font-weight: var(--fw-medium);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.invalid .price,
+.busy .price {
+  color: var(--text-disabled);
+}
+
+.state {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.rule {
+  display: block;
+  height: 2px;
+  margin-top: 14px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.invalid .rule {
+  background: var(--status-danger);
+  box-shadow: none;
+}
+
+.message {
+  margin: 14px 0 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.invalid .message {
+  color: var(--status-danger);
+}
+
+.action {
+  margin-top: var(--spacing-4);
+}
+
+.note {
+  margin: var(--spacing-3) 0 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}

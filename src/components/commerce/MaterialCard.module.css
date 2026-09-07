@@ -1,0 +1,135 @@
+.card {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--spacing-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  color: inherit;
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.card:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.card:disabled {
+  cursor: not-allowed;
+  background: var(--interactive-disabled-surface);
+  border-color: var(--interactive-disabled-border);
+}
+
+/* Selection is driven by aria-pressed so state and appearance cannot drift. */
+.card[aria-pressed="true"] {
+  background: var(--interactive-selected-surface);
+  border-color: var(--border-accent);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-3);
+}
+
+.name {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+}
+
+.card[aria-pressed="true"] .name {
+  color: var(--text-accent);
+}
+
+.multiplier {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.rule {
+  height: 2px;
+  width: 32px;
+  background: var(--titanium);
+  transition: var(--transition-line);
+}
+
+.card[aria-pressed="true"] .rule {
+  width: 100%;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.code {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.description {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.properties {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: 0;
+}
+
+.property {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.propertyKey {
+  width: 76px;
+  flex: 0 0 auto;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.scale {
+  margin: 0;
+  flex: 1;
+  display: flex;
+  gap: 3px;
+}
+
+.pip {
+  flex: 1;
+  height: 3px;
+  background: var(--titanium);
+}
+
+.pipOn {
+  background: var(--silver);
+}
+
+.card[aria-pressed="true"] .pipOn {
+  background: var(--orange-500);
+}
+
+.colors {
+  display: flex;
+  gap: 6px;
+}
+
+.swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-strong);
+}

@@ -15,6 +15,9 @@ import {
   ProgressBar,
 } from "@/components/manufacturing";
 
+import { ProductCard } from "@/components/commerce";
+
+import { CommerceGallery } from "./CommerceGallery";
 import { FormsGallery } from "./FormsGallery";
 
 import styles from "./page.module.css";
@@ -187,6 +190,63 @@ export default function FoundationsPage() {
 
 
 
+
+
+      <section className={styles.block}>
+        <div className={styles.blockHead}>
+          <h2 className="t-h3">Commerce</h2>
+          <span className="orange-line" aria-hidden="true" />
+        </div>
+
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Product card</span>
+        </div>
+        <div className={styles.productGrid}>
+          <ProductCard
+            name="Precision Gear"
+            href="/shop/precision-gear"
+            material="PLA"
+            color="Black"
+            price="₹399"
+            badge="In stock"
+            meta={[
+              { label: "Layer", value: "0.16 MM" },
+              { label: "Weight", value: "34 G" },
+            ]}
+          />
+          <ProductCard
+            name="Optical Mount"
+            href="/shop/optical-mount"
+            material="Resin"
+            color="Grey"
+            price="₹1,240"
+            badge="SLA"
+            variant="featured"
+            meta={[
+              { label: "Layer", value: "0.05 MM" },
+              { label: "Weight", value: "46 G" },
+            ]}
+          />
+          <ProductCard
+            name="Cable Bracket"
+            href="/shop/cable-bracket"
+            material="PETG"
+            color="Graphite"
+            price="₹249"
+            variant="compact"
+          />
+          <ProductCard
+            name="Manifold Housing"
+            href="/shop/manifold-housing"
+            material="PETG"
+            color="Carbon"
+          />
+        </div>
+
+        <div style={{ marginTop: "var(--spacing-9)" }}>
+          <CommerceGallery />
+        </div>
+      </section>
 
       <section className={styles.block}>
         <div className={styles.blockHead}>

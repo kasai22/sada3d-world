@@ -127,3 +127,10 @@
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 2s; }
 }
+
+/* Anchor-rendered buttons inherit base.css link chrome; strip it. */
+a.button,
+a.button:hover {
+  text-decoration: none;
+  border-bottom-width: 1px;
+}

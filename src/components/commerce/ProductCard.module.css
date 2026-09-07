@@ -1,0 +1,224 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  transition: var(--transition-surface), border-color var(--motion-fast) var(--ease-standard);
+}
+
+.card:hover,
+.card:focus-within {
+  border-color: var(--border-strong);
+  transform: translateY(var(--hover-lift));
+}
+
+/* ---- media stage ---- */
+
+.stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--gradient-viewer);
+  overflow: hidden;
+}
+
+.featured .stage {
+  aspect-ratio: 16 / 10;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image: var(--bg-grid);
+}
+
+.image {
+  object-fit: contain;
+}
+
+/*
+ * Placeholder object, used until a render or photograph exists for the part.
+ * A flat metal plate on the viewer stage — deliberately abstract rather than a
+ * fake product shot.
+ */
+.placeholder {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 96px;
+  height: 96px;
+  transform: translate(-50%, -50%) rotateX(-20deg) rotateY(28deg);
+  transform-style: preserve-3d;
+  background: var(--gradient-metal);
+  border: 1px solid var(--titanium-2);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+  transition: transform var(--motion-slow) var(--ease-out),
+    box-shadow var(--motion-medium) var(--ease-standard);
+}
+
+.featured .placeholder {
+  width: 132px;
+  height: 132px;
+}
+
+.card:hover .placeholder,
+.card:focus-within .placeholder {
+  transform: translate(-50%, -50%) rotateX(-20deg) rotateY(42deg);
+  box-shadow: var(--glow-orange-sm), inset 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+.badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 3px 8px;
+  background: var(--surface-accent-soft);
+  border: 1px solid var(--border-accent);
+  color: var(--text-accent);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+}
+
+/* The Titanium Orange Line marks the hovered card's media edge. */
+.line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: var(--transition-line);
+}
+
+.card:hover .line,
+.card:focus-within .line {
+  transform: scaleX(1);
+}
+
+/* ---- body ---- */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  padding: var(--spacing-5);
+  flex: 1;
+}
+
+.compact .body {
+  gap: var(--spacing-2);
+  padding: var(--spacing-4);
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-h5);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.compact .name {
+  font-size: var(--fs-body);
+}
+
+/* The title link covers the card, so the whole surface is clickable but there
+   is only one tab stop and one accessible name. */
+.link {
+  color: inherit;
+  border-bottom: 0;
+}
+
+.link:hover {
+  color: inherit;
+  border-bottom: 0;
+}
+
+.link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.spec {
+  margin: 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px var(--spacing-3);
+  margin: 0;
+}
+
+.metaKey {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.metaValue {
+  margin: 0;
+  text-align: right;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-secondary);
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.price {
+  font-family: var(--font-technical);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-h5);
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.unavailable {
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+}
+
+/* Decorative affordance — the card itself is the link. */
+.view {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-button);
+  padding: 0 14px;
+  height: var(--control-height-sm);
+  display: inline-flex;
+  align-items: center;
+  transition: var(--transition-control);
+}
+
+.card:hover .view,
+.card:focus-within .view {
+  color: var(--text-primary);
+  border-color: var(--white);
+}
