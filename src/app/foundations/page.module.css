@@ -180,3 +180,16 @@
   margin-bottom: var(--spacing-7);
   align-items: start;
 }
+
+.structureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-6);
+  align-items: start;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-7);
+}

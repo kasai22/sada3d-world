@@ -1,0 +1,47 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.label {
+  color: var(--text-muted);
+}
+
+/* Progress always carries a numeric percentage, so removing colour never
+   removes meaning. */
+.value {
+  color: var(--tone-color);
+}
+
+.track {
+  display: flex;
+  gap: 2px;
+}
+
+.segment {
+  flex: 1;
+  height: 6px;
+  background: var(--titanium);
+  transition: background-color var(--motion-medium) var(--ease-standard);
+}
+
+.filled {
+  background: var(--tone-color);
+}
+
+/* Only the leading segment glows — the design system rations glow to the
+   progress head, the orange line, the primary button and focus rings. */
+.head_segment {
+  box-shadow: var(--glow-line);
+}

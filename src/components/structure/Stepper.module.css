@@ -1,0 +1,96 @@
+.stepper {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.item {
+  flex: 1;
+  min-width: 0;
+}
+
+.step {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0 var(--spacing-4) var(--spacing-3) 0;
+  cursor: default;
+  color: inherit;
+}
+
+.step:enabled {
+  cursor: pointer;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.index {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-disabled);
+  flex: 0 0 auto;
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rule {
+  height: 2px;
+  width: 100%;
+  background: var(--border-subtle);
+  transition: var(--transition-control);
+}
+
+/* ---- done ---- */
+
+.done .index,
+.done .label { color: var(--text-secondary); }
+.done .rule  { background: var(--titanium-2); }
+
+/* ---- active ---- */
+
+.active .index { color: var(--text-accent); }
+.active .label { color: var(--text-primary); }
+.active .rule {
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.check {
+  color: var(--status-success);
+  display: flex;
+  flex: 0 0 auto;
+}
+
+/* Mobile: the configurator shows one step per screen, so the trail collapses to
+   a compact scrollable rail rather than five crushed columns. */
+@media (max-width: 767px) {
+  .stepper {
+    gap: var(--spacing-4);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .stepper::-webkit-scrollbar { display: none; }
+
+  .item { flex: 0 0 auto; min-width: 128px; }
+  .step { padding-right: 0; }
+}

@@ -1,0 +1,57 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.row {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.key {
+  text-align: left;
+  padding: 12px 0;
+  font: var(--type-technical-sm);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.value {
+  text-align: right;
+  padding: 12px 0;
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+}
+
+.highlight {
+  color: var(--text-accent);
+}
+
+.dense .key,
+.dense .value {
+  padding: 8px 0;
+}
+
+/* Mobile: label above value, two-line rows. Cells become blocks; the table
+   semantics stay intact for assistive technology. */
+@media (max-width: 767px) {
+  .row {
+    display: block;
+    padding: var(--spacing-3) 0;
+  }
+
+  .key,
+  .value {
+    display: block;
+    padding: 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .key {
+    margin-bottom: 2px;
+  }
+}

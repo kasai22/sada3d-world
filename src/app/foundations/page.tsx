@@ -2,6 +2,19 @@ import type { Metadata } from "next";
 
 import { Button, Icon, IconButton, StatusDot, Tag } from "@/components/core";
 
+import {
+  Breadcrumbs,
+  Panel,
+  SectionHeading,
+  SpecTable,
+  Stepper,
+} from "@/components/structure";
+
+import {
+  ManufacturingTimeline,
+  ProgressBar,
+} from "@/components/manufacturing";
+
 import { FormsGallery } from "./FormsGallery";
 
 import styles from "./page.module.css";
@@ -172,6 +185,126 @@ export default function FoundationsPage() {
         </div>
       </section>
 
+
+
+
+      <section className={styles.block}>
+        <div className={styles.blockHead}>
+          <h2 className="t-h3">Manufacturing</h2>
+          <span className="orange-line" aria-hidden="true" />
+        </div>
+
+        <div className={styles.structureGrid}>
+          <div className={styles.stack}>
+            <ProgressBar value={68} label="Printing" />
+            <ProgressBar value={100} label="Layer pass" tone="complete" />
+            <ProgressBar value={42} label="Paused" tone="paused" />
+            <ProgressBar value={12} label="Failed" tone="failed" />
+          </div>
+
+          <Panel title="Manufacturing status" meta="SADA-10428">
+            <ManufacturingTimeline
+              label="Manufacturing status for order SADA-10428"
+              stages={[
+                { label: "Design verified", state: "complete", meta: "09:14:02" },
+                { label: "File processed", state: "complete", meta: "09:16:41" },
+                { label: "Material prepared", state: "complete", meta: "09:22:08" },
+                { label: "Printing", state: "active", meta: "SADA-FDM-07", progress: 68 },
+                { label: "Quality check", state: "pending" },
+                { label: "Packaging", state: "pending" },
+                { label: "Shipping", state: "pending" },
+              ]}
+            />
+          </Panel>
+        </div>
+      </section>
+
+      <section className={styles.block}>
+        <div className={styles.blockHead}>
+          <h2 className="t-h3">Structure</h2>
+          <span className="orange-line" aria-hidden="true" />
+        </div>
+
+        <div className={styles.stack}>
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Breadcrumbs</span>
+            <Breadcrumbs
+              items={[
+                { label: "Shop", href: "/shop" },
+                { label: "Functional", href: "/shop/functional" },
+                { label: "Mechanical", href: "/shop/functional/mechanical" },
+                { label: "Precision Gear" },
+              ]}
+            />
+          </div>
+
+          <div>
+            <span className={styles.rowLabel}>Stepper</span>
+            <Stepper
+              steps={["Upload", "Material", "Quality", "Finish", "Review"]}
+              current={2}
+              label="Custom print configuration"
+            />
+          </div>
+
+          <div>
+            <span className={styles.rowLabel}>Section heading</span>
+            <div className={styles.structureGrid}>
+              <SectionHeading index="01" meta="12 machines online">
+                Manufacturing capability
+              </SectionHeading>
+              <SectionHeading size="lg" as="h3">
+                Featured products
+              </SectionHeading>
+              <SectionHeading align="center" size="sm" as="h3">
+                Applications
+              </SectionHeading>
+            </div>
+          </div>
+
+          <div>
+            <span className={styles.rowLabel}>Panel and spec table</span>
+            <div className={styles.structureGrid}>
+              <Panel title="Part configuration" meta="PART_00492">
+                <SpecTable
+                  caption="Technical specifications"
+                  highlight={["Est. print time"]}
+                  rows={[
+                    { label: "Print technology", value: "FDM" },
+                    { label: "Material", value: "PLA" },
+                    { label: "Layer height", value: "0.16 MM" },
+                    { label: "Infill", value: "20%" },
+                    { label: "Dimensions", value: "80 × 40 × 20 MM" },
+                    { label: "Est. print time", value: "02:48:12" },
+                    { label: "Weight", value: "34 G" },
+                  ]}
+                />
+              </Panel>
+
+              <Panel technical title="Machine" meta="SADA-FDM-07">
+                <SpecTable
+                  dense
+                  caption="Machine status"
+                  rows={[
+                    { label: "Nozzle", value: "0.4 MM" },
+                    { label: "Bed temp", value: "60 °C" },
+                    { label: "Tolerance", value: "±0.1 MM" },
+                    { label: "Uptime", value: "142:06:44" },
+                  ]}
+                />
+              </Panel>
+
+              <Panel elevated>
+                <p className="t-body" style={{ margin: 0 }}>
+                  Elevated panels are reserved for overlays and floating
+                  summaries. Structure elsewhere comes from hairlines and
+                  surface-value steps.
+                </p>
+              </Panel>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className={styles.block}>
         <div className={styles.blockHead}>
