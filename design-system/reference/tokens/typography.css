@@ -1,0 +1,64 @@
+/* SADA 3D — typography.*
+   DISPLAY = Saira · INTERFACE = Archivo · TECHNICAL = JetBrains Mono */
+:root{
+  --font-display:"Saira","Saira Semi Condensed",system-ui,sans-serif;
+  --font-interface:"Archivo",system-ui,sans-serif;
+  --font-technical:"JetBrains Mono",ui-monospace,monospace;
+
+  --fw-light:300; /* @kind font */
+  --fw-regular:400; /* @kind font */
+  --fw-medium:500; /* @kind font */
+  --fw-semibold:600; /* @kind font */
+  --fw-bold:700; /* @kind font */
+
+  /* type scale (desktop) */
+  --fs-display-1:clamp(56px,7vw,112px); /* @kind font */
+  --fs-display-2:clamp(44px,5vw,80px); /* @kind font */
+  --fs-display-3:clamp(34px,3.6vw,56px); /* @kind font */
+  --fs-h1:40px;
+  --fs-h2:32px;
+  --fs-h3:24px;
+  --fs-h4:20px;
+  --fs-h5:17px;
+  --fs-body-lg:18px;
+  --fs-body:15px;
+  --fs-body-sm:13px;
+  --fs-label:12px;
+  --fs-caption:11px;
+  --fs-micro:10px;
+
+  --lh-display:0.94; /* @kind font */
+  --lh-heading:1.14; /* @kind font */
+  --lh-snug:1.35; /* @kind font */
+  --lh-body:1.6; /* @kind font */
+  --lh-technical:1.5; /* @kind font */
+
+  --ls-display:-0.02em; /* @kind font */
+  --ls-heading:-0.01em; /* @kind font */
+  --ls-body:0em; /* @kind font */
+  --ls-interface:0.01em; /* @kind font */
+  --ls-label:0.14em;   /* uppercase UI labels */
+  --ls-technical:0.06em; /* @kind font */
+  --ls-eyebrow:0.24em; /* section eyebrows */
+
+  /* semantic roles */
+  --type-display:var(--fw-semibold) var(--fs-display-1)/var(--lh-display) var(--font-display); /* @kind font */
+  --type-h1:var(--fw-semibold) var(--fs-h1)/var(--lh-heading) var(--font-display); /* @kind font */
+  --type-h2:var(--fw-semibold) var(--fs-h2)/var(--lh-heading) var(--font-display); /* @kind font */
+  --type-h3:var(--fw-medium) var(--fs-h3)/var(--lh-heading) var(--font-display); /* @kind font */
+  --type-h4:var(--fw-medium) var(--fs-h4)/var(--lh-snug) var(--font-interface); /* @kind font */
+  --type-body:var(--fw-regular) var(--fs-body)/var(--lh-body) var(--font-interface); /* @kind font */
+  --type-body-lg:var(--fw-regular) var(--fs-body-lg)/var(--lh-body) var(--font-interface); /* @kind font */
+  --type-body-sm:var(--fw-regular) var(--fs-body-sm)/var(--lh-body) var(--font-interface); /* @kind font */
+  --type-ui:var(--fw-medium) var(--fs-body-sm)/1.2 var(--font-interface); /* @kind font */
+  --type-label:var(--fw-medium) var(--fs-label)/1.2 var(--font-interface); /* @kind font */
+  --type-technical:var(--fw-regular) var(--fs-body-sm)/var(--lh-technical) var(--font-technical); /* @kind font */
+  --type-technical-sm:var(--fw-regular) var(--fs-caption)/var(--lh-technical) var(--font-technical); /* @kind font */
+  --type-metric:var(--fw-medium) var(--fs-h3)/1.1 var(--font-technical); /* @kind font */
+}
+@media (max-width:768px){
+  :root{
+    --fs-h1:30px;--fs-h2:25px;--fs-h3:20px;--fs-h4:17px;
+    --fs-body-lg:16px;--fs-body:15px;
+  }
+}

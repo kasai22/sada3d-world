@@ -1,0 +1,174 @@
+.page {
+  padding-block: var(--spacing-12);
+}
+
+.header {
+  margin-bottom: var(--spacing-12);
+}
+
+.header h1 {
+  margin-block: var(--spacing-4) var(--spacing-3);
+}
+
+.block {
+  margin-bottom: var(--spacing-12);
+}
+
+.blockHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-7);
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--spacing-3);
+}
+
+.swatch {
+  border: var(--border-hairline);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--surface-card);
+}
+
+.chip {
+  height: 72px;
+  border-bottom: var(--border-hairline);
+}
+
+.swatchMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-3);
+}
+
+.swatchName {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.swatchValue {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.typeRows {
+  display: flex;
+  flex-direction: column;
+  border-top: var(--border-hairline);
+}
+
+.typeRow {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: var(--spacing-6);
+  align-items: baseline;
+  padding-block: var(--spacing-5);
+  border-bottom: var(--border-hairline);
+}
+
+.typeRow dt {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.typeRow dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.mode {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+  min-height: 200px;
+  padding: var(--spacing-5);
+  border: var(--border-hairline);
+  border-radius: var(--radius-card);
+}
+
+.geometry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-4);
+}
+
+.geoSample {
+  display: grid;
+  place-items: center;
+  width: 108px;
+  height: 72px;
+  background: var(--surface-raised);
+  border: var(--border-card);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+}
+
+.motionRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.motionRow {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--spacing-4);
+  align-items: center;
+}
+
+.motionRow span:first-child {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.bar {
+  height: 4px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+@media (max-width: 767px) {
+  .typeRow,
+  .motionRow {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-2);
+  }
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-5);
+}
+
+.rowLabel {
+  width: 100%;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

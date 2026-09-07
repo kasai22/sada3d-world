@@ -1,0 +1,27 @@
+/* SADA 3D — spacing.* (4px base grid) */
+:root{
+  --spacing-0:0px;
+  --spacing-1:4px;
+  --spacing-2:8px;
+  --spacing-3:12px;
+  --spacing-4:16px;
+  --spacing-5:20px;
+  --spacing-6:24px;
+  --spacing-7:32px;
+  --spacing-8:40px;
+  --spacing-9:48px;
+  --spacing-10:64px;
+  --spacing-11:80px;
+  --spacing-12:96px;
+  --spacing-13:128px;
+  --spacing-14:160px;
+
+  --space-inset-card:24px;
+  --space-inset-panel:20px;
+  --space-inset-field:12px;
+  --space-stack-tight:8px;
+  --space-stack:16px;
+  --space-stack-loose:32px;
+  --space-section:96px;
+  --space-section-mobile:56px;
+}

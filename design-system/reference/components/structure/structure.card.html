@@ -1,0 +1,23 @@
+<!-- @dsCard group="Components" viewport="700x360" name="Structure — headings, panels, specs" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><style>body{margin:0;background:var(--void);font:var(--type-body);color:var(--text-primary)}.pad{padding:24px}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head><body><div class="pad"><div id="root"></div><script type="text/babel">
+const { Button, IconButton, Icon, Tag, StatusDot, Input, Select, Checkbox, Radio, Switch, RangeSlider, QuantityStepper, SectionHeading, Panel, SpecTable, Stepper, Breadcrumbs, Header, FilterTree, Viewer3D, ProductCard, MaterialCard, PriceSummary, OrderSummary, ProgressBar, ManufacturingTimeline } = window.SADA3DDesignSystem_217828;
+
+function Demo(){return <div style={{display:'flex',flexDirection:'column',gap:24}}>
+  <Breadcrumbs items={['Shop','Mechanical','Precision Gear']}/>
+  <SectionHeading index="02" meta="08 categories">Discover</SectionHeading>
+  <Stepper steps={['Upload','Material','Quality','Finish','Review']} current={1} onSelect={()=>{}}/>
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+    <Panel title="Part analysis" meta="PART_00492" technical>
+      <SpecTable dense rows={[{label:'Technology',value:'FDM'},{label:'Material',value:'PLA'},{label:'Layer height',value:'0.16 MM'},{label:'Infill',value:'20%'}]} highlightKeys={['Layer height']}/>
+    </Panel>
+    <Panel title="Dimensions">
+      <SpecTable dense rows={[{label:'Bounding box',value:'80 × 40 × 20 MM'},{label:'Volume',value:'48.3 CM³'},{label:'Weight',value:'34 G'},{label:'Print time',value:'02:48:12'}]}/>
+    </Panel>
+  </div>
+</div>}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script></div></body></html>

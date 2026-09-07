@@ -1,0 +1,36 @@
+/* SADA 3D — shadow.* glow.* grid textures. Restraint: depth comes from value, not blur. */
+:root{
+  --shadow-none:none;
+  --shadow-1:0 1px 2px rgba(0,0,0,.6);
+  --shadow-2:0 4px 16px rgba(0,0,0,.55);
+  --shadow-3:0 12px 40px rgba(0,0,0,.6);
+  --shadow-4:0 24px 80px rgba(0,0,0,.7);
+  --shadow-inset-top:inset 0 1px 0 rgba(244,246,248,.06);
+  --shadow-inset-edge:inset 0 0 0 1px rgba(244,246,248,.04);
+
+  --elevation-0:none; /* @kind shadow */
+  --elevation-1:var(--shadow-1),var(--shadow-inset-top); /* @kind shadow */
+  --elevation-2:var(--shadow-2),var(--shadow-inset-top); /* @kind shadow */
+  --elevation-3:var(--shadow-3); /* @kind shadow */
+  --elevation-overlay:var(--shadow-4); /* @kind shadow */
+
+  /* glow — orange only, always low-alpha */
+  --glow-orange-xs:0 0 0 1px rgba(255,107,0,.35); /* @kind shadow */
+  --glow-orange-sm:0 0 12px rgba(255,107,0,.22); /* @kind shadow */
+  --glow-orange-md:0 0 24px rgba(255,107,0,.28); /* @kind shadow */
+  --glow-orange-lg:0 0 64px rgba(255,107,0,.22); /* @kind shadow */
+  --glow-line:0 0 8px rgba(255,107,0,.55); /* @kind shadow */
+  --glow-text:0 0 18px rgba(255,107,0,.35); /* @kind shadow */
+
+  --blur-overlay:blur(18px); /* @kind other */
+  --blur-header:blur(20px); /* @kind other */
+
+  /* technical grid — must stay near-invisible */
+  --grid-line:rgba(244,246,248,.032); /* @kind color */
+  --grid-line-strong:rgba(244,246,248,.055); /* @kind color */
+  --grid-size:32px;
+  --grid-size-lg:96px;
+  --bg-grid:repeating-linear-gradient(0deg,var(--grid-line) 0 1px,transparent 1px var(--grid-size)),repeating-linear-gradient(90deg,var(--grid-line) 0 1px,transparent 1px var(--grid-size)); /* @kind other */
+  --bg-grid-lg:repeating-linear-gradient(0deg,var(--grid-line-strong) 0 1px,transparent 1px var(--grid-size-lg)),repeating-linear-gradient(90deg,var(--grid-line-strong) 0 1px,transparent 1px var(--grid-size-lg)); /* @kind other */
+  --bg-noise:none; /* @kind other */
+}

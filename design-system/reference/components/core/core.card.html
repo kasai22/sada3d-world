@@ -1,0 +1,19 @@
+<!-- @dsCard group="Components" viewport="700x330" name="Core — buttons, tags, status" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><style>body{margin:0;background:var(--void);font:var(--type-body);color:var(--text-primary)}.pad{padding:24px}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head><body><div class="pad"><div id="root"></div><script type="text/babel">
+const { Button, IconButton, Icon, Tag, StatusDot, Input, Select, Checkbox, Radio, Switch, RangeSlider, QuantityStepper, SectionHeading, Panel, SpecTable, Stepper, Breadcrumbs, Header, FilterTree, Viewer3D, ProductCard, MaterialCard, PriceSummary, OrderSummary, ProgressBar, ManufacturingTimeline } = window.SADA3DDesignSystem_217828;
+
+function Row({children}){return <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>{children}</div>}
+function Demo(){return <div style={{display:'flex',flexDirection:'column',gap:18}}>
+  <Row><Button variant="primary">Start Printing</Button><Button variant="secondary">Explore Designs</Button><Button variant="tertiary">Upload</Button><Button variant="ghost">Cancel</Button></Row>
+  <Row><Button variant="technical" size="sm" iconLeft="ruler">Measure</Button><Button variant="destructive" size="sm">Remove</Button><Button loading size="sm">Calculating</Button><Button success size="sm">Added</Button><Button disabled size="sm">Unavailable</Button></Row>
+  <Row><Button size="lg" iconRight="arrow-right">Configure</Button><Button size="md">Medium</Button><Button size="sm">Small</Button></Row>
+  <Row><IconButton icon="search" label="Search" variant="outline"/><IconButton icon="layers" label="Exploded" variant="outline" active/><IconButton icon="maximize" label="Fullscreen"/>
+    <Tag tone="accent">PLA</Tag><Tag>FDM</Tag><Tag tone="success">In stock</Tag><Tag onRemove={()=>{}}>Material: PETG</Tag>
+    <StatusDot status="printing" pulse label="Printing"/><StatusDot status="delivered" label="Delivered"/></Row>
+</div>}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script></div></body></html>

@@ -1,0 +1,129 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: var(--radius-button);
+  font-family: var(--font-interface);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition-control), filter var(--motion-fast) var(--ease-standard),
+    transform var(--motion-instant) var(--ease-standard);
+  transform: translateZ(0);
+}
+
+.fullWidth {
+  display: flex;
+  width: 100%;
+}
+
+/* ---- sizes ---- */
+
+.sm { height: var(--control-height-sm); padding: 0 14px; font-size: 11px; letter-spacing: 0.12em; }
+.md { height: var(--control-height-md); padding: 0 20px; font-size: 12px; letter-spacing: 0.12em; }
+.lg { height: var(--control-height-lg); padding: 0 28px; font-size: 13px; letter-spacing: var(--ls-label); }
+
+/* ---- variants ---- */
+
+.primary {
+  background: var(--gradient-orange);
+  color: var(--text-on-accent);
+  border: 1px solid var(--orange-600);
+}
+.primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: var(--glow-orange-sm);
+}
+.primary:active:not(:disabled) {
+  background: var(--orange-600);
+  filter: none;
+}
+
+.secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+}
+.secondary:hover:not(:disabled) {
+  border-color: var(--white);
+  background: var(--interactive-hover-surface);
+}
+
+.tertiary {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+}
+.tertiary:hover:not(:disabled) {
+  background: var(--carbon-2);
+  border-color: var(--border-default);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+.ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--interactive-hover-surface);
+}
+
+.technical {
+  background: transparent;
+  color: var(--text-accent);
+  border: 1px solid var(--border-accent);
+}
+.technical:hover:not(:disabled) {
+  background: var(--surface-accent-soft);
+}
+
+.destructive {
+  background: transparent;
+  color: var(--status-danger);
+  border: 1px solid rgba(255, 77, 77, 0.45);
+}
+.destructive:hover:not(:disabled) {
+  background: var(--status-danger-surface);
+}
+
+/* ---- shared states ---- */
+
+.button:active:not(:disabled) {
+  transform: scale(var(--press-scale));
+  background-color: var(--interactive-press-surface);
+}
+
+.button:disabled {
+  background: var(--interactive-disabled-surface);
+  color: var(--text-disabled);
+  border-color: var(--interactive-disabled-border);
+  cursor: not-allowed;
+  filter: none;
+  box-shadow: none;
+}
+
+/* Success is a terminal confirmation, so it outranks the variant skin. */
+.success:not(:disabled),
+.success:not(:disabled):hover {
+  background: var(--status-success-surface);
+  border-color: var(--status-success);
+  color: var(--status-success);
+  filter: none;
+  box-shadow: none;
+}
+
+.spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: sada-spin 700ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}

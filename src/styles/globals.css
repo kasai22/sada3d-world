@@ -1,0 +1,244 @@
+/* SADA 3D — global entry point.
+   Token files are the design system's, copied verbatim (typography.css carries a
+   documented edit so families resolve from next/font instead of the Google CDN).
+   Everything below the imports is the foundation layer described in the design
+   system readme: background modes, the Titanium Orange Line, grid, section rhythm. */
+
+@import url("./tokens/colors.css");
+@import url("./tokens/typography.css");
+@import url("./tokens/spacing.css");
+@import url("./tokens/geometry.css");
+@import url("./tokens/effects.css");
+@import url("./tokens/motion.css");
+@import url("./tokens/layout.css");
+@import url("./tokens/base.css");
+
+/* ------------------------------------------------------------------ *
+ * Document
+ * ------------------------------------------------------------------ */
+
+html {
+  background: var(--surface-page);
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100dvh;
+  text-rendering: optimizeLegibility;
+}
+
+/* The design system permits no underline-by-default link chrome inside UI;
+   base.css styles prose links. Reset it for structural/navigational anchors. */
+a.u-plain,
+a.u-plain:hover {
+  color: inherit;
+  border-bottom: 0;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* ------------------------------------------------------------------ *
+ * Layout — 12 / 8 / 4 columns, container, section rhythm
+ * ------------------------------------------------------------------ */
+
+.u-container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter-desktop);
+}
+
+.u-container--narrow {
+  max-width: var(--container-narrow);
+}
+
+.u-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns-desktop), minmax(0, 1fr));
+  gap: var(--grid-gap-desktop);
+}
+
+.u-section {
+  padding-block: var(--space-section);
+}
+
+.u-section--tight {
+  padding-block: var(--spacing-11);
+}
+
+@media (max-width: 1439px) {
+  .u-container { padding-inline: var(--gutter-laptop); }
+}
+
+@media (max-width: 1023px) {
+  .u-container { padding-inline: var(--gutter-tablet); }
+  .u-grid {
+    grid-template-columns: repeat(var(--grid-columns-tablet), minmax(0, 1fr));
+    gap: var(--grid-gap-tablet);
+  }
+}
+
+@media (max-width: 767px) {
+  .u-container { padding-inline: var(--gutter-mobile); }
+  .u-grid {
+    grid-template-columns: repeat(var(--grid-columns-mobile), minmax(0, 1fr));
+    gap: var(--grid-gap-mobile);
+  }
+  .u-section { padding-block: var(--space-section-mobile); }
+  .u-section--tight { padding-block: var(--spacing-9); }
+}
+
+/* ------------------------------------------------------------------ *
+ * Background modes — Hero / Commerce / Engineering / Viewer
+ * The technical grid must be perceptible only when looked for.
+ * ------------------------------------------------------------------ */
+
+.bg-hero {
+  position: relative;
+  background: var(--gradient-hero);
+  isolation: isolate;
+}
+
+.bg-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg-grid-lg);
+  pointer-events: none;
+}
+
+.bg-commerce {
+  background: var(--surface-panel);
+}
+
+.bg-engineering {
+  position: relative;
+  background: var(--surface-page);
+  isolation: isolate;
+}
+
+.bg-engineering::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg-grid);
+  pointer-events: none;
+}
+
+.bg-viewer {
+  background: var(--gradient-viewer);
+}
+
+/* ------------------------------------------------------------------ *
+ * The Titanium Orange Line
+ * Never purely decorative — it marks position, state or progress.
+ * ------------------------------------------------------------------ */
+
+.orange-line {
+  display: block;
+  height: var(--divider-accent-height);
+  width: var(--divider-accent-width);
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.orange-line--full {
+  width: 100%;
+}
+
+/* Scales in from the left on an ancestor's hover / active state. */
+.orange-line--reactive {
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: var(--transition-line);
+}
+
+/* ------------------------------------------------------------------ *
+ * Type roles
+ * ------------------------------------------------------------------ */
+
+.t-display   { font: var(--type-display);      letter-spacing: var(--ls-display);  text-transform: uppercase; margin: 0; }
+.t-h1        { font: var(--type-h1);           letter-spacing: var(--ls-heading);  text-transform: uppercase; margin: 0; }
+.t-h2        { font: var(--type-h2);           letter-spacing: var(--ls-heading);  text-transform: uppercase; margin: 0; }
+.t-h3        { font: var(--type-h3);           letter-spacing: var(--ls-heading);  text-transform: uppercase; margin: 0; }
+.t-h4        { font: var(--type-h4);           letter-spacing: var(--ls-interface); margin: 0; }
+.t-body      { font: var(--type-body);         color: var(--text-secondary); margin: 0; }
+.t-body-lg   { font: var(--type-body-lg);      color: var(--text-secondary); margin: 0; }
+.t-body-sm   { font: var(--type-body-sm);      color: var(--text-secondary); margin: 0; }
+.t-label     { font: var(--type-label);        letter-spacing: var(--ls-label);    text-transform: uppercase; }
+.t-eyebrow   { font: var(--type-label);        letter-spacing: var(--ls-eyebrow);  text-transform: uppercase; color: var(--text-muted); }
+.t-technical { font: var(--type-technical);    letter-spacing: var(--ls-technical); }
+.t-metric    { font: var(--type-metric);       letter-spacing: var(--ls-technical); color: var(--text-primary); }
+
+/* ------------------------------------------------------------------ *
+ * Motion — scroll reveal. Travels 16px and fades; zeroed under
+ * prefers-reduced-motion via the duration/distance token overrides.
+ * ------------------------------------------------------------------ */
+
+@keyframes sada-reveal {
+  from { opacity: 0; transform: translateY(var(--reveal-distance)); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes sada-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes sada-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+.u-reveal {
+  animation: sada-reveal var(--motion-cinematic) var(--ease-out) both;
+}
+
+/* ------------------------------------------------------------------ *
+ * Accessibility helpers
+ * ------------------------------------------------------------------ */
+
+.u-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.u-skip-link {
+  position: absolute;
+  top: var(--spacing-2);
+  left: var(--spacing-2);
+  z-index: var(--z-toast);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--surface-raised);
+  border: var(--border-card);
+  border-radius: var(--radius-button);
+  color: var(--text-primary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  transform: translateY(-200%);
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+
+.u-skip-link:focus-visible {
+  transform: none;
+}
+
+/* Touch pointers get the 44px minimum target; the 32px small control is
+   desktop-pointer only. */
+@media (pointer: coarse) {
+  :root { --control-height-sm: var(--target-min); }
+}

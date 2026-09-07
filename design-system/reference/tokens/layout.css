@@ -1,0 +1,33 @@
+/* SADA 3D — breakpoint.* grid.* container.* */
+:root{
+  --breakpoint-mobile:0px; /* @kind other */
+  --breakpoint-mobile-lg:480px; /* @kind other */
+  --breakpoint-tablet:768px; /* @kind other */
+  --breakpoint-laptop:1024px; /* @kind other */
+  --breakpoint-desktop:1440px; /* @kind other */
+  --breakpoint-wide:1920px; /* @kind other */
+
+  --container-max:1440px;
+  --container-narrow:840px;
+  --gutter-desktop:48px;
+  --gutter-laptop:32px;
+  --gutter-tablet:24px;
+  --gutter-mobile:16px;
+
+  --grid-columns-desktop:12; /* @kind other */
+  --grid-columns-tablet:8; /* @kind other */
+  --grid-columns-mobile:4; /* @kind other */
+  --grid-gap-desktop:24px;
+  --grid-gap-tablet:20px;
+  --grid-gap-mobile:16px;
+
+  --header-height:64px;
+  --header-height-mobile:56px;
+  --sidebar-width:280px;
+  --z-base:0; /* @kind other */
+  --z-sticky:100; /* @kind other */
+  --z-header:200; /* @kind other */
+  --z-drawer:300; /* @kind other */
+  --z-overlay:400; /* @kind other */
+  --z-toast:500; /* @kind other */
+}

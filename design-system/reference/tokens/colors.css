@@ -1,0 +1,102 @@
+/* SADA 3D — color.*
+   BLACK = SYSTEM · WHITE = INFORMATION · ORANGE = ACTION */
+:root{
+  /* ---- base: metal scale ---- */
+  --void:#050506;
+  --graphite:#0A0B0D;
+  --carbon:#121417;
+  --carbon-2:#191C21;
+  --titanium:#262A30;
+  --titanium-2:#343941;
+  --steel:#6C737C;
+  --silver:#A9B0B9;
+  --platinum:#D7DBE0;
+  --white:#F4F6F8;
+
+  /* ---- base: titanium orange ramp ---- */
+  --orange-100:#FFE2CC;
+  --orange-200:#FFC199;
+  --orange-300:#FF9C5C;
+  --orange-400:#FF8226;
+  --orange-500:#FF6B00; /* brand primary */
+  --orange-600:#E25A00;
+  --orange-700:#B84800;
+  --orange-800:#7A2F00;
+  --orange-900:#3D1800;
+
+  /* ---- base: status hues ---- */
+  --signal-green:#3ED598;
+  --signal-amber:#FFC34D;
+  --signal-red:#FF4D4D;
+  --signal-blue:#4DA3FF;
+
+  /* ---- semantic: brand ---- */
+  --color-brand-titanium-orange:var(--orange-500);
+  --color-brand-orange-hover:var(--orange-400);
+  --color-brand-orange-press:var(--orange-600);
+  --color-brand-ink:var(--void);
+
+  /* ---- semantic: background / surface ---- */
+  --color-background-void:var(--void);
+  --color-background-graphite:var(--graphite);
+  --color-background-carbon:var(--carbon);
+  --surface-page:var(--void);
+  --surface-panel:var(--graphite);
+  --surface-card:var(--carbon);
+  --surface-raised:var(--carbon-2);
+  --surface-sunken:#000000;
+  --surface-inverse:var(--white);
+  --surface-accent-soft:rgba(255,107,0,.10);
+  --surface-accent-solid:var(--orange-500);
+  --surface-overlay:rgba(5,5,6,.78);
+  --surface-viewer:#0E1013;
+
+  /* ---- semantic: text ---- */
+  --text-primary:var(--white);
+  --text-secondary:var(--silver);
+  --text-muted:var(--steel);
+  --text-disabled:#4A4F57;
+  --text-accent:var(--orange-500);
+  --text-on-accent:#140800;
+  --text-inverse:var(--void);
+  --text-link:var(--orange-400);
+  --text-link-hover:var(--orange-300);
+
+  /* ---- semantic: border ---- */
+  --border-subtle:#1C1F24;
+  --border-default:var(--titanium);
+  --border-strong:var(--titanium-2);
+  --border-accent:var(--orange-500);
+  --border-focus:var(--orange-400);
+  --border-inverse:rgba(244,246,248,.24);
+
+  /* ---- semantic: interactive ---- */
+  --interactive-hover-surface:rgba(244,246,248,.05);
+  --interactive-press-surface:rgba(244,246,248,.09);
+  --interactive-selected-surface:rgba(255,107,0,.12);
+  --interactive-disabled-surface:#131519;
+  --interactive-disabled-border:#212429;
+
+  /* ---- semantic: status ---- */
+  --status-success:var(--signal-green);
+  --status-success-surface:rgba(62,213,152,.12);
+  --status-warning:var(--signal-amber);
+  --status-warning-surface:rgba(255,195,77,.12);
+  --status-danger:var(--signal-red);
+  --status-danger-surface:rgba(255,77,77,.12);
+  --status-info:var(--signal-blue);
+  --status-info-surface:rgba(77,163,255,.12);
+  --status-active:var(--orange-500);
+  --status-active-surface:rgba(255,107,0,.12);
+  --status-idle:var(--steel);
+
+  /* ---- gradients ---- */
+  --gradient-orange:linear-gradient(180deg,#FF8226 0%,#FF6B00 55%,#E25A00 100%); /* @kind other */
+  --gradient-orange-line:linear-gradient(90deg,#FF6B00 0%,#FF8226 50%,#FF6B00 100%); /* @kind other */
+  --gradient-metal:linear-gradient(135deg,#2A2E35 0%,#15181C 40%,#22262C 70%,#0E1013 100%); /* @kind other */
+  --gradient-metal-edge:linear-gradient(90deg,rgba(244,246,248,0) 0%,rgba(244,246,248,.22) 50%,rgba(244,246,248,0) 100%); /* @kind other */
+  --gradient-surface-lift:linear-gradient(180deg,rgba(244,246,248,.045) 0%,rgba(244,246,248,0) 100%); /* @kind other */
+  --gradient-hero:radial-gradient(120% 90% at 50% 0%,#171A1F 0%,#0A0B0D 45%,#050506 100%); /* @kind other */
+  --gradient-viewer:radial-gradient(70% 70% at 50% 40%,#1A1D22 0%,#0B0C0E 70%,#050506 100%); /* @kind other */
+  --gradient-scrim-bottom:linear-gradient(180deg,rgba(5,5,6,0) 0%,rgba(5,5,6,.92) 100%); /* @kind other */
+}

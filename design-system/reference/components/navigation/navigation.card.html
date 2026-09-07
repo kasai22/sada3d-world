@@ -1,0 +1,14 @@
+<!-- @dsCard group="Components" viewport="700x420" name="Navigation — header & filter tree" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><style>body{margin:0;background:var(--void);font:var(--type-body);color:var(--text-primary)}.pad{padding:24px}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head><body><div id="root"></div><script type="text/babel">
+const { Button, IconButton, Icon, Tag, StatusDot, Input, Select, Checkbox, Radio, Switch, RangeSlider, QuantityStepper, SectionHeading, Panel, SpecTable, Stepper, Breadcrumbs, Header, FilterTree, Viewer3D, ProductCard, MaterialCard, PriceSummary, OrderSummary, ProgressBar, ManufacturingTimeline } = window.SADA3DDesignSystem_217828;
+
+const GROUPS=[{label:'Category',options:[{label:'Mechanical',count:64,defaultOpen:true,children:[{label:'Gears',count:22},{label:'Brackets',count:18},{label:'Tools',count:24}]},{label:'Automotive',count:38,children:[{label:'Interior',count:12}]},{label:'Lifestyle',count:51}]},{label:'Material',options:[{label:'PLA',count:120},{label:'PETG',count:64},{label:'ABS',count:31}]},{label:'Print technology',options:[{label:'FDM',count:180},{label:'SLA',count:44},{label:'SLS',count:12}]}];
+function Demo(){const [sel,setSel]=React.useState(['Gears']);
+return <div><Header active="Shop" cartCount={2} sticky={false}/>
+<div style={{padding:24,maxWidth:300}}><FilterTree groups={GROUPS} selected={sel} onToggle={(l)=>setSel(s=>s.includes(l)?s.filter(x=>x!==l):[...s,l])}/></div></div>}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script></body></html>

@@ -1,0 +1,45 @@
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-button);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--interactive-hover-surface);
+  color: var(--text-primary);
+}
+
+.iconButton:active:not(:disabled) {
+  background: var(--interactive-press-surface);
+}
+
+.iconButton:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.outline {
+  border-color: var(--border-default);
+}
+
+.outline:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+/* Active state is driven by aria-pressed so the accessible state and the visual
+   state can never drift apart. */
+.iconButton[aria-pressed="true"]:not(:disabled) {
+  background: var(--interactive-selected-surface);
+  border-color: var(--border-accent);
+  color: var(--text-accent);
+}
+
+.sm { width: var(--control-height-sm); height: var(--control-height-sm); }
+.md { width: var(--control-height-md); height: var(--control-height-md); }
+.lg { width: var(--control-height-lg); height: var(--control-height-lg); }

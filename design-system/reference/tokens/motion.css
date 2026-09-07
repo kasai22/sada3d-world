@@ -1,0 +1,34 @@
+/* SADA 3D — motion.* Precision, never bounce. */
+:root{
+  --motion-instant:80ms; /* @kind other */
+  --motion-fast:140ms; /* @kind other */
+  --motion-medium:260ms; /* @kind other */
+  --motion-slow:480ms; /* @kind other */
+  --motion-cinematic:900ms; /* @kind other */
+
+  --ease-standard:cubic-bezier(.2,0,0,1); /* @kind other */
+  --ease-out:cubic-bezier(.16,1,.3,1); /* @kind other */
+  --ease-in:cubic-bezier(.5,0,.9,.2); /* @kind other */
+  --ease-mechanical:cubic-bezier(.65,0,.35,1); /* @kind other */
+
+  --transition-control:background-color var(--motion-fast) var(--ease-standard),border-color var(--motion-fast) var(--ease-standard),color var(--motion-fast) var(--ease-standard),box-shadow var(--motion-fast) var(--ease-standard); /* @kind other */
+  --transition-surface:transform var(--motion-medium) var(--ease-out),border-color var(--motion-medium) var(--ease-standard); /* @kind other */
+  --transition-line:transform var(--motion-medium) var(--ease-out),opacity var(--motion-medium) var(--ease-standard); /* @kind other */
+  --transition-spatial:transform var(--motion-slow) var(--ease-out); /* @kind other */
+
+  --reveal-distance:16px; /* @kind other */
+  --hover-lift:-2px; /* @kind other */
+  --press-scale:0.985; /* @kind other */
+}
+@media (prefers-reduced-motion:reduce){
+  :root{
+    --motion-instant:0ms; /* @kind other */
+    --motion-fast:0ms; /* @kind other */
+    --motion-medium:0ms; /* @kind other */
+    --motion-slow:0ms; /* @kind other */
+    --motion-cinematic:0ms; /* @kind other */
+    --reveal-distance:0px;
+    --hover-lift:0px;
+    --press-scale:1; /* @kind other */
+  }
+}

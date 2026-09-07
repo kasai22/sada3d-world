@@ -1,0 +1,12 @@
+/* SADA 3D — minimal global base. Consumers may override. */
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{margin:0;background:var(--surface-page);color:var(--text-primary);font:var(--type-body);letter-spacing:var(--ls-body)}
+*,*::before,*::after{box-sizing:border-box}
+a{color:var(--text-link);text-decoration:none;border-bottom:1px solid rgba(255,107,0,.35);transition:var(--transition-control)}
+a:hover{color:var(--text-link-hover);border-bottom-color:var(--orange-400)}
+:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+::selection{background:var(--orange-500);color:var(--text-on-accent)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--void)}
+::-webkit-scrollbar-thumb{background:var(--titanium);border:2px solid var(--void)}
+::-webkit-scrollbar-thumb:hover{background:var(--titanium-2)}
