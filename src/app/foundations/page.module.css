@@ -199,3 +199,17 @@
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--spacing-6);
 }
+
+.filterLayout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  gap: var(--spacing-9);
+  align-items: start;
+}
+
+@media (max-width: 1023px) {
+  .filterLayout {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-7);
+  }
+}

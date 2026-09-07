@@ -1,0 +1,128 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-7);
+  padding: 0 var(--gutter-laptop);
+  /* One of only two places the system uses blur. */
+  background: rgba(5, 5, 6, 0.82);
+  backdrop-filter: var(--blur-header);
+  -webkit-backdrop-filter: var(--blur-header);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Browsers without backdrop-filter get an opaque bar rather than unreadable
+   text over scrolling content. */
+@supports not (backdrop-filter: blur(1px)) {
+  .header { background: var(--void); }
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  border-bottom: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 17px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+}
+
+.wordmark:hover {
+  border-bottom: 0;
+}
+
+.wordmarkSada { color: var(--text-primary); }
+.wordmarkAccent { color: var(--text-accent); }
+
+.nav {
+  display: flex;
+  gap: 4px;
+  margin-left: var(--spacing-3);
+  flex: 1;
+}
+
+.utilities {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.cart {
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: 6px;
+  right: 4px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--orange-500);
+  color: var(--text-on-accent);
+  font-family: var(--font-technical);
+  font-weight: var(--fw-bold);
+  font-size: 9px;
+  line-height: 1;
+  border-radius: var(--radius-xs);
+  pointer-events: none;
+}
+
+.menuButton {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .header {
+    height: var(--header-height-mobile);
+    gap: var(--spacing-4);
+    padding-inline: var(--gutter-tablet);
+  }
+
+  .nav { display: none; }
+  .menuButton { display: inline-flex; }
+}
+
+@media (max-width: 767px) {
+  .header { padding-inline: var(--gutter-mobile); }
+}
+
+/* Visual body of an icon control rendered inside a link. IconButton itself is a
+   <button>, which must not be nested inside an anchor. */
+.utility {
+  width: var(--control-height-md);
+  height: var(--control-height-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-button);
+  color: var(--text-secondary);
+  transition: var(--transition-control);
+}
+
+.utilityLink:hover .utility {
+  background: var(--interactive-hover-surface);
+  color: var(--text-primary);
+}
+
+.utilityLink:focus-visible {
+  outline: none;
+}
+
+.utilityLink:focus-visible .utility {
+  box-shadow: var(--focus-ring);
+}
+
+@media (pointer: coarse) {
+  .utility { width: var(--target-min); height: var(--target-min); }
+}

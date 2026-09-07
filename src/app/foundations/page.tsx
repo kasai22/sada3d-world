@@ -18,6 +18,7 @@ import {
 import { ProductCard } from "@/components/commerce";
 
 import { CommerceGallery } from "./CommerceGallery";
+import { FilterGallery } from "./FilterGallery";
 import { FormsGallery } from "./FormsGallery";
 
 import styles from "./page.module.css";
@@ -191,6 +192,15 @@ export default function FoundationsPage() {
 
 
 
+
+
+      <section className={styles.block}>
+        <div className={styles.blockHead}>
+          <h2 className="t-h3">Navigation · filter tree</h2>
+          <span className="orange-line" aria-hidden="true" />
+        </div>
+        <FilterGallery />
+      </section>
 
       <section className={styles.block}>
         <div className={styles.blockHead}>

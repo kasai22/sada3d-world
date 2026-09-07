@@ -1,0 +1,40 @@
+.link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--header-height);
+  padding: 0 14px;
+  border-bottom: 0;
+  font: var(--type-ui);
+  letter-spacing: var(--ls-interface);
+  color: var(--text-secondary);
+  transition: var(--transition-control);
+  white-space: nowrap;
+}
+
+.link:hover {
+  color: var(--text-primary);
+  border-bottom: 0;
+}
+
+.active {
+  color: var(--text-primary);
+}
+
+/* The Titanium Orange Line marks the active section. */
+.rule {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: var(--transition-line);
+}
+
+.active .rule {
+  transform: scaleX(1);
+}
