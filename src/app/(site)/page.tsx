@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="bg-hero u-container u-section">
+    <div className="bg-hero u-container u-section">
       <p className="t-eyebrow">Digital to physical</p>
       <h1 className="t-display" style={{ marginBlock: "var(--spacing-4)" }}>
         Manufacturing,
@@ -16,6 +16,6 @@ export default function HomePage() {
       <p style={{ marginTop: "var(--spacing-9)" }}>
         <Link href="/foundations">Design system foundations</Link>
       </p>
-    </main>
+    </div>
   );
 }

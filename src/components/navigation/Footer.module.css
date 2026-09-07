@@ -1,0 +1,118 @@
+.footer {
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-page);
+  margin-top: auto;
+}
+
+.top {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  gap: var(--spacing-9);
+  padding-block: var(--spacing-12) var(--spacing-10);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  max-width: 40ch;
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 20px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.wordmarkSada { color: var(--text-primary); }
+.wordmarkAccent { color: var(--text-accent); }
+
+.tagline {
+  margin: 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.blurb {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.columnTitle {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.link {
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+  border-bottom: 0;
+  transition: var(--transition-control);
+}
+
+.link:hover {
+  color: var(--text-primary);
+  border-bottom: 0;
+}
+
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-4);
+  flex-wrap: wrap;
+  padding-block: var(--spacing-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.legal,
+.status {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  margin: 0;
+}
+
+@media (max-width: 1023px) {
+  .top {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-8);
+    padding-block: var(--spacing-10) var(--spacing-8);
+  }
+
+  .brand { grid-column: 1 / -1; }
+}
+
+@media (max-width: 767px) {
+  .top {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-7);
+  }
+}

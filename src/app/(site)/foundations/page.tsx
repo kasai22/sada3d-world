@@ -108,7 +108,7 @@ function Swatches({
 
 export default function FoundationsPage() {
   return (
-    <main className={`u-container ${styles.page}`}>
+    <div className={`u-container ${styles.page}`}>
       <header className={styles.header}>
         <p className="t-eyebrow">Design system</p>
         <h1 className="t-display">Foundations.</h1>
@@ -490,6 +490,6 @@ export default function FoundationsPage() {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }

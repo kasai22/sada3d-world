@@ -1,0 +1,38 @@
+.wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-height: 60dvh;
+  padding-block: var(--space-section);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  max-width: 60ch;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-4);
+}
+
+@media (max-width: 767px) {
+  .wrap { padding-block: var(--space-section-mobile); }
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.code {
+  margin: 0;
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-accent);
+}

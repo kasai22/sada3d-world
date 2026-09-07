@@ -9,3 +9,5 @@ export type { MobileNavProps, NavItem } from "./MobileNav";
 
 export { NavLink } from "./NavLink";
 export type { NavLinkProps } from "./NavLink";
+
+export { Footer } from "./Footer";
