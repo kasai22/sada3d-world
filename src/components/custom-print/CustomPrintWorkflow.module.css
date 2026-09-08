@@ -1,0 +1,200 @@
+.workflow {
+  padding-bottom: var(--space-section);
+}
+
+.stepper {
+  margin-bottom: var(--spacing-9);
+  padding-bottom: var(--spacing-2);
+}
+
+/* Two columns from tablet up: the configuration must stay beside the stage
+   rather than hundreds of pixels below it. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: var(--spacing-9);
+  align-items: start;
+}
+
+.stageColumn {
+  min-width: 0;
+  position: sticky;
+  top: calc(var(--header-height) + var(--spacing-6));
+}
+
+.panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.panelHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.stepIndex {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.stepIndexRule {
+  width: 24px;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: clamp(26px, 2.6vw, 38px);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.intro {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+  max-width: 46ch;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+.formats {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/*
+ * Reserved so a validation message appears in space that already exists,
+ * rather than shifting the actions down when it arrives.
+ */
+.messageSlot {
+  min-height: 22px;
+}
+
+.message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--status-danger);
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: var(--spacing-4);
+  background: var(--status-info-surface);
+  border: 1px solid rgba(77, 163, 255, 0.4);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.noticeGlyph {
+  color: var(--status-info);
+  flex: 0 0 auto;
+  display: flex;
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-3);
+  padding-top: var(--spacing-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.actionsSpacer {
+  flex: 1;
+}
+
+.quantityField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.quantityLabel {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.materials {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--spacing-4);
+}
+
+/* ---- review ---- */
+
+.reviewRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--spacing-4);
+  padding-block: var(--spacing-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.reviewKey {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.reviewValue {
+  display: block;
+  margin-top: 4px;
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1023px) {
+  .layout { gap: var(--spacing-6); }
+  .stageColumn { position: static; }
+  .workflow { padding-bottom: var(--space-section-mobile); }
+}
+
+@media (max-width: 767px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-7);
+  }
+
+  .stepper { margin-bottom: var(--spacing-7); }
+  .actions { flex-wrap: wrap; }
+  .actions > * { flex: 1 1 auto; }
+  .actionsSpacer { display: none; }
+}

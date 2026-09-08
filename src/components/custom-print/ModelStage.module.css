@@ -1,0 +1,139 @@
+.stage {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--gradient-viewer);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  perspective: 1200px;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image: var(--bg-grid);
+}
+
+/*
+ * Static stand-in for the uploaded geometry.
+ *
+ * Deliberately abstract: it is not a render of the customer's model and must
+ * not be mistaken for one. It carries no rotation, drag or camera, because
+ * there is nothing real behind it to control. Phase 9 replaces the body of this
+ * component with the viewer; the workflow passes a model and gets a stage, and
+ * that contract does not change.
+ */
+.object {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotateX(58deg) rotateZ(38deg);
+  transform-style: preserve-3d;
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #4C535D 0%, #2C3138 45%, #3A404A 72%, #1B1F24 100%);
+  border: 1px solid rgba(5, 5, 6, 0.55);
+  transform: translateZ(var(--z));
+}
+
+.faceTop {
+  background: linear-gradient(135deg, #666E79 0%, #383E47 45%, #262B32 100%);
+  border-color: var(--steel);
+}
+
+.tick {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid var(--titanium-2);
+  border-left: 1px solid var(--titanium-2);
+}
+
+.tickTL { top: 12px; left: 12px; }
+.tickTR { top: 12px; right: 12px; transform: rotate(90deg); }
+.tickBR { bottom: 12px; right: 12px; transform: rotate(180deg); }
+.tickBL { bottom: 12px; left: 12px; transform: rotate(270deg); }
+
+.meta {
+  position: absolute;
+  left: var(--spacing-5);
+  right: var(--spacing-5);
+  bottom: var(--spacing-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.modelId {
+  color: var(--text-accent);
+}
+
+.pending {
+  color: var(--text-disabled);
+}
+
+/* ---- file summary beneath the stage ---- */
+
+.summary {
+  margin-top: var(--spacing-4);
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--spacing-4);
+}
+
+.fileMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Long filenames must truncate rather than widen the column. */
+.fileName {
+  font: var(--type-body);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-2);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1023px) {
+  .stage { aspect-ratio: 4 / 3; }
+  .object { width: 46%; }
+}
+
+@media (max-width: 767px) {
+  .stage { aspect-ratio: 16 / 10; }
+  .meta { left: var(--spacing-4); right: var(--spacing-4); bottom: var(--spacing-4); }
+}

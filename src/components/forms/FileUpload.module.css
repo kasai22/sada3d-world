@@ -18,6 +18,10 @@
   transition: var(--transition-control);
 }
 
+.zoneFill {
+  height: 100%;
+}
+
 .zone:hover:not(.disabled) {
   border-color: var(--white);
   background: var(--interactive-hover-surface);

@@ -29,6 +29,11 @@ export interface FileUploadProps {
   disabled?: boolean;
   /** Server-side error to display beneath the zone. */
   error?: string;
+  /**
+   * Makes the drop zone fill its container instead of using its natural
+   * height. Used where the zone occupies a model stage.
+   */
+  fill?: boolean;
   className?: string;
 }
 
@@ -45,6 +50,7 @@ export function FileUpload({
   onFileChange,
   disabled,
   error,
+  fill = false,
   className,
 }: FileUploadProps) {
   const inputId = useId();
@@ -116,6 +122,7 @@ export function FileUpload({
         htmlFor={inputId}
         className={clsx(
           styles.zone,
+          fill && styles.zoneFill,
           dragging && styles.dragging,
           message && styles.invalid,
           disabled && styles.disabled,

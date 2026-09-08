@@ -9,6 +9,14 @@
 .item {
   flex: 1;
   min-width: 0;
+  /*
+   * Containing block for the visually-hidden state text inside each step.
+   * Below 768px the stepper is a horizontal scroller; without this the
+   * absolutely positioned text resolves against the initial containing block,
+   * lands at its off-screen static position and widens the whole document.
+   * See the note on .u-visually-hidden in globals.css.
+   */
+  position: relative;
 }
 
 .step {
