@@ -28,6 +28,17 @@ export interface ProductImage {
   alt: string;
 }
 
+/**
+ * A mesh the viewer can render.
+ *
+ * Local demo assets under /models today; Phase 16 supplies an authorised R2
+ * URL. Absent means the product falls back to the placeholder stage.
+ */
+export interface ProductModel {
+  url: string;
+  format: "stl" | "obj" | "glb" | "gltf";
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -50,6 +61,8 @@ export interface Product {
   image?: ProductImage;
   /** Additional views. The gallery only appears when there is more than one. */
   gallery?: readonly ProductImage[];
+  /** Renderable mesh, when one exists for this part. */
+  model?: ProductModel;
   /** Small corner label on the card, e.g. "New". */
   badge?: string;
 

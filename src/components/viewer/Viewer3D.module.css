@@ -1,0 +1,165 @@
+.viewer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--gradient-viewer);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+/* The canvas mounts here. It is aria-hidden; the description beside it and the
+   toolbar carry the meaning. */
+.canvas {
+  position: absolute;
+  inset: 0;
+  /* Orbit and pinch belong to the viewer, not the page. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.canvas:active {
+  cursor: grabbing;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image: var(--bg-grid);
+  pointer-events: none;
+}
+
+/* ---- corner ticks: reads as an inspection frame ---- */
+
+.tick {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid var(--titanium-2);
+  border-left: 1px solid var(--titanium-2);
+  pointer-events: none;
+}
+
+.tickTL { top: 12px; left: 12px; }
+.tickTR { top: 12px; right: 12px; transform: rotate(90deg); }
+.tickBR { bottom: 12px; right: 12px; transform: rotate(180deg); }
+.tickBL { bottom: 12px; left: 12px; transform: rotate(270deg); }
+
+/* ---- toolbar ---- */
+
+.toolbar {
+  position: absolute;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  /* One of the two places the design system permits blur. */
+  background: rgba(10, 11, 13, 0.72);
+  backdrop-filter: var(--blur-overlay);
+  -webkit-backdrop-filter: var(--blur-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-button);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .toolbar { background: var(--surface-panel); }
+}
+
+.mode {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-3);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---- overlays ---- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-6);
+  text-align: center;
+  /* Sits above the canvas but never blocks orbit once the model is shown. */
+  pointer-events: none;
+}
+
+.overlayInteractive {
+  pointer-events: auto;
+}
+
+.overlayGlyph {
+  color: var(--text-disabled);
+}
+
+.overlayTitle {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.overlayBody {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+  max-width: 34ch;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--text-disabled);
+  border-top-color: var(--orange-500);
+  border-radius: var(--radius-pill);
+  animation: sada-spin 900ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+}
+
+/* ---- footer readout ---- */
+
+.footer {
+  position: absolute;
+  left: var(--spacing-5);
+  right: var(--spacing-5);
+  bottom: var(--spacing-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* ---- fullscreen ---- */
+
+.viewer:fullscreen {
+  border: 0;
+}
+
+.viewer:fullscreen .footer {
+  bottom: var(--spacing-7);
+}
+
+@media (max-width: 767px) {
+  .toolbar { top: var(--spacing-2); right: var(--spacing-2); }
+  .mode { display: none; }
+  .footer { left: var(--spacing-4); right: var(--spacing-4); bottom: var(--spacing-4); }
+}

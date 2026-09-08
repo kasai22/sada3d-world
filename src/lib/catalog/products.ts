@@ -18,6 +18,7 @@ export const PRODUCTS: readonly Product[] = [
     category: "gears", browseCategory: "mechanical",
     material: "pla", technology: "fdm", color: "black",
     price: 399, currency: "INR", availability: "in-stock", badge: "In stock",
+    model: { url: "/models/precision-gear.stl", format: "stl" },
     description:
       "A 24-tooth spur gear for prototyping and light-duty mechanical assemblies. The bore is sized for a 6 mm shaft with a clearance fit.",
     applications: ["Prototyping", "Mechanical assemblies", "Educational models"],
@@ -100,6 +101,7 @@ export const PRODUCTS: readonly Product[] = [
     category: "brackets", browseCategory: "components",
     material: "petg", technology: "fdm", color: "graphite",
     price: 249, currency: "INR", availability: "in-stock",
+    model: { url: "/models/cable-bracket.stl", format: "stl" },
     description:
       "A single-screw bracket that retains an 8 mm loom against a flat surface.",
     applications: ["Cable management", "Workshop fit-out"],
@@ -146,6 +148,7 @@ export const PRODUCTS: readonly Product[] = [
     category: "couplers", browseCategory: "components",
     material: "abs", technology: "fdm", color: "titanium",
     price: 640, currency: "INR", availability: "in-stock", badge: "New",
+    model: { url: "/models/hex-drive-coupler.stl", format: "stl" },
     description:
       "Adapts a 6 mm hex drive to an 8 mm round shaft, with a grub-screw seat on the round side.",
     applications: ["Drive trains", "Tool adapters"],

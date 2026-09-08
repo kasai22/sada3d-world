@@ -21,6 +21,7 @@ import {
   requestQuote,
 } from "@/lib/custom-print/quote";
 import type { QuoteResponse } from "@/lib/pricing/types";
+import { forgetModelFile, rememberModelFile } from "@/lib/custom-print/modelBlobs";
 import { modelStorage } from "@/lib/custom-print/storage";
 import {
   ACCEPTED_EXTENSIONS,
@@ -61,6 +62,12 @@ export function CustomPrintWorkflow() {
   const [step, setStep] = useState<StepId>("upload");
   const [restored, setRestored] = useState(false);
 
+  /*
+   * Set while the customer is choosing a replacement. The existing model stays
+   * in the configuration until a valid new one arrives, so cancelling by
+   * navigating away leaves the original in place.
+   */
+  const [replacing, setReplacing] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
@@ -107,6 +114,8 @@ export function CustomPrintWorkflow() {
   function goTo(next: StepId) {
     setStep(next);
     setBlocked(null);
+    // Leaving the upload step abandons a replacement in progress.
+    if (next !== "upload") setReplacing(false);
     // Move focus to the new step's heading so the change is announced and
     // keyboard users continue from the right place.
     window.requestAnimationFrame(() => headingRef.current?.focus());
@@ -128,6 +137,7 @@ export function CustomPrintWorkflow() {
     setBlocked(null);
 
     if (!file) {
+      forgetModelFile();
       setConfiguration((current) => ({ ...current, model: undefined }));
       return;
     }
@@ -135,7 +145,12 @@ export function CustomPrintWorkflow() {
     setPreparing(true);
     try {
       const model: UploadedModel = await modelStorage.prepare(file);
+      // The bytes stay in memory for the viewer only; the workflow continues to
+      // persist identity alone. Registering replaces and revokes any previous
+      // object URL.
+      rememberModelFile(model.id, file);
       setConfiguration((current) => ({ ...current, model }));
+      setReplacing(false);
     } catch (cause) {
       setFileError(
         cause instanceof ModelFileError
@@ -161,6 +176,8 @@ export function CustomPrintWorkflow() {
   }
 
   function onStartOver() {
+    forgetModelFile();
+    setReplacing(false);
     clearConfiguration();
     setConfiguration(EMPTY_CONFIGURATION);
     setQuote(null);
@@ -192,11 +209,16 @@ export function CustomPrintWorkflow() {
 
       <div className={styles.layout}>
         <div className={styles.stageColumn}>
-          {configuration.model ? (
+          {configuration.model && !replacing ? (
             <ModelStage
               model={configuration.model}
-              onReplace={() => goTo("upload")}
+              onReplace={() => {
+                setReplacing(true);
+                setStep("upload");
+              }}
               onRemove={() => {
+                forgetModelFile();
+                setReplacing(false);
                 setConfiguration((current) => ({ ...current, model: undefined }));
                 goTo("upload");
               }}

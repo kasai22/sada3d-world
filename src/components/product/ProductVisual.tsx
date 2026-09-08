@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 import clsx from "clsx";
 
+import { Viewer3DLazy } from "@/components/viewer";
 import { partId } from "@/lib/catalog/query";
 import type { Product, ProductImage } from "@/lib/catalog/types";
 import styles from "./ProductVisual.module.css";
@@ -17,13 +18,10 @@ export interface ProductVisualProps {
 /**
  * The product stage.
  *
- * This is the seam for Phase 9: swapping the body of this component for the
- * real Viewer3D changes nothing about the product page's layout, because the
- * page only ever passes a product and gets back a square stage.
- *
- * It renders no fake interaction. There is no drag handle, no rotate button and
- * no simulated camera — the stage says the model view is not available yet
- * rather than pretending to be one.
+ * Renders the real 3D viewer for any part that has a mesh, and falls back to
+ * the placeholder for parts that do not. The interface is unchanged from Phase
+ * 6 — the page still passes a product and gets back a square stage — so the
+ * rendering layer swapped without touching ProductHero or ProductGallery.
  */
 export function ProductVisual({
   product,
@@ -32,6 +30,30 @@ export function ProductVisual({
   className,
 }: ProductVisualProps) {
   const shown = image ?? product.image;
+
+  // A mesh takes precedence: it is the real object, not a picture of it.
+  if (product.model && !image) {
+    return (
+      <Viewer3DLazy
+        className={clsx(styles.stage, className)}
+        source={{
+          url: product.model.url,
+          format: product.model.format,
+          label: product.name,
+        }}
+        description={`Interactive 3D view of ${product.name}. Drag to rotate, scroll to zoom.`}
+        appearance={{ surface: "graphite" }}
+        footer={
+          <>
+            <span className={styles.partId}>{partId(product)}</span>
+            <span className={styles.pending}>
+              {product.model.format.toUpperCase()}
+            </span>
+          </>
+        }
+      />
+    );
+  }
 
   return (
     <div className={clsx(styles.stage, className)}>
