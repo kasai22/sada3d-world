@@ -1,50 +1,77 @@
+import { quoteService } from "@/lib/pricing/service";
+import type { QuoteRequest, QuoteResponse } from "@/lib/pricing/types";
+
 import type { CustomPrintConfiguration } from "./types";
 
 /**
- * Quote seam.
+ * The workflow's quote boundary.
  *
- * Phase 8 owns the pricing engine. This file exists so the workflow has a typed
- * boundary to hand a finished configuration to, and so the review step can
- * already represent every outcome a real engine will produce.
+ * Unchanged in shape since Phase 7: the workflow hands over a configuration
+ * and receives a QuoteResponse. What sits behind it changed — this now maps the
+ * configuration into a pricing request and delegates to the quote service.
  *
- * It deliberately computes nothing. There is no price model, no material
- * multiplier and no print-time estimate anywhere in Phase 7, because none of
- * those figures exist yet and a plausible-looking number is worse than none.
+ * The workflow still knows nothing about the pricing formula, and this file
+ * contains no arithmetic.
  */
 
-export interface QuoteRequest {
-  configuration: CustomPrintConfiguration;
-}
+export type { QuoteResponse, QuoteRequest };
 
-export type QuoteStatus = "pending" | "available" | "unavailable" | "error";
+/** Maps workflow state onto a pricing request. */
+export function toQuoteRequest(
+  configuration: CustomPrintConfiguration,
+): QuoteRequest | null {
+  const model = configuration.model;
+  if (!model || !configuration.material) return null;
 
-export interface QuoteBreakdownLine {
-  label: string;
-  /** Pre-formatted for the locale by the engine that produced it. */
-  value: string;
-}
-
-export interface QuoteResponse {
-  status: QuoteStatus;
-  /** Present only when status is "available". */
-  total?: string;
-  /** Part analysis and cost lines, when the engine provides them. */
-  breakdown?: readonly QuoteBreakdownLine[];
-  /** Shown to the customer when the quote is unavailable or errored. */
-  message?: string;
+  return {
+    model: {
+      name: model.name,
+      extension: model.extension,
+      sizeBytes: model.sizeBytes,
+      // Only present where the file format actually states one.
+      triangles: model.inspection.triangles,
+    },
+    material: configuration.material,
+    quality: configuration.quality,
+    finish: configuration.finish,
+    quantity: configuration.quantity,
+    // geometry stays absent: nothing measures the part yet, so the engine
+    // prices the configuration and says so.
+  };
 }
 
 /**
- * Requests a manufacturing quote for a configuration.
+ * Signature of everything that affects the price.
  *
- * Always resolves "unavailable" in Phase 7. The workflow renders that outcome
- * honestly rather than inventing a figure; Phase 8 replaces the body of this
- * function and the review step starts showing real numbers with no UI change.
+ * The workflow compares this against the signature a quote was produced from,
+ * so a figure can never stay on screen describing a configuration that has
+ * since changed.
  */
-export async function requestQuote(_request: QuoteRequest): Promise<QuoteResponse> {
-  return {
-    status: "unavailable",
-    message:
-      "Live quoting is not available yet. Your configuration is complete and ready to submit once quoting is enabled.",
-  };
+export function pricingSignature(configuration: CustomPrintConfiguration): string {
+  return [
+    configuration.model?.id ?? "",
+    configuration.material ?? "",
+    configuration.quality ?? "",
+    configuration.finish ?? "",
+    configuration.quantity,
+  ].join("|");
+}
+
+export async function requestQuote(
+  configuration: CustomPrintConfiguration,
+): Promise<QuoteResponse> {
+  const request = toQuoteRequest(configuration);
+
+  if (!request) {
+    return {
+      status: "invalid",
+      errors: [
+        !configuration.model
+          ? { field: "model" as const, message: "Upload a model before requesting a quote." }
+          : { field: "material" as const, message: "Select a material." },
+      ],
+    };
+  }
+
+  return quoteService.request(request);
 }

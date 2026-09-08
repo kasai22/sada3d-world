@@ -1,3 +1,5 @@
+import { formatINR } from "@/lib/money";
+
 import { PRODUCTS } from "./products";
 import { PRICE_BRACKETS, categoryPath } from "./taxonomy";
 import type {
@@ -16,14 +18,9 @@ export function isQuoteOnly(product: Product): boolean {
   return product.price === 0;
 }
 
-const INR = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
-
+/** Catalog display price. Zero means the part is quoted from geometry. */
 export function formatPrice(value: number): string {
-  return value === 0 ? "On quote" : INR.format(value);
+  return value === 0 ? "On quote" : formatINR(value);
 }
 
 /* ------------------------------------------------------------------ *

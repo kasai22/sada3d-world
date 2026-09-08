@@ -1,0 +1,215 @@
+.summary {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  /* Technical panel geometry: this is an engineering readout, not a card. */
+  border-radius: var(--radius-panel-technical);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4) var(--spacing-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.body {
+  padding: var(--spacing-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+/* ---- total ---- */
+
+.totalBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.totalLabel {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.total {
+  font-family: var(--font-technical);
+  font-weight: var(--fw-medium);
+  /* Present, not shouted. The part is the subject, the price is a fact. */
+  font-size: 34px;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+/* A stale figure is dimmed and captioned; it is never shown as current. */
+.stale .total {
+  color: var(--text-disabled);
+}
+
+.rule {
+  height: 2px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.stale .rule {
+  background: var(--titanium);
+  box-shadow: none;
+}
+
+/* ---- breakdown ---- */
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--spacing-3);
+  padding-block: var(--spacing-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.lineLabel {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.lineDetail {
+  display: block;
+  margin-top: 2px;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.lineAmount {
+  margin: 0;
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-3);
+  padding-top: var(--spacing-4);
+}
+
+.totalRowLabel {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.totalRowValue {
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+}
+
+/* ---- notes ---- */
+
+.excluded {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.excludedItem {
+  display: flex;
+  gap: var(--spacing-2);
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.excludedMark {
+  color: var(--text-disabled);
+  flex: 0 0 auto;
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: var(--spacing-4);
+  border: 1px solid rgba(77, 163, 255, 0.4);
+  background: var(--status-info-surface);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.noticeGlyph {
+  color: var(--status-info);
+  flex: 0 0 auto;
+  display: flex;
+}
+
+.problem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--status-danger);
+}
+
+.problemGlyph {
+  color: var(--status-danger);
+  flex: 0 0 auto;
+  display: flex;
+}
+
+.errors {
+  margin: 0;
+  padding-left: var(--spacing-5);
+  font: var(--type-body-sm);
+  color: var(--status-danger);
+}
+
+.placeholder {
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-3);
+}
+
+@media (max-width: 767px) {
+  .total { font-size: 28px; }
+  .body { padding: var(--spacing-4); }
+  .head { padding: var(--spacing-4); }
+}

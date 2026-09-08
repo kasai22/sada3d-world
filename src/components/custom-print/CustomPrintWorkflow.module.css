@@ -185,6 +185,15 @@
   .layout { gap: var(--spacing-6); }
   .stageColumn { position: static; }
   .workflow { padding-bottom: var(--space-section-mobile); }
+
+  /*
+   * The panel is narrow here because the layout is still two columns, and
+   * button labels do not wrap. Without this the action row runs past the panel
+   * edge and widens the page.
+   */
+  .actions { flex-wrap: wrap; }
+  .actions > * { flex: 1 1 auto; }
+  .actionsSpacer { display: none; }
 }
 
 @media (max-width: 767px) {
@@ -194,7 +203,4 @@
   }
 
   .stepper { margin-bottom: var(--spacing-7); }
-  .actions { flex-wrap: wrap; }
-  .actions > * { flex: 1 1 auto; }
-  .actionsSpacer { display: none; }
 }

@@ -15,7 +15,12 @@ import {
   materialOption,
   qualityOption,
 } from "@/lib/custom-print/options";
-import { requestQuote, type QuoteResponse } from "@/lib/custom-print/quote";
+import { QuoteSummary } from "@/components/quote";
+import {
+  pricingSignature,
+  requestQuote,
+} from "@/lib/custom-print/quote";
+import type { QuoteResponse } from "@/lib/pricing/types";
 import { modelStorage } from "@/lib/custom-print/storage";
 import {
   ACCEPTED_EXTENSIONS,
@@ -61,6 +66,12 @@ export function CustomPrintWorkflow() {
   const [blocked, setBlocked] = useState<string | null>(null);
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [quoting, setQuoting] = useState(false);
+  /*
+   * The configuration a quote was produced from. Comparing it against the
+   * current one is what stops a figure describing a configuration the customer
+   * has since changed.
+   */
+  const [quotedSignature, setQuotedSignature] = useState<string | null>(null);
 
   const messageId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -138,8 +149,12 @@ export function CustomPrintWorkflow() {
 
   async function onRequestQuote() {
     setQuoting(true);
+    // Captured before awaiting, so the quote is tied to the configuration it
+    // was actually priced from.
+    const signature = pricingSignature(configuration);
     try {
-      setQuote(await requestQuote({ configuration }));
+      setQuote(await requestQuote(configuration));
+      setQuotedSignature(signature);
     } finally {
       setQuoting(false);
     }
@@ -149,8 +164,12 @@ export function CustomPrintWorkflow() {
     clearConfiguration();
     setConfiguration(EMPTY_CONFIGURATION);
     setQuote(null);
+    setQuotedSignature(null);
     goTo("upload");
   }
+
+  const quoteIsStale =
+    quote !== null && quotedSignature !== pricingSignature(configuration);
 
   const material = materialOption(configuration.material);
   const quality = qualityOption(configuration.quality);
@@ -375,14 +394,12 @@ export function CustomPrintWorkflow() {
                   ))}
                 </dl>
 
-                {quote && (
-                  <p className={styles.notice} role="status">
-                    <span className={styles.noticeGlyph}>
-                      <Icon name="info" size={16} />
-                    </span>
-                    {quote.message ?? "Quote received."}
-                  </p>
-                )}
+                <QuoteSummary
+                  response={quote}
+                  loading={quoting}
+                  stale={quoteIsStale}
+                  onRetry={onRequestQuote}
+                />
 
                 <p className={styles.notice}>
                   <span className={styles.noticeGlyph}>
@@ -430,7 +447,11 @@ export function CustomPrintWorkflow() {
                   Start over
                 </Button>
                 <Button loading={quoting} onClick={onRequestQuote}>
-                  Continue to quote
+                  {quote === null
+                    ? "Get manufacturing quote"
+                    : quoteIsStale
+                      ? "Recalculate estimate"
+                      : "Recalculate"}
                 </Button>
               </>
             ) : (

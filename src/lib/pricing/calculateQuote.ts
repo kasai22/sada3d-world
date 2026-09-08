@@ -1,0 +1,183 @@
+import { EXCLUDED_FROM_ESTIMATE, PRICING_RULES, type PricingRules } from "./rules";
+import type {
+  ManufacturingQuote,
+  QuoteLine,
+  QuoteRequest,
+  QuoteResponse,
+  QuoteValidationError,
+} from "./types";
+
+/**
+ * The quote engine.
+ *
+ * Pure and deterministic: the same request always produces the same result.
+ * No React, no I/O, no clock, no randomness — which is what makes it testable
+ * and what will let it move to a server unchanged.
+ *
+ * It prices the customer's *selections*. It does not price the part, because
+ * nothing in the system measures the part yet. That distinction is carried on
+ * the result as `basis: "configuration"` and stated in the interface.
+ */
+
+export const ACCEPTED_MODEL_EXTENSIONS = [".stl", ".step", ".stp", ".obj"];
+
+/** Whole rupees, half away from zero. The one rounding point in the pipeline. */
+export function roundRupees(value: number): number {
+  return Math.round(value);
+}
+
+/* ------------------------------------------------------------------ *
+ * Validation
+ * ------------------------------------------------------------------ */
+
+/**
+ * Validates a request against the rules, not against the UI.
+ *
+ * The interface already prevents most of these, but the engine cannot assume
+ * that: a future server implementation receives whatever a client sends, and
+ * must reach the same verdict on its own.
+ */
+export function validateQuoteRequest(
+  request: QuoteRequest,
+  rules: PricingRules = PRICING_RULES,
+): QuoteValidationError[] {
+  const errors: QuoteValidationError[] = [];
+
+  const model = request.model;
+  if (!model || !model.name) {
+    errors.push({ field: "model", message: "Upload a model before requesting a quote." });
+  } else {
+    if (!ACCEPTED_MODEL_EXTENSIONS.includes(model.extension)) {
+      errors.push({ field: "model", message: "This file type cannot be quoted." });
+    }
+    if (!Number.isFinite(model.sizeBytes) || model.sizeBytes <= 0) {
+      errors.push({ field: "model", message: "This model file is empty." });
+    }
+  }
+
+  if (!request.material) {
+    errors.push({ field: "material", message: "Select a material." });
+  } else if (rules.materialFactor[request.material] === undefined) {
+    errors.push({ field: "material", message: "Select a supported material." });
+  }
+
+  if (request.quality !== undefined && rules.qualityFactor[request.quality] === undefined) {
+    errors.push({ field: "quality", message: "Select a supported print quality." });
+  }
+
+  if (request.finish !== undefined && rules.finishFee[request.finish] === undefined) {
+    errors.push({ field: "finish", message: "Select a supported finish." });
+  }
+
+  const quantity = request.quantity;
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    errors.push({ field: "quantity", message: "Quantity must be a whole number of at least 1." });
+  } else if (quantity > rules.maxQuantity) {
+    errors.push({
+      field: "quantity",
+      message: `Quantity above ${rules.maxQuantity} needs a manual quote.`,
+    });
+  }
+
+  return errors;
+}
+
+/* ------------------------------------------------------------------ *
+ * Calculation
+ * ------------------------------------------------------------------ */
+
+/**
+ * Prices a validated request.
+ *
+ * Each line is rounded to whole rupees and the total is the sum of those
+ * rounded lines, so the breakdown a customer reads always adds up to the
+ * figure beside it. Rounding happens once, at line level — intermediate
+ * per-unit maths stays in full precision.
+ */
+export function calculateQuote(
+  request: QuoteRequest,
+  rules: PricingRules = PRICING_RULES,
+): QuoteResponse {
+  const errors = validateQuoteRequest(request, rules);
+  if (errors.length > 0) return { status: "invalid", errors };
+
+  const quantity = request.quantity;
+  const materialFactor = rules.materialFactor[request.material] ?? 1;
+  const qualityFactor =
+    request.quality === undefined ? 1 : (rules.qualityFactor[request.quality] ?? 1);
+  const finishFee =
+    request.finish === undefined ? 0 : (rules.finishFee[request.finish] ?? 0);
+
+  // Per unit, in full precision.
+  const unitBase = rules.baseUnitCost;
+  const unitMaterial = unitBase * (materialFactor - 1);
+  const unitQuality = unitBase * materialFactor * (qualityFactor - 1);
+
+  const units = quantity === 1 ? undefined : `× ${quantity} units`;
+
+  const lines: QuoteLine[] = [
+    { id: "setup", label: "Setup", amount: roundRupees(rules.setupFee), detail: "Once per job" },
+    {
+      id: "base",
+      label: "Base manufacturing",
+      amount: roundRupees(unitBase * quantity),
+      detail: units,
+    },
+  ];
+
+  // A dimension that costs nothing is omitted rather than shown as ₹0.
+  if (unitMaterial !== 0) {
+    lines.push({
+      id: "material",
+      label: "Material",
+      amount: roundRupees(unitMaterial * quantity),
+      detail: units,
+    });
+  }
+
+  if (unitQuality !== 0) {
+    lines.push({
+      id: "quality",
+      label: "Quality",
+      amount: roundRupees(unitQuality * quantity),
+      detail: units,
+    });
+  }
+
+  if (finishFee !== 0) {
+    lines.push({
+      id: "finish",
+      label: "Finish",
+      amount: roundRupees(finishFee * quantity),
+      detail: units,
+    });
+  }
+
+  const subtotal = lines.reduce((sum, line) => sum + line.amount, 0);
+
+  // Stated as its own line so the breakdown still sums to the total.
+  if (subtotal < rules.minimumOrder) {
+    lines.push({
+      id: "minimum",
+      label: "Minimum order adjustment",
+      amount: rules.minimumOrder - subtotal,
+    });
+  }
+
+  const total = lines.reduce((sum, line) => sum + line.amount, 0);
+
+  const quote: ManufacturingQuote = {
+    currency: rules.currency,
+    // Geometry is never present yet; when analysis arrives this becomes
+    // "geometry" and the interface stops calling the figure an estimate.
+    basis: request.geometry ? "geometry" : "configuration",
+    quantity,
+    lines,
+    total,
+    excluded: EXCLUDED_FROM_ESTIMATE,
+    rulesVersion: rules.version,
+    provisional: rules.provisional,
+  };
+
+  return { status: "available", quote };
+}
