@@ -2,10 +2,12 @@ import {
   ACESFilmicToneMapping,
   AmbientLight,
   Box3,
+  Box3Helper,
   Color,
   DirectionalLight,
   GridHelper,
   Group,
+  LineBasicMaterial,
   Material,
   Mesh,
   MeshStandardMaterial,
@@ -14,21 +16,34 @@ import {
   PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
+  Raycaster,
   Scene,
   ShadowMaterial,
+  Sphere,
   SRGBColorSpace,
+  Vector2,
   Vector3,
   WebGLRenderer,
   type Camera,
 } from "three";
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+import { componentForObject, discoverComponents, measureAssembly } from "./components";
+import {
+  EXPLODE_DURATION_MS,
+  calculateExplosionTransform,
+  easeInOutCubic,
+} from "./explode";
 import { loadModel, measureBounds } from "./loaders";
 import type {
+  AssemblyBounds,
   ModelAsset,
   ViewerAppearance,
   ViewerBackground,
   ViewerCameraMode,
+  ViewerCapabilities,
+  ViewerComponent,
+  ViewerComponentInfo,
   ViewerModelSource,
 } from "./types";
 
@@ -48,6 +63,11 @@ import type {
 const FOV = 35;
 /** Breathing room around the framed model. */
 const FRAME_PADDING = 1.35;
+
+/** Titanium Orange, rationed to one thing at a time: the selected component. */
+const SELECTION_COLOR = 0xff6b00;
+/** Hover is a hint, not a decision, so it reads in the neutral scale. */
+const HOVER_COLOR = 0x8a929c;
 
 const BACKGROUND_COLOR: Record<ViewerBackground, number> = {
   void: 0x050506,
@@ -102,10 +122,34 @@ export class ViewerEngine {
   private appearance: ViewerAppearance;
   private reducedMotion: boolean;
 
+  /** Radius the camera was last framed against — rest bounds, or exploded. */
+  private frameRadius = 1;
+
   private frameHandle = 0;
   private disposed = false;
   /** Guards against a slow load resolving after the engine is torn down. */
   private loadToken = 0;
+
+  /* ---- exploded view ---- */
+
+  private components: ViewerComponent[] = [];
+  private assembly: AssemblyBounds | null = null;
+  private explodeAmountValue = 0;
+  private explodeAnimation = 0;
+  private selectedId: string | null = null;
+  private hoveredId: string | null = null;
+  private selectionHelper: Box3Helper | null = null;
+  private hoverHelper: Box3Helper | null = null;
+  private readonly raycaster = new Raycaster();
+  private readonly pointer = new Vector2();
+
+  /**
+   * Called after every frame the engine draws.
+   *
+   * The label layer uses this to follow the model. It fires only when a frame
+   * is actually rendered, so an idle viewer calls nothing.
+   */
+  onAfterRender: (() => void) | null = null;
 
   constructor(container: HTMLElement, options: ViewerEngineOptions = {}) {
     this.container = container;
@@ -232,6 +276,7 @@ export class ViewerEngine {
     this.asset = asset;
     this.scene.add(root);
 
+    this.discoverAssembly();
     this.applyAppearance();
     this.addGround(asset);
     this.frameModel();
@@ -239,6 +284,17 @@ export class ViewerEngine {
   }
 
   private clearModel(): void {
+    // Component state belongs to one model. Nothing survives a replacement:
+    // no transforms, no selection, no explode amount, no pending animation.
+    this.cancelExplodeAnimation();
+    this.components = [];
+    this.assembly = null;
+    this.explodeAmountValue = 0;
+    this.selectedId = null;
+    this.hoveredId = null;
+    this.removeHelper("selection");
+    this.removeHelper("hover");
+
     if (this.modelRoot) {
       this.scene.remove(this.modelRoot);
       disposeObject(this.modelRoot);
@@ -286,6 +342,265 @@ export class ViewerEngine {
       disposeMaterial(this.grid.material);
       this.grid = null;
     }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Exploded view
+   *
+   * Transform strategy
+   * ------------------
+   * Components are the children of the assembly root, so no component is a
+   * descendant of another. A parent transform can therefore never be applied
+   * twice: each component's position is written once from its own recorded
+   * rest position, and anything nested inside a component moves with it
+   * because that is what a child transform does.
+   *
+   * Nothing is accumulated. Every update assigns an absolute position derived
+   * from the rest transform and the current amount, so scrubbing back and
+   * forth cannot drift, and amount 0 restores the file's own transform exactly.
+   * ---------------------------------------------------------------- */
+
+  /**
+   * Reads the structure of the loaded model.
+   *
+   * A failure here is not a viewer failure. If the scene cannot be analysed the
+   * model still displays; only the exploded view goes away.
+   */
+  private discoverAssembly(): void {
+    const asset = this.asset;
+    if (!asset) return;
+
+    try {
+      const components = discoverComponents(asset.object);
+      if (components.length === 0) return;
+
+      this.components = components;
+      this.assembly = measureAssembly(components);
+    } catch {
+      this.components = [];
+      this.assembly = null;
+    }
+  }
+
+  get capabilities(): ViewerCapabilities {
+    return { explode: this.components.length > 0 && this.assembly !== null };
+  }
+
+  /** The components as the UI names them — no three.js objects cross this line. */
+  get componentInfo(): ViewerComponentInfo[] {
+    return this.components.map(({ id, name, type, named, index }) => ({
+      id,
+      name,
+      type,
+      named,
+      index,
+    }));
+  }
+
+  get explodeAmount(): number {
+    return this.explodeAmountValue;
+  }
+
+  /**
+   * Moves the assembly to an explode amount between 0 and 1.
+   *
+   * Scrubbing applies immediately — direct manipulation should not lag behind
+   * the hand. The assembled/exploded toggle animates, unless the viewer is in
+   * reduced motion, in which case it also applies immediately.
+   */
+  setExplodeAmount(amount: number, options: { animate?: boolean } = {}): void {
+    if (!this.capabilities.explode) return;
+
+    const target = Math.min(Math.max(amount, 0), 1);
+    this.cancelExplodeAnimation();
+
+    if (!options.animate || this.reducedMotion) {
+      this.applyExplode(target);
+      this.requestRender();
+      return;
+    }
+
+    const from = this.explodeAmountValue;
+    if (from === target) return;
+
+    const start = performance.now();
+
+    // A self-scheduling loop that exists only while the transition does. When
+    // it ends nothing keeps requesting frames, so the on-demand model holds.
+    const step = (now: number): void => {
+      if (this.disposed) return;
+      const t = Math.min((now - start) / EXPLODE_DURATION_MS, 1);
+      this.applyExplode(from + (target - from) * easeInOutCubic(t));
+      this.renderNow();
+
+      if (t < 1) this.explodeAnimation = requestAnimationFrame(step);
+      else this.explodeAnimation = 0;
+    };
+
+    this.explodeAnimation = requestAnimationFrame(step);
+  }
+
+  private cancelExplodeAnimation(): void {
+    if (this.explodeAnimation) cancelAnimationFrame(this.explodeAnimation);
+    this.explodeAnimation = 0;
+  }
+
+  /** Writes every component's position for the given amount. */
+  private applyExplode(amount: number): void {
+    const assembly = this.assembly;
+    if (!assembly) return;
+
+    this.explodeAmountValue = amount;
+
+    for (const component of this.components) {
+      const { position } = calculateExplosionTransform(component, assembly, amount);
+      component.object.position.copy(position);
+    }
+
+    // The build plate is a reference for the assembled part. Once the parts
+    // leave it, it is no longer telling the truth about anything, so it goes.
+    const grounded = amount === 0;
+    if (this.ground) this.ground.visible = grounded;
+    if (this.grid) this.grid.visible = grounded;
+
+    this.updateHelpers();
+  }
+
+  /* ---- selection ---- */
+
+  get selectedComponent(): string | null {
+    return this.selectedId;
+  }
+
+  selectComponent(id: string | null): void {
+    if (id !== null && !this.components.some((c) => c.id === id)) return;
+    if (this.selectedId === id) return;
+    this.selectedId = id;
+    this.updateHelpers();
+    this.requestRender();
+  }
+
+  hoverComponent(id: string | null): void {
+    if (this.hoveredId === id) return;
+    this.hoveredId = id;
+    this.updateHelpers();
+    this.requestRender();
+  }
+
+  /**
+   * The component under a pointer, or null.
+   *
+   * Returns an identifier rather than an object: the UI works in identifiers,
+   * which stay valid across re-renders and never leak the scene graph.
+   */
+  componentAt(clientX: number, clientY: number): string | null {
+    if (!this.modelRoot || this.components.length === 0) return null;
+
+    const rect = this.container.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+
+    this.pointer.set(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    this.raycaster.setFromCamera(this.pointer, this.camera as Camera);
+
+    const hit = this.raycaster.intersectObject(this.modelRoot, true)[0];
+    if (!hit) return null;
+
+    return componentForObject(hit.object, this.components)?.id ?? null;
+  }
+
+  /**
+   * Draws the selection and hover outlines.
+   *
+   * Outlines rather than material changes: materials are frequently shared
+   * between parts in a glTF file, so tinting one component would tint its
+   * siblings. A wireframe box touches nothing and disposes cleanly.
+   */
+  private updateHelpers(): void {
+    for (const [kind, id] of [
+      ["selection", this.selectedId],
+      ["hover", this.hoveredId === this.selectedId ? null : this.hoveredId],
+    ] as const) {
+      const component = id
+        ? this.components.find((candidate) => candidate.id === id)
+        : undefined;
+
+      if (!component) {
+        this.removeHelper(kind);
+        continue;
+      }
+
+      const box = new Box3().setFromObject(component.object);
+      const existing = kind === "selection" ? this.selectionHelper : this.hoverHelper;
+
+      if (existing) {
+        existing.box.copy(box);
+        existing.updateMatrixWorld(true);
+        continue;
+      }
+
+      const helper = new Box3Helper(
+        box,
+        new Color(kind === "selection" ? SELECTION_COLOR : HOVER_COLOR),
+      );
+      // Drawn over the part so the outline stays readable from any angle.
+      const material = helper.material as LineBasicMaterial;
+      material.depthTest = false;
+      material.transparent = true;
+      material.opacity = kind === "selection" ? 0.95 : 0.45;
+      helper.renderOrder = 2;
+
+      this.scene.add(helper);
+      if (kind === "selection") this.selectionHelper = helper;
+      else this.hoverHelper = helper;
+    }
+  }
+
+  private removeHelper(kind: "selection" | "hover"): void {
+    const helper = kind === "selection" ? this.selectionHelper : this.hoverHelper;
+    if (!helper) return;
+
+    this.scene.remove(helper);
+    helper.geometry.dispose();
+    disposeMaterial(helper.material);
+
+    if (kind === "selection") this.selectionHelper = null;
+    else this.hoverHelper = null;
+  }
+
+  /**
+   * Screen positions for component labels.
+   *
+   * Projected in the viewer's own pixel space so the label layer can place DOM
+   * elements over the canvas. Components behind the camera are reported as not
+   * visible rather than wrapped around to the far edge.
+   */
+  projectComponents(): Array<{ id: string; x: number; y: number; visible: boolean }> {
+    const { width, height } = this.size();
+    const camera = this.camera;
+    const center = new Vector3();
+    const box = new Box3();
+
+    return this.components.map((component) => {
+      box.setFromObject(component.object);
+      box.getCenter(center);
+      const projected = center.clone().project(camera);
+      const visible =
+        projected.z < 1 &&
+        projected.x >= -1 &&
+        projected.x <= 1 &&
+        projected.y >= -1 &&
+        projected.y <= 1;
+
+      return {
+        id: component.id,
+        x: ((projected.x + 1) / 2) * width,
+        y: ((1 - projected.y) / 2) * height,
+        visible,
+      };
+    });
   }
 
   /* ---------------------------------------------------------------- *
@@ -391,7 +706,56 @@ export class ViewerEngine {
       this.controls.update();
     }
 
+    this.frameRadius = radius;
     this.updateProjection();
+  }
+
+  /**
+   * Frames everything currently on screen, including separated components.
+   *
+   * The rest bounding box is deliberately not reused: once parts have moved it
+   * no longer contains them, and framing from it would clip the assembly.
+   */
+  frameAssembly(): void {
+    const root = this.modelRoot;
+    if (!root) {
+      this.frameModel();
+      return;
+    }
+
+    const box = new Box3().setFromObject(root);
+    if (box.isEmpty()) return;
+
+    const center = new Vector3();
+    box.getCenter(center);
+    const sphere = new Sphere();
+    box.getBoundingSphere(sphere);
+
+    const radius = Number.isFinite(sphere.radius) && sphere.radius > 0
+      ? sphere.radius
+      : (this.asset?.bounds.radius ?? 1);
+    const distance = (radius / Math.sin((FOV * Math.PI) / 360)) * FRAME_PADDING;
+
+    const direction = new Vector3(1, 0.75, 1).normalize();
+    const position = direction.multiplyScalar(distance).add(center);
+
+    for (const camera of [this.perspective, this.orthographic]) {
+      camera.position.copy(position);
+      camera.near = Math.max(radius / 1000, 0.001);
+      camera.far = distance + radius * 10;
+      camera.lookAt(center);
+    }
+
+    if (this.controls) {
+      this.controls.target.copy(center);
+      this.controls.minDistance = radius * 0.4;
+      this.controls.maxDistance = distance * 6;
+      this.controls.update();
+    }
+
+    this.frameRadius = radius;
+    this.updateProjection();
+    this.requestRender();
   }
 
   /** Restores the camera only. Manufacturing selections are untouched. */
@@ -407,8 +771,7 @@ export class ViewerEngine {
     this.perspective.aspect = aspect;
     this.perspective.updateProjectionMatrix();
 
-    const radius = this.asset?.bounds.radius ?? 1;
-    const half = radius * FRAME_PADDING;
+    const half = this.frameRadius * FRAME_PADDING;
     this.orthographic.left = -half * aspect;
     this.orthographic.right = half * aspect;
     this.orthographic.top = half;
@@ -460,10 +823,21 @@ export class ViewerEngine {
     if (this.disposed || this.frameHandle) return;
     this.frameHandle = requestAnimationFrame(() => {
       this.frameHandle = 0;
-      if (this.disposed) return;
-      this.renderer.render(this.scene, this.camera as Camera);
+      this.renderNow();
     });
   };
+
+  /**
+   * Draws immediately.
+   *
+   * Used by the explode transition, which is already inside a frame callback
+   * and would otherwise wait a further frame to appear.
+   */
+  private renderNow(): void {
+    if (this.disposed) return;
+    this.renderer.render(this.scene, this.camera as Camera);
+    this.onAfterRender?.();
+  }
 
   resize(): void {
     if (this.disposed) return;
@@ -504,6 +878,9 @@ export class ViewerEngine {
 
     if (this.frameHandle) cancelAnimationFrame(this.frameHandle);
     this.frameHandle = 0;
+    // An explode transition in flight would otherwise keep asking for frames.
+    this.cancelExplodeAnimation();
+    this.onAfterRender = null;
 
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;

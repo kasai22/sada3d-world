@@ -41,7 +41,21 @@ export const PRODUCTS: readonly Product[] = [
     ],
     materialNotes: ["Dimensionally stable", "Matte finish", "Low moisture absorption"],
   },
-  { id: "p-002", slug: "planetary-carrier", name: "Planetary Carrier", summary: "Three-pinion carrier for compact gearboxes.", category: "gears", browseCategory: "mechanical", material: "pla", technology: "fdm", color: "orange", price: 520, currency: "INR", availability: "in-stock" },
+  {
+    id: "p-002", slug: "planetary-carrier", name: "Planetary Carrier",
+    summary: "Three-pinion carrier for compact gearboxes.",
+    category: "gears", browseCategory: "mechanical",
+    material: "pla", technology: "fdm", color: "orange",
+    price: 520, currency: "INR", availability: "in-stock",
+    // A six-part assembly, so the viewer offers the exploded view. The parts
+    // are the ones the model file declares; nothing is inferred.
+    model: { url: "/models/planetary-carrier.glb", format: "glb" },
+    description:
+      "A three-pinion carrier for compact planetary gearboxes. Supplied as separate parts for assembly.",
+    applications: ["Gearbox prototyping", "Mechanical assemblies"],
+    materials: ["pla", "petg", "abs"],
+    colors: ["orange", "black", "graphite"],
+  },
   { id: "p-003", slug: "helical-pinion", name: "Helical Pinion", summary: "Quiet-running pinion, 20 degree helix.", category: "gears", browseCategory: "mechanical", material: "petg", technology: "fdm", color: "graphite", price: 610, currency: "INR", availability: "made-to-order" },
   { id: "p-004", slug: "torque-wrench-handle", name: "Torque Wrench Handle", summary: "Replacement grip for a 3/8 inch drive.", category: "tools", browseCategory: "mechanical", material: "abs", technology: "fdm", color: "black", price: 480, currency: "INR", availability: "in-stock" },
   { id: "p-005", slug: "hex-key-organiser", name: "Hex Key Organiser", summary: "Holds nine keys, 1.5 to 10 mm.", category: "tools", browseCategory: "mechanical", material: "pla", technology: "fdm", color: "titanium", price: 240, currency: "INR", availability: "in-stock" },

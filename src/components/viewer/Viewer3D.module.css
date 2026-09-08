@@ -158,8 +158,76 @@
   bottom: var(--spacing-7);
 }
 
+/*
+ * The compact product stage is 4:3 on a phone, which leaves the exploded
+ * controls covering the object they are controlling. Opening them grows the
+ * stage instead of burying the model; closing them returns it.
+ */
+@media (max-width: 767px) {
+  .withPanel { min-height: 460px; }
+}
+
 @media (max-width: 767px) {
   .toolbar { top: var(--spacing-2); right: var(--spacing-2); }
   .mode { display: none; }
   .footer { left: var(--spacing-4); right: var(--spacing-4); bottom: var(--spacing-4); }
+}
+
+/* ---- component labels ----
+   Positioned imperatively after each rendered frame, so an orbit never passes
+   through React. The layer itself never takes a pointer event: the label is a
+   caption on the model, not a second control for it. */
+
+.labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 2px var(--spacing-2);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  background: rgba(5, 5, 6, 0.72);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.labelSelected {
+  color: var(--text-primary);
+  border-color: var(--border-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label { transition: none; }
+}
+
+/* ---- capability readout ---- */
+
+.capability {
+  position: absolute;
+  left: var(--spacing-3);
+  top: var(--spacing-3);
+  padding: 2px var(--spacing-2);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .capability { left: var(--spacing-2); top: var(--spacing-2); }
+  .label { font-size: var(--fs-micro); }
 }

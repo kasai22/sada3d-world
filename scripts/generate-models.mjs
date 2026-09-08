@@ -114,12 +114,125 @@ function huge() {
   return new THREE.SphereGeometry(4200, 48, 32);
 }
 
+/* ------------------------------------------------------------------ *
+ * Multi-component assembly
+ *
+ * The exploded view needs a model that genuinely declares parts. This builds
+ * one from the same parametric primitives, with one named object per part, and
+ * writes it Y-up because that is what glTF and OBJ define.
+ * ------------------------------------------------------------------ */
+
+/** Bakes the CAD Z-up authoring convention into Y-up file coordinates. */
+function upright(geometry) {
+  geometry.rotateX(-Math.PI / 2);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function named(name, geometry, position) {
+  const mesh = new THREE.Mesh(upright(geometry), new THREE.MeshStandardMaterial());
+  mesh.name = name;
+  mesh.position.set(position[0], position[1], position[2]);
+  return mesh;
+}
+
+/**
+ * A three-pinion planetary carrier.
+ *
+ * Parts are arranged the way they assemble: the carrier plate at the bottom,
+ * three pinions on their pitch circle, the sun gear on the axis, and a cap over
+ * the top. No dimension here is a manufacturing specification.
+ */
+function planetaryCarrier() {
+  const group = new THREE.Group();
+  group.name = "Planetary Carrier";
+
+  const plate = new THREE.CylinderGeometry(30, 30, 5, 32);
+  plate.rotateX(Math.PI / 2); // undone by upright(), leaving a flat disc
+  group.add(named("Carrier Plate", plate, [0, 0, 0]));
+
+  group.add(named("Sun Gear", gear({ teeth: 16, pitch: 11, depth: 1.6, boreRadius: 3, thickness: 8 }), [0, 6.5, 0]));
+
+  const pitchRadius = 18;
+  for (let i = 0; i < 3; i += 1) {
+    const angle = (i / 3) * Math.PI * 2;
+    group.add(
+      named(
+        `Pinion ${i + 1}`,
+        gear({ teeth: 10, pitch: 7, depth: 1.4, boreRadius: 2, thickness: 8 }),
+        [Math.cos(angle) * pitchRadius, 6.5, Math.sin(angle) * pitchRadius],
+      ),
+    );
+  }
+
+  // A ring rather than a solid lid, so the assembled part still shows that
+  // there is something inside it.
+  const capShape = new THREE.Shape();
+  capShape.absarc(0, 0, 30, 0, Math.PI * 2, false);
+  bore(capShape, 13);
+  const cap = new THREE.ExtrudeGeometry(capShape, { depth: 4, bevelEnabled: false });
+  group.add(named("Retaining Cap", cap, [0, 17, 0]));
+
+  return group;
+}
+
+/**
+ * The glTF exporter assembles the binary chunk through a FileReader, which is a
+ * browser API. Node has Blob but not the reader, so this supplies the one
+ * method the exporter calls. It touches nothing about the exported geometry.
+ */
+function installFileReader() {
+  if (globalThis.FileReader) return;
+
+  globalThis.FileReader = class {
+    readAsArrayBuffer(blob) {
+      blob
+        .arrayBuffer()
+        .then((buffer) => {
+          this.result = buffer;
+          this.onloadend?.();
+        })
+        .catch((error) => {
+          this.onerror?.(error);
+        });
+    }
+  };
+}
+
+async function writeGltf(name, object) {
+  installFileReader();
+  const { GLTFExporter } = await import("three/examples/jsm/exporters/GLTFExporter.js");
+  const data = await new GLTFExporter().parseAsync(object, { binary: true });
+  const buffer = Buffer.from(data);
+  const file = path.join(OUT, name);
+  fs.writeFileSync(file, buffer);
+  console.log(
+    `${name.padEnd(24)} ${String(buffer.length).padStart(8)} bytes  ` +
+      `${object.children.length} components`,
+  );
+}
+
+async function writeObj(name, object) {
+  const { OBJExporter } = await import("three/examples/jsm/exporters/OBJExporter.js");
+  const text = new OBJExporter().parse(object);
+  const file = path.join(OUT, name);
+  fs.writeFileSync(file, text, "utf8");
+  console.log(
+    `${name.padEnd(24)} ${String(Buffer.byteLength(text)).padStart(8)} bytes  ` +
+      `${object.children.length} components`,
+  );
+}
+
 const set = process.argv[3] ?? "product";
 
 if (set === "product") {
   write("precision-gear.stl", gear({}));
   write("cable-bracket.stl", bracket({}));
   write("hex-drive-coupler.stl", coupler({}));
+  await writeGltf("planetary-carrier.glb", planetaryCarrier());
+} else if (set === "assembly") {
+  await writeGltf("assembly.glb", planetaryCarrier());
+  await writeObj("assembly.obj", planetaryCarrier());
 } else {
   write("plate-flat.stl", plate());
   write("tiny.stl", tiny());
