@@ -1,0 +1,157 @@
+.section {
+  padding-block: var(--space-section);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: var(--spacing-10);
+  align-items: center;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-5);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.eyebrowRule {
+  width: 32px;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-display-3);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+/* The third line is the payoff, so it carries the signal colour. */
+.headlineAccent {
+  color: var(--text-accent);
+}
+
+.lead {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+  max-width: 46ch;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+}
+
+/* ---- compact flow rail ---- */
+
+.flow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-5);
+  padding-top: var(--spacing-5);
+  border-top: 1px solid var(--border-subtle);
+  width: 100%;
+}
+
+.flowStep {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.flowStep:first-child {
+  color: var(--text-accent);
+}
+
+.flowArrow {
+  width: 24px;
+  height: 1px;
+  background: var(--border-strong);
+  flex: 0 0 auto;
+}
+
+/* ---- readout ---- */
+
+.readout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+.price {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 2px solid var(--border-accent);
+}
+
+.priceLabel {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.priceValue {
+  font-family: var(--font-technical);
+  font-weight: var(--fw-medium);
+  font-size: 32px;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+}
+
+.disclaimerText {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-disabled);
+}
+
+@media (max-width: 1023px) {
+  .section { padding-block: var(--space-section-mobile); }
+
+  .layout {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-8);
+  }
+}
+
+@media (max-width: 767px) {
+  .flow { gap: var(--spacing-2); }
+  .flowArrow { width: 14px; }
+  .priceValue { font-size: 26px; }
+}

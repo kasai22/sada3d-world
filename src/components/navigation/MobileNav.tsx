@@ -69,7 +69,7 @@ export function MobileNav({ items, className }: MobileNavProps) {
             />
           </div>
 
-          <nav>
+          <nav aria-label="Main">
             <ul className={styles.links}>
               {items.map((item, index) => {
                 const active =

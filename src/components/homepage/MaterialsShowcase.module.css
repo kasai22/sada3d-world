@@ -1,0 +1,234 @@
+.section {
+  padding-block: var(--space-section);
+  background: var(--surface-page);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--spacing-7);
+  margin-bottom: var(--spacing-9);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-display-3);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.headNote {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  max-width: 36ch;
+}
+
+/*
+ * A scroll strip, not a card grid — the featured-products section below is the
+ * grid, and two grids in a row flatten the page's rhythm.
+ */
+.strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(268px, 1fr);
+  gap: var(--spacing-4);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  padding-bottom: var(--spacing-4);
+  /* Bleed the strip to the viewport edge so it reads as continuing off-screen. */
+  margin-inline: calc(var(--gutter-desktop) * -1);
+  padding-inline: var(--gutter-desktop);
+}
+
+.specimen {
+  /* Containing block for any absolutely positioned descendant, so nothing
+     inside a card can escape the scroll strip and widen the page. */
+  position: relative;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  transition: var(--transition-control);
+}
+
+.specimen:hover,
+.specimen:focus-within {
+  border-color: var(--border-strong);
+}
+
+/* ---- physical surface ---- */
+
+.surface {
+  position: relative;
+  height: 132px;
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+/* PLA — flat, dimensionally stable, no shine at all. */
+.matte {
+  background: linear-gradient(160deg, #2E323A 0%, #1E2126 60%, #16191D 100%);
+}
+
+/* PETG — semi-gloss: one hard specular band across the face. */
+.gloss {
+  background:
+    linear-gradient(
+      108deg,
+      transparent 26%,
+      rgba(244, 246, 248, 0.28) 40%,
+      rgba(244, 246, 248, 0.06) 48%,
+      transparent 62%
+    ),
+    linear-gradient(160deg, #2A2F36 0%, #191C21 100%);
+}
+
+/* ABS — machinable, vapour-smoothable: fine turned lines. */
+.machined {
+  background:
+    repeating-linear-gradient(
+      92deg,
+      rgba(244, 246, 248, 0.11) 0 1px,
+      transparent 1px 6px
+    ),
+    linear-gradient(160deg, #33383F 0%, #171A1E 100%);
+}
+
+/* TPU — elastomeric: broad, soft falloff with no hard edge anywhere. */
+.soft {
+  background:
+    radial-gradient(80% 120% at 26% 8%, rgba(244, 246, 248, 0.17) 0%, transparent 68%),
+    radial-gradient(60% 80% at 82% 96%, rgba(255, 107, 0, 0.08) 0%, transparent 70%),
+    linear-gradient(160deg, #24272C 0%, #131518 100%);
+}
+
+/* Resin — translucent: light carries up through the body from beneath. */
+.translucent {
+  background:
+    linear-gradient(180deg, rgba(215, 219, 224, 0.2) 0%, transparent 48%),
+    radial-gradient(70% 75% at 50% 108%, rgba(215, 219, 224, 0.34) 0%, transparent 72%),
+    linear-gradient(160deg, #1F2329 0%, #0D0F12 100%);
+}
+
+.multiplier {
+  position: absolute;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--spacing-5);
+  flex: 1;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.code {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  display: block;
+  margin-top: 4px;
+}
+
+.description {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.properties {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: 0;
+}
+
+.applications {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.colors {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-strong);
+}
+
+.colorCount {
+  margin-left: auto;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.footer {
+  margin-top: var(--spacing-9);
+  display: flex;
+  justify-content: flex-start;
+}
+
+@media (max-width: 1439px) {
+  .strip {
+    margin-inline: calc(var(--gutter-laptop) * -1);
+    padding-inline: var(--gutter-laptop);
+  }
+}
+
+@media (max-width: 1023px) {
+  .section { padding-block: var(--space-section-mobile); }
+
+  .head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-8);
+  }
+
+  .strip {
+    margin-inline: calc(var(--gutter-tablet) * -1);
+    padding-inline: var(--gutter-tablet);
+  }
+}
+
+@media (max-width: 767px) {
+  .strip {
+    grid-auto-columns: minmax(240px, 82%);
+    margin-inline: calc(var(--gutter-mobile) * -1);
+    padding-inline: var(--gutter-mobile);
+  }
+}

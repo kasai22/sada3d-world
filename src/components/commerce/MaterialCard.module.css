@@ -87,40 +87,10 @@
   margin: 0;
 }
 
-.property {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.propertyKey {
-  width: 76px;
-  flex: 0 0 auto;
-  font: var(--type-technical-sm);
-  letter-spacing: var(--ls-technical);
-  text-transform: uppercase;
-  color: var(--text-disabled);
-}
-
-.scale {
-  margin: 0;
-  flex: 1;
-  display: flex;
-  gap: 3px;
-}
-
-.pip {
-  flex: 1;
-  height: 3px;
-  background: var(--titanium);
-}
-
-.pipOn {
-  background: var(--silver);
-}
-
-.card[aria-pressed="true"] .pipOn {
-  background: var(--orange-500);
+/* PropertyScale reads --pip-color, so selection recolours the whole scale
+   without the scale component knowing about selection. */
+.card[aria-pressed="true"] {
+  --pip-color: var(--orange-500);
 }
 
 .colors {

@@ -1,0 +1,148 @@
+.hero {
+  position: relative;
+  /* Column, not row: below 1024px the readout leaves absolute positioning and
+     becomes a flow sibling of .inner. As a row it would sit beside the content
+     and force the page wider than the viewport. */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* Fills the first screen without forcing an exact viewport lock, so a short
+     laptop window never clips the CTAs. */
+  min-height: min(880px, calc(100dvh - var(--header-height)));
+  padding-block: var(--spacing-12);
+  overflow: hidden;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--spacing-9);
+  width: 100%;
+}
+
+.copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-6);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.eyebrowRule {
+  width: 32px;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  /*
+   * Not --fs-display-1. At its 112px ceiling "MANUFACTURING," measures ~890px,
+   * which is wider than this column and would collide with the 3D object. This
+   * scale fills the column and stops there.
+   */
+  font-size: clamp(32px, 5vw, 76px);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.lead {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+  max-width: 38ch;
+  text-wrap: pretty;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-2);
+}
+
+.visual {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Technical footer rule, pinned to the bottom of the hero. */
+.readout {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--spacing-7);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.readoutGroup {
+  display: flex;
+  gap: var(--spacing-6);
+}
+
+@media (max-width: 1023px) {
+  .inner {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-9);
+    justify-items: start;
+  }
+
+  .copy { max-width: 100%; }
+
+  .visual {
+    order: -1;
+    width: 100%;
+  }
+
+  .readout { position: static; margin-top: var(--spacing-9); }
+}
+
+@media (max-width: 767px) {
+  .hero {
+    min-height: 0;
+    padding-block: var(--spacing-9) var(--spacing-10);
+  }
+
+  /*
+   * --fs-display-1 bottoms out at 56px, which the design system's responsive
+   * matrix specifies for mobile. "MANUFACTURING," is 14 characters and renders
+   * 472px wide at that size — wider than a 390px viewport. Scaling the hero
+   * headline with the viewport keeps the word intact instead of letting it
+   * push the page sideways. The token is untouched; this is local to the hero.
+   */
+  .headline {
+    font-size: clamp(30px, 10vw, 56px);
+  }
+
+  .readoutGroup { gap: var(--spacing-4); }
+
+  /* The second readout group is detail, not information the page depends on. */
+  .readoutSecondary { display: none; }
+}

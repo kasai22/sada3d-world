@@ -1,0 +1,262 @@
+.section {
+  padding-block: var(--space-section);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--spacing-7);
+  margin-bottom: var(--spacing-10);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-display-3);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.headNote {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  max-width: 34ch;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.72fr);
+  gap: var(--spacing-10);
+  align-items: start;
+}
+
+/* ---- index list ---- */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--spacing-4);
+  padding-block: var(--spacing-5);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  color: inherit;
+  transition: var(--transition-control);
+}
+
+.row:hover,
+.row:focus-visible {
+  border-bottom-color: var(--border-subtle);
+}
+
+/* The orange line marks the active row. */
+.row::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: var(--transition-line);
+}
+
+.active::after {
+  transform: scaleX(1);
+}
+
+.index {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-disabled);
+  transition: var(--transition-control);
+}
+
+.active .index {
+  color: var(--text-accent);
+}
+
+.name {
+  font-family: var(--font-display);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-h4);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  transition: var(--transition-control);
+  display: block;
+}
+
+.active .name {
+  color: var(--text-primary);
+}
+
+.descriptor {
+  display: block;
+  margin-top: 4px;
+  font: var(--type-body-sm);
+  color: var(--text-disabled);
+  transition: var(--transition-control);
+}
+
+.active .descriptor {
+  color: var(--text-secondary);
+}
+
+.arrow {
+  display: flex;
+  align-items: center;
+  color: var(--text-disabled);
+  transform: translateX(-4px);
+  opacity: 0;
+  transition: var(--transition-control), transform var(--motion-medium) var(--ease-out);
+}
+
+.active .arrow {
+  color: var(--text-accent);
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- stage ---- */
+
+.stage {
+  position: sticky;
+  top: calc(var(--header-height) + var(--spacing-7));
+  aspect-ratio: 4 / 5;
+  display: grid;
+  place-items: center;
+  background: var(--gradient-viewer);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.stageGrid {
+  position: absolute;
+  inset: 0;
+  background-image: var(--bg-grid);
+}
+
+/* Oversized ghost numeral behind the mark. */
+.stageNumeral {
+  position: absolute;
+  bottom: -4%;
+  right: 2%;
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: 34cqw;
+  line-height: 0.8;
+  color: rgba(244, 246, 248, 0.035);
+  user-select: none;
+}
+
+.stageInner {
+  position: relative;
+  container-type: inline-size;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+/*
+ * Category mark: three nested squares whose rotation and scale are derived from
+ * the category index, so every category reads as a distinct object while the
+ * set stays one system.
+ */
+.mark {
+  position: relative;
+  width: 46%;
+  aspect-ratio: 1;
+  transform: rotate(calc(var(--seed) * 9deg));
+  transition: transform var(--motion-slow) var(--ease-out);
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--titanium-2);
+}
+
+.ring:nth-child(1) {
+  transform: rotate(calc(var(--seed) * 6deg)) scale(1);
+  border-color: var(--titanium-2);
+}
+
+.ring:nth-child(2) {
+  transform: rotate(calc(var(--seed) * -13deg)) scale(0.72);
+  border-color: var(--steel);
+}
+
+.ring:nth-child(3) {
+  transform: rotate(calc(var(--seed) * 21deg)) scale(0.44);
+  border-color: var(--orange-500);
+  box-shadow: var(--glow-orange-sm);
+  background: rgba(255, 107, 0, 0.05);
+}
+
+.stageMeta {
+  position: absolute;
+  left: var(--spacing-5);
+  right: var(--spacing-5);
+  bottom: var(--spacing-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stageName {
+  color: var(--text-primary);
+}
+
+@media (max-width: 1023px) {
+  .section { padding-block: var(--space-section-mobile); }
+
+  .head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-8);
+  }
+
+  .layout { grid-template-columns: 1fr; gap: var(--spacing-8); }
+
+  /* The stage is a desktop refinement; on small screens the list is the
+     section and the stage would only push content down. */
+  .stage { display: none; }
+
+  .arrow { opacity: 1; transform: none; }
+  .name { color: var(--text-primary); }
+  .descriptor { color: var(--text-secondary); }
+}
+
+@media (max-width: 767px) {
+  .row {
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: var(--spacing-3);
+    padding-block: var(--spacing-4);
+  }
+}

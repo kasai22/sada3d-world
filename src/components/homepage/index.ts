@@ -1,0 +1,9 @@
+export { CreateCategories } from "./CreateCategories";
+export { CustomManufacturing } from "./CustomManufacturing";
+export { FeaturedProducts } from "./FeaturedProducts";
+export { FinalCTA } from "./FinalCTA";
+export { Hero } from "./Hero";
+export { HowItWorks } from "./HowItWorks";
+export { Industries } from "./Industries";
+export { ManufacturingCapabilities } from "./ManufacturingCapabilities";
+export { MaterialsShowcase } from "./MaterialsShowcase";

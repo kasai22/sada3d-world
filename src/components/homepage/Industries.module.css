@@ -1,0 +1,118 @@
+.section {
+  padding-block: var(--space-section);
+}
+
+.head {
+  margin-bottom: var(--spacing-10);
+}
+
+.headline {
+  margin: 0;
+  /* em, not ch: the cap has to resolve against the display size on this
+     element. On the wrapper it resolved against the 15px body font and broke
+     the line four times. */
+  max-width: 12em;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-display-3);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+/*
+ * Six columns with mixed spans. The asymmetry is the point: equal tiles would
+ * flatten seven distinct audiences into a feature grid.
+ */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  padding: var(--spacing-7);
+  background: var(--surface-panel);
+  min-height: 220px;
+  transition: var(--transition-control);
+}
+
+.panel:hover {
+  background: var(--surface-card);
+}
+
+.wide {
+  grid-column: span 4;
+}
+
+.narrow {
+  grid-column: span 2;
+}
+
+.index {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-disabled);
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-h3);
+  line-height: var(--lh-heading);
+  letter-spacing: var(--ls-heading);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.wide .name {
+  font-size: var(--fs-h2);
+}
+
+.summary {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  max-width: 44ch;
+}
+
+/* The rule sits at the foot of each panel and grows on hover. */
+.rule {
+  margin-top: auto;
+  height: 2px;
+  width: 32px;
+  background: var(--titanium);
+  transition: var(--transition-line);
+}
+
+.panel:hover .rule {
+  width: 72px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+@media (max-width: 1023px) {
+  .section { padding-block: var(--space-section-mobile); }
+  .head { margin-bottom: var(--spacing-8); }
+
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wide, .narrow { grid-column: span 1; }
+
+  .panel { padding: var(--spacing-6); min-height: 180px; }
+  .wide .name { font-size: var(--fs-h3); }
+}
+
+@media (max-width: 767px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .panel { min-height: 0; padding: var(--spacing-5); }
+}

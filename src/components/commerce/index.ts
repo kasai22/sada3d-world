@@ -5,6 +5,9 @@ export type {
   PropertyRating,
 } from "./MaterialCard";
 
+export { PropertyScale } from "./PropertyScale";
+export type { PropertyScaleProps } from "./PropertyScale";
+
 export { OrderSummary } from "./OrderSummary";
 export type { OrderItem, OrderSummaryProps, TotalRow } from "./OrderSummary";
 

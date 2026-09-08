@@ -1,0 +1,161 @@
+.section {
+  padding-block: var(--space-section);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--spacing-7);
+  margin-bottom: var(--spacing-10);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-display-3);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.headNote {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  max-width: 34ch;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--spacing-6);
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-6);
+  /* The rail runs across the whole row; direction comes from the gradient,
+     which fades orange to titanium left to right. */
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(
+      90deg,
+      var(--rail-from) 0%,
+      var(--rail-to) 100%
+    )
+    1;
+}
+
+.step:nth-child(1) { --rail-from: var(--orange-500); --rail-to: var(--titanium-2); }
+.step:nth-child(2) { --rail-from: var(--titanium-2); --rail-to: var(--titanium); }
+.step:nth-child(3) { --rail-from: var(--titanium); --rail-to: var(--border-subtle); }
+.step:nth-child(4) { --rail-from: var(--border-subtle); --rail-to: var(--border-subtle); }
+
+/* Node sitting on the rail. */
+.node {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  background: var(--surface-page);
+  border: 1px solid var(--titanium-2);
+}
+
+.step:nth-child(1) .node {
+  border-color: var(--orange-500);
+  background: var(--orange-500);
+  box-shadow: var(--glow-orange-sm);
+}
+
+.index {
+  font-family: var(--font-technical);
+  font-weight: var(--fw-medium);
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: var(--ls-technical);
+  color: var(--text-disabled);
+}
+
+.step:nth-child(1) .index {
+  color: var(--text-accent);
+}
+
+.glyph {
+  color: var(--text-muted);
+  display: flex;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-h4);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.summary {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+  max-width: 28ch;
+}
+
+.meta {
+  margin-top: auto;
+  padding-top: var(--spacing-4);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.footer {
+  margin-top: var(--spacing-10);
+}
+
+@media (max-width: 1023px) {
+  .section { padding-block: var(--space-section-mobile); }
+
+  .head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-8);
+  }
+
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-7); }
+  .index { font-size: 36px; }
+}
+
+@media (max-width: 767px) {
+  /* Vertical rail: the row layout would crush four steps into unreadable
+     columns, so the sequence rotates rather than shrinking. */
+  .steps { grid-template-columns: minmax(0, 1fr); gap: 0; }
+
+  .step {
+    padding: var(--spacing-5) 0 var(--spacing-6) var(--spacing-6);
+    border-top: 0;
+    border-left: 1px solid var(--titanium);
+    border-image: none;
+    gap: var(--spacing-3);
+  }
+
+  .step:nth-child(1) { border-left-color: var(--orange-500); }
+  .step:last-child { border-left-color: transparent; }
+
+  .node { top: var(--spacing-5); left: -4px; }
+  .index { font-size: 28px; }
+  .meta { padding-top: var(--spacing-2); }
+  .footer { margin-top: var(--spacing-8); }
+}

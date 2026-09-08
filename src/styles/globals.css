@@ -204,6 +204,15 @@ canvas {
  * Accessibility helpers
  * ------------------------------------------------------------------ */
 
+/*
+ * Hidden from sight, available to screen readers.
+ *
+ * This is absolutely positioned, so it resolves against the nearest positioned
+ * ancestor — or the initial containing block if there is none. Inside a
+ * horizontally scrolling region that means its static position can sit far to
+ * the right and widen the whole document. Any component that puts this inside a
+ * scroller must give an ancestor `position: relative`.
+ */
 .u-visually-hidden {
   position: absolute;
   width: 1px;

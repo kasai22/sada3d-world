@@ -20,6 +20,8 @@ export interface SectionHeadingProps {
    * outline rather than choosing by visual size.
    */
   as?: "h1" | "h2" | "h3" | "h4";
+  /** Placed on the heading element so a section can point aria-labelledby at it. */
+  id?: string;
   className?: string;
 }
 
@@ -36,6 +38,7 @@ export function SectionHeading({
   align = "left",
   size = "md",
   as: Tag = "h2",
+  id,
   className,
 }: SectionHeadingProps) {
   return (
@@ -52,7 +55,9 @@ export function SectionHeading({
               {index}
             </span>
           )}
-          <Tag className={clsx(styles.text, styles[size])}>{children}</Tag>
+          <Tag id={id} className={clsx(styles.text, styles[size])}>
+            {children}
+          </Tag>
         </span>
         {meta && <span className={styles.meta}>{meta}</span>}
       </div>

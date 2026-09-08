@@ -1,0 +1,75 @@
+.section {
+  position: relative;
+  padding-block: var(--spacing-13);
+  border-top: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--spacing-6);
+}
+
+.rule {
+  width: 48px;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-display-2);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+/* The three words are the brand line; the middle one carries the signal. */
+.headline span {
+  display: block;
+}
+
+.headlineAccent {
+  color: var(--text-accent);
+}
+
+.lead {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+  max-width: 40ch;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-2);
+}
+
+.readout {
+  margin-top: var(--spacing-9);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+@media (max-width: 767px) {
+  .section { padding-block: var(--spacing-11); }
+  .readout { flex-direction: column; gap: var(--spacing-2); text-align: left; }
+}

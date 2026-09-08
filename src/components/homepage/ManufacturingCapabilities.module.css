@@ -1,0 +1,141 @@
+.section {
+  padding-block: var(--space-section);
+}
+
+.head {
+  margin-bottom: var(--spacing-9);
+}
+
+/* ---- metrics ---- */
+
+.metrics {
+  list-style: none;
+  margin: 0 0 var(--spacing-10);
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-7) var(--spacing-5) var(--spacing-7) 0;
+  border-left: 1px solid var(--border-subtle);
+  padding-left: var(--spacing-5);
+}
+
+.metric:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.metricValue {
+  font-family: var(--font-technical);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-h2);
+  line-height: 1;
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+}
+
+/* Exactly one metric carries the signal colour. */
+.metric:first-child .metricValue {
+  color: var(--text-accent);
+}
+
+.metricLabel {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ---- technologies ---- */
+
+.technologies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.technology {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--spacing-6);
+  padding-block: var(--spacing-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.code {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-h3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.technologyBody {
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.summary {
+  margin: 4px 0 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.detail {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  white-space: nowrap;
+}
+
+.note {
+  margin: var(--spacing-6) 0 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+@media (max-width: 1023px) {
+  .section { padding-block: var(--space-section-mobile); }
+  .head { margin-bottom: var(--spacing-8); }
+
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .metric {
+    padding: var(--spacing-5) var(--spacing-4);
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .metric:first-child,
+  .metric:nth-child(2) { border-top: 0; }
+  .metric:nth-child(odd) { border-left: 0; padding-left: 0; }
+}
+
+@media (max-width: 767px) {
+  .technology {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-2);
+  }
+
+  .detail { white-space: normal; }
+  .metricValue { font-size: var(--fs-h3); }
+}

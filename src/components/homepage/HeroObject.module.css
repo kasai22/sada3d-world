@@ -1,0 +1,157 @@
+/*
+ * Hero object — a part caught mid-build.
+ *
+ * The lower layers are solid machined metal, the upper layers are orange
+ * wireframe, and a bright plane sits at the boundary. It states digital →
+ * physical literally rather than decoratively.
+ *
+ * Pure CSS 3D: no WebGL, no canvas, ~20 elements. The real three.js viewer is
+ * Phase 9's deliverable and does not belong on the landing route.
+ */
+
+.scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 560px;
+  margin-inline: auto;
+  perspective: 1400px;
+  perspective-origin: 50% 42%;
+  /* Set by the pointer handler; 0 until then, and permanently 0 for touch
+     pointers and reduced motion. */
+  --tilt-x: 0deg;
+  --tilt-z: 0deg;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
+  /* Looking down at roughly a third-angle view. Shallower than a plan view so
+     the stack reads as an object with height rather than as flat sheets. */
+  transform: rotateX(calc(50deg + var(--tilt-x))) rotateZ(var(--tilt-z));
+  transition: transform var(--motion-slow) var(--ease-out);
+}
+
+.spin {
+  position: relative;
+  width: 62%;
+  height: 62%;
+  transform-style: preserve-3d;
+  animation: hero-spin 72s linear infinite;
+}
+
+@keyframes hero-spin {
+  to { transform: rotateZ(360deg); }
+}
+
+/* ---- build plate ---- */
+
+.plate {
+  position: absolute;
+  inset: -24%;
+  border: 1px solid var(--border-default);
+  background:
+    repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 24px),
+    var(--surface-viewer);
+  box-shadow: 0 0 80px rgba(0, 0, 0, 0.8);
+}
+
+/* ---- layers ---- */
+
+.layer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--w);
+  height: var(--w);
+  margin: calc(var(--w) / -2) 0 0 calc(var(--w) / -2);
+  transform: translateZ(var(--z));
+}
+
+/*
+ * Solid, already-printed material.
+ *
+ * Only the ring of each layer left uncovered by the one above is visible, so
+ * those terraces carry the read. The fill is bright enough to catch light and
+ * the seam between layers is dark, which is what makes the body look like
+ * machined steps rather than stacked wireframe.
+ */
+.solid {
+  background: linear-gradient(135deg, #575E68 0%, #333941 42%, #454C55 70%, #23272D 100%);
+  border: 1px solid rgba(5, 5, 6, 0.55);
+}
+
+/* The topmost printed layer sits directly under the print plane. */
+.crown {
+  background: linear-gradient(135deg, #6A727D 0%, #3D444D 45%, #2A2F36 100%);
+  border-color: rgba(5, 5, 6, 0.4);
+}
+
+/* Not yet printed — geometry that still only exists as data. */
+.ghost {
+  border: 1px solid rgba(255, 107, 0, var(--ghost-alpha));
+  background: rgba(255, 107, 0, 0.02);
+}
+
+/* The print plane: the one place the object emits light. */
+.head {
+  border: 1px solid var(--orange-500);
+  background: rgba(255, 107, 0, 0.1);
+  box-shadow: 0 0 24px rgba(255, 107, 0, 0.28);
+}
+
+/* ---- annotations ---- */
+
+.annotation {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.annotationRule {
+  width: 40px;
+  height: 1px;
+  background: var(--border-strong);
+}
+
+.digital {
+  top: 12%;
+  right: 2%;
+  color: var(--text-accent);
+}
+
+.digital .annotationRule {
+  background: var(--orange-500);
+}
+
+.physical {
+  bottom: 16%;
+  left: 2%;
+  color: var(--text-muted);
+}
+
+@media (max-width: 1023px) {
+  .scene { max-width: 420px; }
+  .annotation { font-size: 10px; }
+}
+
+@media (max-width: 767px) {
+  /* Mobile keeps the object but drops it out of the visual lead, so it is
+     smaller and loses the annotations rather than crowding the headline. */
+  .scene { max-width: 300px; }
+  .annotation { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin { animation: none; }
+  .stage { transition: none; }
+}

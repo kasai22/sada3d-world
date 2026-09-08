@@ -1,9 +1,9 @@
 import clsx from "clsx";
 
+import { PropertyScale, type PropertyRating } from "./PropertyScale";
 import styles from "./MaterialCard.module.css";
 
-/** 1–5. Rendered as a five-pip scale and stated in text for screen readers. */
-export type PropertyRating = 1 | 2 | 3 | 4 | 5;
+export type { PropertyRating };
 
 export interface MaterialProperties {
   strength?: PropertyRating;
@@ -69,23 +69,7 @@ export function MaterialCard({
         {PROPERTY_ORDER.map((key) => {
           const rating = properties[key];
           if (rating == null) return null;
-
-          return (
-            <div key={key} className={styles.property}>
-              <dt className={styles.propertyKey}>{key}</dt>
-              <dd className={styles.scale}>
-                {Array.from({ length: 5 }, (_, index) => (
-                  <span
-                    key={index}
-                    aria-hidden="true"
-                    className={clsx(styles.pip, index < rating && styles.pipOn)}
-                  />
-                ))}
-                {/* The pip scale is decorative; the value is stated. */}
-                <span className="u-visually-hidden">{rating} out of 5</span>
-              </dd>
-            </div>
-          );
+          return <PropertyScale key={key} label={key} rating={rating} />;
         })}
       </dl>
 

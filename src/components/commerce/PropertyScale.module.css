@@ -1,0 +1,38 @@
+/* A 1–5 material property, drawn as pips. Must be rendered inside a <dl>. */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.key {
+  width: 76px;
+  flex: 0 0 auto;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.scale {
+  /* Establishes the containing block for the visually-hidden rating text.
+     Without it that text is positioned against the initial containing block,
+     and inside a horizontal scroller its static position lies far off-screen,
+     stretching the document. See the note on .u-visually-hidden. */
+  position: relative;
+  margin: 0;
+  flex: 1;
+  display: flex;
+  gap: 3px;
+}
+
+.pip {
+  flex: 1;
+  height: 3px;
+  background: var(--titanium);
+}
+
+.on {
+  background: var(--pip-color, var(--silver));
+}
