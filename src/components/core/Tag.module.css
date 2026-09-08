@@ -41,3 +41,10 @@
 .remove:hover {
   opacity: 1;
 }
+
+/* The remove affordance renders as a link when driven by a URL. */
+a.remove,
+a.remove:hover {
+  border-bottom: 0;
+  color: inherit;
+}

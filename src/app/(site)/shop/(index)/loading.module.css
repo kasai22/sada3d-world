@@ -1,0 +1,74 @@
+/*
+ * Skeleton, not a spinner.
+ *
+ * The shapes match the real layout's boxes so nothing shifts when results
+ * arrive. The shimmer is a slow opacity pulse rather than a travelling
+ * gradient — the design system has no sweeping highlights.
+ */
+
+.page {
+  padding-block: var(--spacing-9) var(--space-section);
+}
+
+.block {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  animation: skeleton 1.6s var(--ease-standard) infinite;
+}
+
+@keyframes skeleton {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .block { animation: none; opacity: 0.8; }
+}
+
+.crumbs { height: 14px; width: 180px; margin-bottom: var(--spacing-7); }
+.title { height: 64px; width: min(520px, 70%); margin-bottom: var(--spacing-4); }
+.lead { height: 18px; width: min(420px, 60%); margin-bottom: var(--spacing-8); }
+
+.rail {
+  display: flex;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-9);
+  overflow: hidden;
+}
+
+.railItem {
+  flex: 0 0 auto;
+  width: 208px;
+  height: 116px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  gap: var(--spacing-9);
+  align-items: start;
+}
+
+.sidebar { height: 520px; }
+
+.toolbar { height: 44px; margin-bottom: var(--spacing-7); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: var(--spacing-6);
+}
+
+.card { aspect-ratio: 3 / 4; }
+
+@media (max-width: 1023px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { display: none; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); gap: var(--spacing-4); }
+  .railItem { width: 176px; height: 104px; }
+  .title { height: 44px; }
+}
+
+@media (max-width: 519px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1,0 +1,30 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-5);
+}
+
+.label {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  margin-right: var(--spacing-1);
+}
+
+.clear {
+  margin-left: var(--spacing-2);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 0;
+  transition: var(--transition-control);
+}
+
+.clear:hover {
+  color: var(--text-primary);
+  border-bottom: 0;
+}

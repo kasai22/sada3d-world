@@ -1,0 +1,36 @@
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /*
+   * The minimum decides the column count, not a breakpoint.
+   *
+   * Beside the 280px sidebar a 1440px container leaves 1016px, so 230px is what
+   * lets four columns land on desktop (cards render at 236px) while a laptop
+   * falls to three at 280px. A larger minimum silently drops desktop to three.
+   */
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--spacing-6);
+}
+
+.grid > li {
+  display: flex;
+  min-width: 0;
+}
+
+.grid > li > * {
+  width: 100%;
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+    gap: var(--spacing-4);
+  }
+}
+
+@media (max-width: 519px) {
+  /* Below this a two-up grid crushes the card below its useful width. */
+  .grid { grid-template-columns: minmax(0, 1fr); }
+}

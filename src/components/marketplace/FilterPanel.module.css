@@ -1,0 +1,121 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.count {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.reset {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.reset:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.reset:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* ---- colour facet ----
+   Colours are a swatch grid rather than a row in the tree: the swatch is the
+   label, and a checkbox list of colour names reads far worse. */
+
+.colorGroup {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--spacing-4);
+}
+
+.colorLegend {
+  display: block;
+  width: 100%;
+  padding: 14px 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.swatchLabel {
+  position: relative;
+  cursor: pointer;
+}
+
+.swatchInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.swatch {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-strong);
+  background: var(--swatch);
+  color: var(--swatch-mark);
+  transition: var(--transition-control);
+}
+
+.swatchLabel:hover .swatch {
+  border-color: var(--white);
+}
+
+.swatchInput:checked + .swatch {
+  border-color: var(--orange-500);
+  box-shadow: var(--glow-orange-xs);
+}
+
+.swatchInput:focus-visible + .swatch {
+  box-shadow: var(--focus-ring);
+}
+
+.swatchInput:disabled + .swatch {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (pointer: coarse) {
+  .swatch { width: var(--target-min); height: var(--target-min); }
+}

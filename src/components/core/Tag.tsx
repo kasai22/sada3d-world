@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { HTMLAttributes } from "react";
 import clsx from "clsx";
 
@@ -13,6 +14,12 @@ export interface TagProps extends HTMLAttributes<HTMLSpanElement> {
   icon?: IconName;
   /** Supplying this turns the tag into a removable filter chip. */
   onRemove?: () => void;
+  /**
+   * Server-rendered alternative to `onRemove`: the remove affordance becomes a
+   * link to the given URL. Used by URL-driven filter chips, which then need no
+   * client JavaScript at all. Ignored when `onRemove` is supplied.
+   */
+  removeHref?: string;
   /** Names what is being removed, e.g. "PLA" -> "Remove filter PLA". */
   removeLabel?: string;
 }
@@ -29,6 +36,7 @@ export function Tag({
   mono = true,
   icon,
   onRemove,
+  removeHref,
   removeLabel,
   className,
   ...rest
@@ -45,7 +53,7 @@ export function Tag({
     >
       {icon && <Icon name={icon} size={12} />}
       {children}
-      {onRemove && (
+      {onRemove ? (
         <button
           type="button"
           onClick={onRemove}
@@ -54,6 +62,16 @@ export function Tag({
         >
           <Icon name="x" size={12} />
         </button>
+      ) : (
+        removeHref && (
+          <Link
+            href={removeHref}
+            aria-label={removeLabel ?? "Remove filter"}
+            className={styles.remove}
+          >
+            <Icon name="x" size={12} />
+          </Link>
+        )
       )}
     </span>
   );

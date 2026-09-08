@@ -1,7 +1,7 @@
 import Link from "next/link";
 import clsx from "clsx";
 
-import { Icon, IconButton } from "@/components/core";
+import { Icon } from "@/components/core";
 import { MobileNav, type NavItem } from "./MobileNav";
 import { NavLink } from "./NavLink";
 import styles from "./Header.module.css";
@@ -47,7 +47,18 @@ export function Header({
       </nav>
 
       <div className={styles.utilities}>
-        <IconButton icon="search" label="Search" />
+        {/* Search lives in the catalog toolbar, so this is a link to it rather
+            than a control that opens an overlay. */}
+        <Link
+          href="/shop"
+          className={clsx("u-plain", styles.utilityLink)}
+          aria-label="Search parts"
+          title="Search parts"
+        >
+          <span className={styles.utility}>
+            <Icon name="search" size={17} />
+          </span>
+        </Link>
 
         <Link
           href="/account"

@@ -45,6 +45,15 @@
   gap: 2px;
 }
 
+/*
+ * Collapsed panels use the `hidden` attribute, whose default
+ * `display: none` loses to the class rules above on specificity. These
+ * restore it — without them a collapsed group still renders its options.
+ */
+.options[hidden] {
+  display: none;
+}
+
 /* ---- node ---- */
 
 .node {
@@ -99,4 +108,8 @@
   flex-direction: column;
   gap: 2px;
   padding-bottom: 4px;
+}
+
+.children[hidden] {
+  display: none;
 }
