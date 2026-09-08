@@ -1,0 +1,201 @@
+/*
+ * A cart line.
+ *
+ * Quieter than the marketing pages: hairlines, technical metadata, one accent.
+ * Desktop lays the columns out on one row; below the tablet breakpoint the line
+ * stacks, because a four-column table at 390px is a table nobody can read.
+ */
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 110px 110px;
+  grid-template-areas:
+    "identity quantity unit total"
+    "issues   issues   issues actions";
+  align-items: start;
+  gap: var(--spacing-4) var(--spacing-5);
+  padding: var(--spacing-6) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.row:first-child {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Applied while a change is in flight: readable, not disabled-looking. */
+.pending {
+  opacity: 0.72;
+}
+
+/* ---- identity ---- */
+
+.identity {
+  grid-area: identity;
+  display: flex;
+  gap: var(--spacing-4);
+  min-width: 0;
+}
+
+.glyph {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.kind {
+  align-self: flex-start;
+}
+
+.name {
+  font: var(--type-h4);
+  letter-spacing: var(--ls-heading);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+a.name:hover {
+  color: var(--text-accent);
+}
+
+.spec,
+.file {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ---- columns ---- */
+
+.quantity {
+  grid-area: quantity;
+}
+
+.unit {
+  grid-area: unit;
+  text-align: right;
+}
+
+.total {
+  grid-area: total;
+  text-align: right;
+}
+
+.columnLabel {
+  display: block;
+  margin-bottom: var(--spacing-2);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.unitValue {
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+.each {
+  color: var(--text-muted);
+}
+
+.totalValue {
+  font: var(--type-metric);
+  color: var(--text-primary);
+}
+
+/* ---- actions ---- */
+
+.actions {
+  grid-area: actions;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+}
+
+/* ---- issues ---- */
+
+.issues {
+  grid-area: issues;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.issue {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+  background: var(--status-warning-surface);
+  border-left: 2px solid var(--status-warning);
+}
+
+.issue svg {
+  color: var(--status-warning);
+}
+
+.issueAction {
+  margin-left: auto;
+  padding: 0;
+  font: var(--type-ui);
+  color: var(--text-accent);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.issueAction:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+/* ---- stacked ---- */
+
+@media (max-width: 899px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "identity identity"
+      "quantity total"
+      "unit     unit"
+      "issues   issues"
+      "actions  actions";
+    gap: var(--spacing-4);
+  }
+
+  .unit {
+    text-align: left;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .issue {
+    flex-wrap: wrap;
+  }
+
+  .issueAction {
+    margin-left: 0;
+  }
+}

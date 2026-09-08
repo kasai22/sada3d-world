@@ -1,0 +1,66 @@
+.page {
+  padding: var(--spacing-9) 0 var(--spacing-12);
+}
+
+.intro {
+  margin-bottom: var(--spacing-8);
+}
+
+.crumbs {
+  margin-bottom: var(--spacing-6);
+}
+
+.title {
+  margin: 0 0 var(--spacing-3);
+  font: var(--type-h1);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.description {
+  margin: 0;
+  max-width: 56ch;
+  font: var(--type-body);
+  color: var(--text-muted);
+}
+
+@media (max-width: 767px) {
+  .page { padding: var(--spacing-7) 0 var(--spacing-9); }
+  .intro { margin-bottom: var(--spacing-6); }
+}
+
+/* ---- a cart that cannot be ordered as it stands ---- */
+
+.blocked {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+  max-width: 720px;
+  padding: var(--spacing-6);
+  background: var(--status-warning-surface);
+  border-left: 2px solid var(--status-warning);
+}
+
+.blockedTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin: 0;
+  font: var(--type-h4);
+  letter-spacing: var(--ls-heading);
+  color: var(--text-primary);
+}
+
+.blockedTitle svg {
+  flex: 0 0 auto;
+  color: var(--status-warning);
+}
+
+.blockedList {
+  margin: 0;
+  padding-left: var(--spacing-5);
+  font: var(--type-body);
+  color: var(--text-secondary);
+}

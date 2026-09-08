@@ -1,0 +1,114 @@
+/*
+ * The totals block.
+ *
+ * Deliberately calm. One accent, on the action; everything else is information.
+ */
+
+.summary {
+  position: sticky;
+  top: calc(var(--header-height) + var(--spacing-5));
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--spacing-6);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.key {
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.value {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+/* An amount the system does not have. Reads as a statement, not a figure. */
+.pendingValue {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.grand {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.grandKey {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.grandValue {
+  font: var(--type-h3);
+  letter-spacing: var(--ls-heading);
+  color: var(--text-primary);
+}
+
+.note,
+.provisional,
+.blocked {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.provisional svg,
+.blocked svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.blocked {
+  color: var(--status-warning);
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-2);
+}
+
+@media (max-width: 1023px) {
+  .summary {
+    position: static;
+  }
+}

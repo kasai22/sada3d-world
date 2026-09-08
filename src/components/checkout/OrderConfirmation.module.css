@@ -1,0 +1,191 @@
+/*
+ * Order confirmation.
+ *
+ * The quietest page in the system. One success mark, technical facts, and no
+ * celebration — the customer wants to know what happened, not to be congratulated.
+ */
+
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+  max-width: 720px;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.glyph {
+  color: var(--status-success);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-h1);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.lede {
+  margin: 0;
+  max-width: 52ch;
+  font: var(--type-body-lg);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* ---- facts ---- */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-5);
+  margin: 0;
+  padding: var(--spacing-5) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.factKey {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.factValue {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin: 0;
+  font: var(--type-metric);
+  color: var(--text-primary);
+}
+
+/* ---- sections ---- */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.sectionTitle {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.item:first-child {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.itemMeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.itemName {
+  font: var(--type-body);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.itemSpec {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.itemQty {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+}
+
+.itemPrice {
+  font: var(--type-body);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.address {
+  margin: 0;
+  font: var(--type-body);
+  font-style: normal;
+  color: var(--text-secondary);
+}
+
+.note {
+  margin: 0;
+  max-width: 60ch;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.provisional {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding: var(--spacing-4);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+  background: var(--status-info-surface);
+  border-left: 2px solid var(--status-info);
+}
+
+.provisional svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--status-info);
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-3);
+}
+
+@media (max-width: 767px) {
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-4);
+  }
+
+  .item {
+    flex-wrap: wrap;
+  }
+}

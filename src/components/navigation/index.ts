@@ -1,6 +1,7 @@
 export { FilterTree } from "./FilterTree";
 export type { FilterGroup, FilterNode, FilterTreeProps } from "./FilterTree";
 
+export { CartLink } from "./CartLink";
 export { Header, PRIMARY_NAV } from "./Header";
 export type { HeaderProps } from "./Header";
 

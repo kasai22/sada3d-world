@@ -2,6 +2,7 @@ import Link from "next/link";
 import clsx from "clsx";
 
 import { Icon } from "@/components/core";
+import { CartLink } from "./CartLink";
 import { MobileNav, type NavItem } from "./MobileNav";
 import { NavLink } from "./NavLink";
 import styles from "./Header.module.css";
@@ -17,8 +18,6 @@ export const PRIMARY_NAV: readonly NavItem[] = [
 
 export interface HeaderProps {
   items?: readonly NavItem[];
-  /** Rendered as a badge on the cart control. Omit or 0 hides it. */
-  cartCount?: number;
   className?: string;
 }
 
@@ -28,11 +27,7 @@ export interface HeaderProps {
  * A Server Component — only the active-link marker and the mobile drawer need
  * the client, and each is isolated in its own small component.
  */
-export function Header({
-  items = PRIMARY_NAV,
-  cartCount = 0,
-  className,
-}: HeaderProps) {
+export function Header({ items = PRIMARY_NAV, className }: HeaderProps) {
   return (
     <header className={clsx(styles.header, className)}>
       <Link href="/" className={styles.wordmark} aria-label="SADA 3D — home">
@@ -71,23 +66,9 @@ export function Header({
           </span>
         </Link>
 
-        <Link
-          href="/cart"
-          className={clsx("u-plain", styles.utilityLink, styles.cart)}
-          aria-label={
-            cartCount > 0 ? `Cart, ${cartCount} items` : "Cart, empty"
-          }
-          title="Cart"
-        >
-          <span className={styles.utility}>
-            <Icon name="shopping-cart" size={17} />
-          </span>
-          {cartCount > 0 && (
-            <span className={styles.badge} aria-hidden="true">
-              {cartCount > 99 ? "99+" : cartCount}
-            </span>
-          )}
-        </Link>
+        {/* The only client island in the header: it reads the count the cart
+            service wrote, so no page has to become dynamic to show it. */}
+        <CartLink />
 
         <MobileNav items={items} className={styles.menuButton} />
       </div>

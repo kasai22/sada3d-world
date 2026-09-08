@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { MaterialCard } from "@/components/commerce";
 import { Button, Icon, Tag } from "@/components/core";
@@ -20,6 +21,7 @@ import {
   pricingSignature,
   requestQuote,
 } from "@/lib/custom-print/quote";
+import { submitCustomCartIntent } from "@/lib/cart/intent";
 import type { QuoteResponse } from "@/lib/pricing/types";
 import { forgetModelFile, rememberModelFile } from "@/lib/custom-print/modelBlobs";
 import { modelStorage } from "@/lib/custom-print/storage";
@@ -57,6 +59,7 @@ import styles from "./CustomPrintWorkflow.module.css";
  * seam in lib/custom-print and are not reached into from here.
  */
 export function CustomPrintWorkflow() {
+  const router = useRouter();
   const [configuration, setConfiguration] =
     useState<CustomPrintConfiguration>(EMPTY_CONFIGURATION);
   const [step, setStep] = useState<StepId>("upload");
@@ -79,6 +82,11 @@ export function CustomPrintWorkflow() {
    * has since changed.
    */
   const [quotedSignature, setQuotedSignature] = useState<string | null>(null);
+
+  /* Adding the quoted configuration to the cart. */
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const messageId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -175,6 +183,56 @@ export function CustomPrintWorkflow() {
     }
   }
 
+  /**
+   * Puts the quoted configuration in the cart.
+   *
+   * Only the identity of the model, the configuration and the quantity cross
+   * the boundary. The server re-runs the quote engine over them, so the price
+   * the cart holds is the server's figure and not the one on this screen.
+   *
+   * The model file itself stays in the browser — it always has. The cart line
+   * records that a file is expected, and checkout refuses to turn it into an
+   * order until the file can actually be reached for manufacturing.
+   */
+  async function onAddToCart() {
+    const model = configuration.model;
+    if (!model || !configuration.material || !configuration.quality || !configuration.finish) {
+      return;
+    }
+
+    setAdding(true);
+    setAddError(null);
+
+    try {
+      const result = await submitCustomCartIntent({
+        model: {
+          modelId: model.id,
+          name: model.name,
+          extension: model.extension,
+          sizeBytes: model.sizeBytes,
+          formatLabel: model.inspection.formatLabel,
+          triangles: model.inspection.triangles,
+        },
+        material: configuration.material,
+        quality: configuration.quality,
+        finish: configuration.finish,
+        quantity: configuration.quantity,
+      });
+
+      if (!result.ok) {
+        setAddError(result.message);
+        return;
+      }
+
+      setAdded(true);
+      router.refresh();
+    } catch {
+      setAddError("This part could not be added. Try again.");
+    } finally {
+      setAdding(false);
+    }
+  }
+
   function onStartOver() {
     forgetModelFile();
     setReplacing(false);
@@ -182,11 +240,22 @@ export function CustomPrintWorkflow() {
     setConfiguration(EMPTY_CONFIGURATION);
     setQuote(null);
     setQuotedSignature(null);
+    setAdded(false);
+    setAddError(null);
     goTo("upload");
   }
 
   const quoteIsStale =
     quote !== null && quotedSignature !== pricingSignature(configuration);
+
+  /*
+   * A part can be added once it has been quoted and the configuration has not
+   * moved since. A stale quote is not an add-to-cart: the price on screen no
+   * longer describes what is configured.
+   */
+  const quotedTotal =
+    quote?.status === "available" && !quoteIsStale ? quote.quote.total : null;
+  const canAddToCart = quotedTotal !== null;
 
   const material = materialOption(configuration.material);
   const quality = qualityOption(configuration.quality);
@@ -444,6 +513,19 @@ export function CustomPrintWorkflow() {
                 {blocked}
               </p>
             )}
+            {addError && (
+              <p className={styles.message} role="alert">
+                <Icon name="error" size={14} />
+                {addError}
+              </p>
+            )}
+            {added && !addError && (
+              <p className={styles.message} role="status">
+                <Icon name="check" size={14} />
+                Added to your cart. The file is prepared for manufacturing once
+                upload storage is configured.
+              </p>
+            )}
           </div>
 
           <div className={styles.actions}>
@@ -468,13 +550,27 @@ export function CustomPrintWorkflow() {
                 <Button variant="ghost" onClick={onStartOver}>
                   Start over
                 </Button>
-                <Button loading={quoting} onClick={onRequestQuote}>
+                <Button
+                  variant={canAddToCart ? "secondary" : "primary"}
+                  loading={quoting}
+                  onClick={onRequestQuote}
+                >
                   {quote === null
                     ? "Get manufacturing quote"
                     : quoteIsStale
                       ? "Recalculate estimate"
                       : "Recalculate"}
                 </Button>
+                {canAddToCart && (
+                  <Button
+                    iconLeft={added ? undefined : "shopping-cart"}
+                    loading={adding}
+                    success={added}
+                    onClick={onAddToCart}
+                  >
+                    {added ? "Added to cart" : "Add to cart"}
+                  </Button>
+                )}
               </>
             ) : (
               <Button iconRight="arrow-right" onClick={onContinue}>

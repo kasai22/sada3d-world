@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button, Icon } from "@/components/core";
 import { QuantityStepper } from "@/components/forms";
@@ -32,6 +33,7 @@ const MAX_QUANTITY = 99;
  * introducing a modifier later changes one expression here.
  */
 export function ProductPurchase({ product }: ProductPurchaseProps) {
+  const router = useRouter();
   const materials = product.materials ?? [product.material];
   const colors = product.colors ?? (product.color ? [product.color] : []);
   const qualities = product.qualityOptions ?? [];
@@ -66,27 +68,28 @@ export function ProductPurchase({ product }: ProductPurchaseProps) {
     setError(null);
 
     try {
-      await submitCartIntent({
+      // Identity and configuration only. What it costs is the server's to
+      // decide, and it re-derives it from the catalog.
+      const result = await submitCartIntent({
         productId: product.id,
-        slug: product.slug,
-        name: product.name,
-        href: `/shop/${product.browseCategory}/${product.slug}`,
         material,
         color,
         quality: quality || undefined,
         quantity,
-        unitPrice: product.price,
-        currency: product.currency,
       });
 
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
       setAdded(true);
+      // The cart page reads the cart on the server, so the route needs to be
+      // re-rendered for the count and lines to be current.
+      router.refresh();
       window.setTimeout(() => setAdded(false), 2400);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "This part could not be added. Try again.",
-      );
+    } catch {
+      setError("This part could not be added. Try again.");
     } finally {
       setPending(false);
     }

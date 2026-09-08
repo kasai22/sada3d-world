@@ -1,0 +1,151 @@
+/*
+ * Checkout.
+ *
+ * Calmer than the rest of the site: one accent, on the action the customer is
+ * about to take. Two columns on desktop; on a phone the summary sits between
+ * the address and the payment note, so the total is read before the order is
+ * placed rather than after scrolling past it.
+ */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-areas:
+    "contact  summary"
+    "shipping summary"
+    "payment  summary"
+    "problem  summary";
+  gap: var(--spacing-8) var(--spacing-9);
+  align-items: start;
+}
+
+.contact { grid-area: contact; }
+.shipping { grid-area: shipping; }
+.payment { grid-area: payment; }
+.summary { grid-area: summary; }
+.problem { grid-area: problem; }
+
+.sectionTitle {
+  margin: 0 0 var(--spacing-5);
+  padding-bottom: var(--spacing-3);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-5);
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+/* ---- payment ---- */
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: var(--spacing-4);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+  background: var(--status-info-surface);
+  border-left: 2px solid var(--status-info);
+}
+
+.notice svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--status-info);
+}
+
+.total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  margin: var(--spacing-5) 0 0;
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.totalLabel {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.totalValue {
+  font: var(--type-h3);
+  letter-spacing: var(--ls-heading);
+  color: var(--text-primary);
+}
+
+/* ---- failures ---- */
+
+.problemBox {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  padding: var(--spacing-5);
+  background: var(--status-danger-surface);
+  border-left: 2px solid var(--status-danger);
+}
+
+.problemTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.problemTitle svg {
+  color: var(--status-danger);
+}
+
+.problemList {
+  margin: 0;
+  padding-left: var(--spacing-5);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.problemNote {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+/* ---- responsive ---- */
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "contact"
+      "shipping"
+      "summary"
+      "payment"
+      "problem";
+    gap: var(--spacing-7);
+  }
+}
+
+@media (max-width: 599px) {
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-4);
+  }
+}

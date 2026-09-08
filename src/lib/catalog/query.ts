@@ -226,6 +226,23 @@ export function getProduct(
 }
 
 /**
+ * Looks a product up by its identifier.
+ *
+ * The cart stores a product id and nothing else about the product, so this is
+ * how a cart line is resolved back to trusted catalog data. Returning undefined
+ * is meaningful: the product is no longer in the catalog, and a cart line that
+ * points at it can no longer be bought.
+ */
+export function getProductById(id: string): Product | undefined {
+  return PRODUCTS.find((product) => product.id === id);
+}
+
+/** The canonical page for a product. */
+export function productHref(product: Product): string {
+  return `/shop/${product.browseCategory}/${product.slug}`;
+}
+
+/**
  * Every valid category/slug pair, for generateStaticParams. With
  * dynamicParams disabled this doubles as the allowlist that makes unknown
  * products a routing-level 404.

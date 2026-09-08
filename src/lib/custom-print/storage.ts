@@ -53,3 +53,42 @@ export const localModelStorage: ModelStorageAdapter = {
 
 /** The adapter the workflow uses. Phase 16 points this at R2. */
 export const modelStorage: ModelStorageAdapter = localModelStorage;
+
+/* ------------------------------------------------------------------ *
+ * Durable file availability
+ * ------------------------------------------------------------------ */
+
+export interface ModelFileAvailability {
+  /**
+   * True when the manufacturing file can be retrieved by fulfilment without
+   * the customer's browser. Nothing else is a substitute: a part cannot be
+   * made from a filename.
+   */
+  durable: boolean;
+  /** Shown to the customer when it is not. */
+  reason?: string;
+}
+
+/**
+ * Whether a model's file can be reached for manufacturing.
+ *
+ * Today: never. The local adapter keeps the selected file in the browser and
+ * sends it nowhere, which was the correct Phase 7 behaviour and is still the
+ * behaviour now. Phase 16 replaces the adapter with a presigned R2 upload, and
+ * this becomes a real lookup against the stored object.
+ *
+ * Checkout treats a false result as blocking. An order whose file cannot be
+ * retrieved is an order that cannot be fulfilled, and creating one would be a
+ * promise the system cannot keep.
+ */
+export function modelFileAvailability(_modelId: string): ModelFileAvailability {
+  if (modelStorage.name === "local") {
+    return {
+      durable: false,
+      reason:
+        "Upload storage is not configured yet, so this part cannot be sent for manufacturing.",
+    };
+  }
+
+  return { durable: true };
+}
