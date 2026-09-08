@@ -1,0 +1,117 @@
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--spacing-10);
+  align-items: start;
+  padding-bottom: var(--spacing-12);
+}
+
+.visual {
+  min-width: 0;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  min-width: 0;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.eyebrowRule {
+  width: 24px;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+}
+
+.categoryLink {
+  color: var(--text-muted);
+  border-bottom: 0;
+  transition: var(--transition-control);
+}
+
+.categoryLink:hover {
+  color: var(--text-primary);
+  border-bottom: 0;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  /* Sized to the column: product names are unpredictable, and display-1 would
+     overrun this width on the longer ones. */
+  font-size: clamp(30px, 3.4vw, 48px);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.summary {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+  max-width: 46ch;
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--spacing-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.price {
+  font-family: var(--font-technical);
+  font-weight: var(--fw-medium);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.priceNote {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+/*
+ * Tablet keeps two columns.
+ *
+ * Stacking here made the square stage full-width, which pushed Add to cart to
+ * ~1678px — nearly two screens down. Side by side costs the info column some
+ * width but keeps the purchase controls on the first screen.
+ */
+@media (max-width: 1023px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--spacing-6);
+    padding-bottom: var(--spacing-10);
+  }
+}
+
+@media (max-width: 767px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-7);
+  }
+}
+
+@media (max-width: 767px) {
+  .price { font-size: 32px; }
+}

@@ -1,0 +1,74 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.legend {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  width: 100%;
+  padding: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.selected {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.option {
+  position: relative;
+  cursor: pointer;
+}
+
+.input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.swatch {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-strong);
+  background: var(--swatch);
+  color: var(--swatch-mark);
+  transition: var(--transition-control);
+}
+
+.option:hover .swatch {
+  border-color: var(--white);
+}
+
+.input:checked + .swatch {
+  border-color: var(--orange-500);
+  box-shadow: var(--glow-orange-xs);
+}
+
+.input:focus-visible + .swatch {
+  box-shadow: var(--focus-ring);
+}
+
+@media (pointer: coarse) {
+  .swatch { width: var(--target-min); height: var(--target-min); }
+}

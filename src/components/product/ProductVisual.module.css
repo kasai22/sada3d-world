@@ -1,0 +1,101 @@
+.stage {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  perspective: 1200px;
+  background: var(--gradient-viewer);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image: var(--bg-grid);
+}
+
+.image {
+  object-fit: contain;
+  padding: var(--spacing-9);
+}
+
+/*
+ * Placeholder object, in the same language as the ProductCard stage but at hero
+ * scale, where a single plane reads as an empty box. A short stack of offset
+ * faces gives it thickness so it reads as a machined part.
+ *
+ * Static by design: no rotation, no drag, no simulated camera. There is no
+ * interaction to imply until the real viewer arrives in Phase 9, and neither
+ * that swap nor R2 renders in Phase 16 change this component's interface.
+ */
+.placeholder {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotateX(58deg) rotateZ(38deg);
+  transform-style: preserve-3d;
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #4C535D 0%, #2C3138 45%, #3A404A 72%, #1B1F24 100%);
+  border: 1px solid rgba(5, 5, 6, 0.55);
+  transform: translateZ(var(--z));
+}
+
+/* Top face catches the light; the stack beneath it reads as the body. */
+.faceTop {
+  background: linear-gradient(135deg, #666E79 0%, #383E47 45%, #262B32 100%);
+  border-color: var(--steel);
+}
+
+/* Corner ticks read the stage as an inspection frame rather than a photo box. */
+.tick {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid var(--titanium-2);
+  border-left: 1px solid var(--titanium-2);
+}
+
+.tickTL { top: 12px; left: 12px; }
+.tickTR { top: 12px; right: 12px; transform: rotate(90deg); }
+.tickBR { bottom: 12px; right: 12px; transform: rotate(180deg); }
+.tickBL { bottom: 12px; left: 12px; transform: rotate(270deg); }
+
+.meta {
+  position: absolute;
+  left: var(--spacing-5);
+  right: var(--spacing-5);
+  bottom: var(--spacing-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.partId {
+  color: var(--text-accent);
+}
+
+/* A note, not a control: there is no interaction to offer until Phase 9. */
+.pending {
+  color: var(--text-disabled);
+}
+
+@media (max-width: 767px) {
+  /* Shorter than square so the name, price and purchase controls stay close to
+     the fold instead of sitting under a full-width image. */
+  .stage { aspect-ratio: 4 / 3; }
+  .placeholder { width: 46%; }
+  .image { padding: var(--spacing-6); }
+  .meta { left: var(--spacing-4); right: var(--spacing-4); bottom: var(--spacing-4); }
+}

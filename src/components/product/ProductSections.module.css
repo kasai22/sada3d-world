@@ -1,0 +1,119 @@
+/* Shared rhythm for the sections below the hero. */
+
+.section {
+  padding-block: var(--space-section);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sectionTight {
+  padding-block: var(--spacing-9);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.head {
+  margin-bottom: var(--spacing-7);
+}
+
+/* Two columns: heading left, content right, so the sections read as an
+   engineering document rather than a stack of full-width panels. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
+  gap: var(--spacing-9);
+  align-items: start;
+}
+
+.body {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+/* ---- specifications ---- */
+
+.specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--spacing-9);
+  align-items: start;
+}
+
+/* ---- applications ---- */
+
+.applications {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- material notes ---- */
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+.noteRule {
+  width: 24px;
+  height: 2px;
+  background: var(--titanium);
+}
+
+/* ---- related ---- */
+
+.related {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--spacing-6);
+}
+
+.related > li {
+  display: flex;
+  min-width: 0;
+}
+
+.related > li > * {
+  width: 100%;
+}
+
+@media (max-width: 1023px) {
+  .section { padding-block: var(--space-section-mobile); }
+  .sectionTight { padding-block: var(--spacing-8); }
+
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-5);
+  }
+
+  .specs { grid-template-columns: minmax(0, 1fr); }
+
+  .related {
+    grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+    gap: var(--spacing-4);
+  }
+}
+
+@media (max-width: 519px) {
+  .related { grid-template-columns: minmax(0, 1fr); }
+}

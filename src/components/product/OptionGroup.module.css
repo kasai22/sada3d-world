@@ -1,0 +1,133 @@
+/*
+ * Segmented single-choice control.
+ *
+ * A fieldset of real radios with the input visually hidden, so the whole group
+ * is one tab stop, arrow keys move between options and the selected value is
+ * announced — all from the platform, with no key handling of our own.
+ */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.legend {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  width: 100%;
+  padding: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.selected {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.option {
+  position: relative;
+  cursor: pointer;
+}
+
+.input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.face {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: var(--control-height-md);
+  justify-content: center;
+  padding: 0 var(--spacing-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-button);
+  background: var(--surface-panel);
+  color: var(--text-secondary);
+  transition: var(--transition-control);
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.detail {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.option:hover .face {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.input:checked + .face {
+  border-color: var(--border-accent);
+  background: var(--interactive-selected-surface);
+  color: var(--text-accent);
+}
+
+.input:checked + .face .detail {
+  color: var(--text-accent);
+}
+
+.input:focus-visible + .face {
+  box-shadow: var(--focus-ring);
+}
+
+.input:disabled + .face {
+  background: var(--interactive-disabled-surface);
+  border-color: var(--interactive-disabled-border);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* ---- fixed value: no choice to offer ---- */
+
+.fixed {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding-block: var(--spacing-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.fixedLabel {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fixedValue {
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}

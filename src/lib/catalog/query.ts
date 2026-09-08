@@ -207,3 +207,67 @@ export function queryCatalog(query: CatalogQuery): CatalogResult {
 export function catalogSize(): number {
   return PRODUCTS.length;
 }
+
+/* ------------------------------------------------------------------ *
+ * Product detail
+ * ------------------------------------------------------------------ */
+
+/**
+ * Resolves one product by its browse category and slug.
+ *
+ * The category must match the product's own — /shop/lifestyle/precision-gear is
+ * not a valid address for a mechanical part and returns undefined so the route
+ * can 404 rather than serve the same product under two URLs.
+ */
+export function getProduct(
+  browseCategory: string,
+  slug: string,
+): Product | undefined {
+  return PRODUCTS.find(
+    (product) => product.slug === slug && product.browseCategory === browseCategory,
+  );
+}
+
+/**
+ * Every valid category/slug pair, for generateStaticParams. With
+ * dynamicParams disabled this doubles as the allowlist that makes unknown
+ * products a routing-level 404.
+ */
+export function productParams(): { category: string; slug: string }[] {
+  return PRODUCTS.map((product) => ({
+    category: product.browseCategory,
+    slug: product.slug,
+  }));
+}
+
+/**
+ * Related parts: nearest first.
+ *
+ * Same leaf category, then same browse category, then same material. Local and
+ * deterministic — no recommendation engine, and the ordering is replaceable
+ * without touching the UI.
+ */
+export function getRelatedProducts(product: Product, limit = 4): Product[] {
+  const others = PRODUCTS.filter((candidate) => candidate.id !== product.id);
+
+  const score = (candidate: Product): number => {
+    if (candidate.category === product.category) return 0;
+    if (candidate.browseCategory === product.browseCategory) return 1;
+    if (candidate.material === product.material) return 2;
+    return 3;
+  };
+
+  return others
+    .map((candidate) => ({ candidate, rank: score(candidate) }))
+    .filter((entry) => entry.rank < 3)
+    .sort((a, b) => a.rank - b.rank || a.candidate.id.localeCompare(b.candidate.id))
+    .slice(0, limit)
+    .map((entry) => entry.candidate);
+}
+
+/** Stable technical identifier derived from the product id, e.g. PART_00001. */
+export function partId(product: Product): string {
+  const digits = product.id.replace(/\D/g, "");
+  return `PART_${digits.padStart(5, "0")}`;
+}
+
