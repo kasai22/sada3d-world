@@ -1,5 +1,3 @@
-import type { CartTotals } from "@/lib/cart/types";
-
 /**
  * Checkout domain types.
  *
@@ -113,56 +111,14 @@ export interface FieldError {
 
 /* ------------------------------------------------------------------ *
  * Order
+ *
+ * The Order type moved to lib/orders in Phase 12, where the four state
+ * machines that describe it live. Checkout creates orders; lib/orders owns
+ * them. This module re-exports the type so the checkout surface keeps one
+ * import path.
  * ------------------------------------------------------------------ */
 
-/**
- * Order status.
- *
- * Commercial states only. Nothing here describes a machine, a queue or a
- * production step — manufacturing status is Phase 12's, and mixing the two
- * would make "paid" and "printing" look like points on one scale.
- */
-export type OrderStatus =
-  | "pending"
-  | "awaiting_payment"
-  | "paid"
-  | "payment_failed"
-  | "cancelled";
-
-/**
- * A line as the order records it.
- *
- * A snapshot, not a reference. The catalog can be re-priced tomorrow and this
- * must still say what was bought and what was charged.
- */
-export interface OrderLine {
-  type: "catalog" | "custom";
-  name: string;
-  spec: string;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
-  /** Present on custom lines: what produced the price. */
-  quoteRulesVersion?: string;
-}
-
-export interface Order {
-  /** Customer-facing reference, e.g. "S3D-000184". */
-  reference: string;
-  status: OrderStatus;
-  /** The cart this order was created from. */
-  cartId: string;
-  lines: readonly OrderLine[];
-  totals: CartTotals;
-  contact: Contact;
-  address: ShippingAddress;
-  placedAt: string;
-  /** Provider reference, never provider credentials or card data. */
-  paymentSessionId?: string;
-  paymentProvider?: string;
-  /** True while the order was placed against provisional pricing rules. */
-  provisional: boolean;
-}
+export type { Order, OrderItem, OrderStatus } from "@/lib/orders/types";
 
 /* ------------------------------------------------------------------ *
  * Checkout
@@ -174,7 +130,7 @@ export interface CheckoutInput {
 }
 
 export type CheckoutResult =
-  | { status: "placed"; order: Order }
+  | { status: "placed"; order: import("@/lib/orders/types").Order }
   /** The cart cannot be ordered as it stands. */
   | { status: "cart_invalid"; messages: readonly string[] }
   | { status: "invalid"; errors: readonly FieldError[] }

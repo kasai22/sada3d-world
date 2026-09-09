@@ -1,0 +1,147 @@
+/*
+ * Order tracking.
+ *
+ * Quieter than the marketing pages. The order's status and each item's status
+ * sit at different levels of the page because they are different facts.
+ */
+
+.tracking {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+}
+
+.demo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: var(--spacing-4);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+  background: var(--status-info-surface);
+  border-left: 2px solid var(--status-info);
+}
+
+.demo svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--status-info);
+}
+
+/* ---- head ---- */
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.eyebrow {
+  margin: 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.reference {
+  margin: 0;
+  font: var(--type-h1);
+  letter-spacing: var(--ls-display);
+  color: var(--text-primary);
+}
+
+.placed {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+/* ---- facts ---- */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--spacing-5);
+  margin: 0;
+  padding: var(--spacing-5) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.factKey {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.factValue {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font: var(--type-metric);
+  color: var(--text-primary);
+}
+
+/* ---- sections ---- */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.sectionTitle {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.address {
+  margin: 0;
+  font: var(--type-body);
+  font-style: normal;
+  color: var(--text-secondary);
+}
+
+.note {
+  margin: 0;
+  max-width: 60ch;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-3);
+}
+
+@media (max-width: 899px) {
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 479px) {
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-4);
+  }
+}

@@ -6,10 +6,13 @@ import { resolvePaymentAdapter } from "@/lib/payment/service";
 import { PaymentConfigurationError } from "@/lib/payment/types";
 
 import { checkoutIdempotencyKey, idempotencyStore } from "./idempotency";
-import { orderRepository } from "./orders";
+import { createManufacturingJobs } from "@/lib/orders/service";
+import { orderRepository } from "@/lib/orders/repository";
+import { aggregateOrderStatus } from "@/lib/orders/aggregate";
+import type { Order, OrderItem } from "@/lib/orders/types";
 import { shippingPolicy, taxPolicy } from "./policies";
 import { normaliseAddress, normaliseContact, validateCheckoutInput } from "./validation";
-import type { CheckoutInput, CheckoutResult, Order, OrderLine } from "./types";
+import type { CheckoutInput, CheckoutResult } from "./types";
 
 /**
  * Checkout.
@@ -48,8 +51,16 @@ export async function reviewCheckout(address?: CheckoutInput["address"]): Promis
   });
 }
 
-function toOrderLines(cart: PricedCart): OrderLine[] {
-  return cart.lines.map((priced) => ({
+/**
+ * Snapshots the cart as order items.
+ *
+ * Each gets its own identity and its own fulfilment status, because an order
+ * may hold a stocked part that ships tomorrow beside a custom part that takes a
+ * week, and one status could not describe both.
+ */
+function toOrderItems(cart: PricedCart, reference: string): OrderItem[] {
+  return cart.lines.map((priced, index) => ({
+    id: `${reference}-${String(index + 1).padStart(2, "0")}`,
     type: priced.line.type,
     name: priced.name,
     spec: priced.spec,
@@ -58,6 +69,9 @@ function toOrderLines(cart: PricedCart): OrderLine[] {
     lineTotal: priced.lineTotal ?? 0,
     quoteRulesVersion:
       priced.line.type === "custom" ? priced.line.quote.rulesVersion : undefined,
+    // Nothing has started. A custom item moves to in_progress when its
+    // manufacturing job is created, below.
+    fulfillmentStatus: "pending" as const,
   }));
 }
 
@@ -110,7 +124,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   const reservation = await idempotencyStore.reserve(key);
 
   if (reservation.status === "duplicate") {
-    const existing = await orderRepository.find(reservation.orderReference);
+    const existing = await orderRepository.findOrder(reservation.orderReference);
     if (existing) return { status: "placed", order: existing };
     // The reservation outlived its order, which should not happen. Treat the
     // request as unsafe to repeat rather than charging again.
@@ -174,31 +188,56 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     };
   }
 
-  const order: Order = {
+  const placedAt = new Date().toISOString();
+  const items = toOrderItems(priced, reference);
+
+  const payload = {
     reference,
-    status: "paid",
     cartId: cart.id,
-    lines: toOrderLines(priced),
+    payment: {
+      // The commercial fact, kept out of the order status. Manufacturing knows
+      // nothing about it and it knows nothing about manufacturing.
+      status: "paid" as const,
+      sessionId: payment.session.id,
+      provider: payment.session.provider,
+    },
+    items,
+    shipments: [],
     totals: priced.totals,
     contact,
     address,
-    placedAt: new Date().toISOString(),
-    paymentSessionId: payment.session.id,
-    paymentProvider: payment.session.provider,
+    placedAt,
+    updatedAt: placedAt,
     provisional: priced.totals.provisional || payment.session.mode !== "live",
+  };
+
+  const order: Order = {
+    ...payload,
+    // Derived, never assigned. Every item is pending, so this is `confirmed`.
+    status: aggregateOrderStatus({ items, payment: payload.payment }),
   };
 
   // One write. In Postgres this is one transaction covering the order, its
   // items and the payment reference.
-  await orderRepository.create(order);
+  await orderRepository.createOrder(order);
+
+  /*
+   * Custom items become manufacturing jobs; catalog items do not. Today no
+   * custom item can reach this point — checkout refuses one whose file is not
+   * durably stored — so this runs against nothing until Phase 16. It is wired
+   * now so that when the file seam opens, an order arrives in production
+   * without a second change.
+   */
+  const withJobs = await createManufacturingJobs(order);
+
   await idempotencyStore.complete(key, reference);
 
   // The cart has become an order and is no longer a cart.
   await cartRepository.clear();
 
-  return { status: "placed", order };
+  return { status: "placed", order: withJobs };
 }
 
 export async function findOrder(reference: string): Promise<Order | undefined> {
-  return orderRepository.find(reference);
+  return orderRepository.findOrder(reference);
 }

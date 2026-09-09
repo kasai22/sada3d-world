@@ -1,0 +1,199 @@
+import type { ManufacturingJob } from "@/lib/manufacturing/types";
+
+import type { Order } from "./types";
+
+/**
+ * Order and manufacturing storage.
+ *
+ * ── The current implementation ────────────────────────────────────────────
+ *
+ * PROVISIONAL and in-process. Postgres is not provisioned — Phase 14 brings
+ * Payload and the schema — so orders and jobs live in the server process and do
+ * not survive a restart. They are held on globalThis so a development reload
+ * does not lose them. That is a convenience, not durability.
+ *
+ * Everything above this file is written as though the store were a database:
+ * reads are async, writes are async, and no caller holds a reference to a
+ * stored object it can mutate.
+ *
+ * ── The relational model this maps onto ───────────────────────────────────
+ *
+ *   orders                 reference (unique) · cart_id · user_id nullable
+ *                          · status · payment_status · payment_session_id
+ *                          · payment_provider · totals_* · contact_*
+ *                          · address_* · placed_at · updated_at · cancelled_at
+ *   order_items            id · order_id · item_type · name · spec · quantity
+ *                          · unit_price · line_total · quote_rules_version
+ *                          · fulfillment_status · manufacturing_job_id
+ *                          · shipment_id
+ *   shipments              id · order_id · status · carrier · tracking_number
+ *                          · shipped_at · delivered_at · updated_at
+ *   manufacturing_jobs     id · order_item_id · state · quality_result
+ *                          · rework_count · hold_reason · hold_started_at
+ *                          · hold_resolved_at · machine_id
+ *                          · estimated_completion_at · version
+ *   manufacturing_events   id · job_id · type · from_state · to_state
+ *                          · occurred_at · actor · note
+ *
+ * Money is integer whole rupees, as everywhere else.
+ *
+ * ── Concurrency ──────────────────────────────────────────────────────────
+ *
+ * Two operators can report the same milestone at the same moment. Applying an
+ * event is therefore serialised per job by the lock below, so a transition is
+ * always decided against the state that was actually current. In Postgres this
+ * is `SELECT … FOR UPDATE` on the job row, or an optimistic `version` check —
+ * which is why the schema above carries one.
+ */
+
+interface Store {
+  orders: Map<string, Order>;
+  jobs: Map<string, ManufacturingJob>;
+  sequence: number;
+  /** Per-job promise chains. See applyExclusively. */
+  locks: Map<string, Promise<unknown>>;
+  seeded: boolean;
+}
+
+const GLOBAL_KEY = "__sada3d_orders_v2__";
+
+function store(): Store {
+  const globals = globalThis as unknown as Record<string, Store | undefined>;
+  const existing = globals[GLOBAL_KEY];
+  if (existing) return existing;
+
+  const created: Store = {
+    orders: new Map(),
+    jobs: new Map(),
+    sequence: 0,
+    locks: new Map(),
+    seeded: false,
+  };
+  globals[GLOBAL_KEY] = created;
+  return created;
+}
+
+export interface OrderRepository {
+  readonly name: string;
+  nextReference(): Promise<string>;
+  createOrder(order: Order): Promise<Order>;
+  saveOrder(order: Order): Promise<Order>;
+  findOrder(reference: string): Promise<Order | undefined>;
+  listOrders(): Promise<Order[]>;
+
+  createJob(job: ManufacturingJob): Promise<ManufacturingJob>;
+  saveJob(job: ManufacturingJob): Promise<ManufacturingJob>;
+  findJob(id: string): Promise<ManufacturingJob | undefined>;
+  findJobsForOrder(reference: string): Promise<ManufacturingJob[]>;
+
+  /**
+   * Runs a job update with nothing else touching that job.
+   *
+   * The lock is per job, not global: two different parts can progress at the
+   * same time, and only reports about the same part are made to queue.
+   */
+  applyExclusively<T>(jobId: string, work: () => Promise<T>): Promise<T>;
+
+  /** Development fixtures. Never used in production; see fixtures.ts. */
+  hasSeeded(): boolean;
+  markSeeded(): void;
+}
+
+/** Defensive copy, so a caller cannot mutate what the store holds. */
+function cloneOrder(order: Order): Order {
+  return {
+    ...order,
+    items: order.items.map((item) => ({ ...item })),
+    shipments: order.shipments.map((shipment) => ({
+      ...shipment,
+      itemIds: [...shipment.itemIds],
+    })),
+  };
+}
+
+function cloneJob(job: ManufacturingJob): ManufacturingJob {
+  return {
+    ...job,
+    events: job.events.map((event) => ({ ...event })),
+    hold: job.hold ? { ...job.hold } : undefined,
+  };
+}
+
+export const memoryOrderRepository: OrderRepository = {
+  name: "memory",
+
+  async nextReference(): Promise<string> {
+    const state = store();
+    state.sequence += 1;
+    return `S3D-${String(state.sequence).padStart(6, "0")}`;
+  },
+
+  async createOrder(order: Order): Promise<Order> {
+    store().orders.set(order.reference, cloneOrder(order));
+    return order;
+  },
+
+  async saveOrder(order: Order): Promise<Order> {
+    store().orders.set(order.reference, cloneOrder(order));
+    return order;
+  },
+
+  async findOrder(reference: string): Promise<Order | undefined> {
+    const found = store().orders.get(reference);
+    return found ? cloneOrder(found) : undefined;
+  },
+
+  async listOrders(): Promise<Order[]> {
+    return [...store().orders.values()].map(cloneOrder);
+  },
+
+  async createJob(job: ManufacturingJob): Promise<ManufacturingJob> {
+    store().jobs.set(job.id, cloneJob(job));
+    return job;
+  },
+
+  async saveJob(job: ManufacturingJob): Promise<ManufacturingJob> {
+    store().jobs.set(job.id, cloneJob(job));
+    return job;
+  },
+
+  async findJob(id: string): Promise<ManufacturingJob | undefined> {
+    const found = store().jobs.get(id);
+    return found ? cloneJob(found) : undefined;
+  },
+
+  async findJobsForOrder(reference: string): Promise<ManufacturingJob[]> {
+    return [...store().jobs.values()]
+      .filter((job) => job.orderReference === reference)
+      .map(cloneJob);
+  },
+
+  async applyExclusively<T>(jobId: string, work: () => Promise<T>): Promise<T> {
+    const state = store();
+    const previous = state.locks.get(jobId) ?? Promise.resolve();
+
+    // Chain onto whatever is already running for this job. `catch` keeps one
+    // failed update from poisoning every later one.
+    const next = previous.catch(() => undefined).then(work);
+    state.locks.set(
+      jobId,
+      next.catch(() => undefined),
+    );
+
+    try {
+      return await next;
+    } finally {
+      if (state.locks.get(jobId) === next) state.locks.delete(jobId);
+    }
+  },
+
+  hasSeeded(): boolean {
+    return store().seeded;
+  },
+
+  markSeeded(): void {
+    store().seeded = true;
+  },
+};
+
+export const orderRepository: OrderRepository = memoryOrderRepository;

@@ -1,0 +1,273 @@
+/*
+ * One item's tracking.
+ *
+ * Calm and technical: hairlines, uppercase keys, one accent. The status blocks
+ * read as instrument panels rather than as a dashboard.
+ */
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  padding: var(--spacing-6) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.item:first-child {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ---- identity ---- */
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+}
+
+.glyph {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.kind {
+  align-self: flex-start;
+}
+
+.name {
+  margin: 0;
+  font: var(--type-h4);
+  letter-spacing: var(--ls-heading);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.spec {
+  margin: 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.figures {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-2);
+  flex: 0 0 auto;
+}
+
+.quantity {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+}
+
+.price {
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+/* ---- status ---- */
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-4) var(--spacing-8);
+  margin: 0;
+  padding: var(--spacing-4) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.statusRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  min-width: 0;
+}
+
+.statusKey {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.statusValue {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.statusFailed {
+  color: var(--status-danger);
+}
+
+.technical {
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+}
+
+/* ---- sections ---- */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.timeline {
+  margin: 0;
+}
+
+.shipment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-4) var(--spacing-8);
+  margin: 0;
+  padding: var(--spacing-4);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ---- exceptions: holds, rework, failure ---- */
+
+.exception {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  background: var(--status-warning-surface);
+  border-left: 2px solid var(--status-warning);
+}
+
+.exception svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--status-warning);
+}
+
+.exceptionTitle {
+  margin: 0 0 var(--spacing-1);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.exceptionBody {
+  margin: 0;
+  max-width: 62ch;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.exceptionMeta {
+  margin: var(--spacing-2) 0 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+}
+
+.estimate {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+/* ---- history ---- */
+
+.history {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--spacing-3);
+}
+
+.historySummary {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.historySummary:hover {
+  color: var(--text-primary);
+}
+
+/* A line of small technical text is a 14px target. On a finger it needs more. */
+@media (pointer: coarse) {
+  .historySummary {
+    display: flex;
+    align-items: center;
+    min-height: var(--target-min);
+  }
+}
+
+.historySummary:focus-visible {
+  outline: none;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin: var(--spacing-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historyEntry {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: baseline;
+}
+
+.historyTime {
+  flex: 0 0 auto;
+  min-width: 15ch;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-disabled);
+}
+
+.historyMessage {
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 767px) {
+  .head {
+    flex-wrap: wrap;
+  }
+
+  .figures {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--spacing-3);
+  }
+
+  .historyEntry {
+    flex-direction: column;
+    gap: var(--spacing-1);
+  }
+
+  .historyTime {
+    min-width: 0;
+  }
+}

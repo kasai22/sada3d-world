@@ -1,0 +1,23 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  max-width: 420px;
+}
+
+.message {
+  min-height: 20px;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--status-danger);
+}
+
+.error svg {
+  flex: 0 0 auto;
+}

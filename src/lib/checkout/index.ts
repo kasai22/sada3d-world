@@ -1,6 +1,4 @@
 export { checkoutIdempotencyKey, idempotencyStore } from "./idempotency";
-export { orderRepository } from "./orders";
-export type { OrderRepository } from "./orders";
 export { checkDestination, isSupportedCountry, shippingPolicy, taxPolicy } from "./policies";
 export { findOrder, placeOrder, reviewCheckout } from "./service";
 export {
@@ -21,8 +19,5 @@ export type {
   CheckoutResult,
   Contact,
   FieldError,
-  Order,
-  OrderLine,
-  OrderStatus,
   ShippingAddress,
 } from "./types";

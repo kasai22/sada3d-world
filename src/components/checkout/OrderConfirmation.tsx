@@ -1,23 +1,12 @@
 import { Button, Icon, Tag } from "@/components/core";
 import { formatINR } from "@/lib/money";
-import {
-  INDIA_STATES,
-  SUPPORTED_COUNTRIES,
-  type Order,
-} from "@/lib/checkout/types";
+import { INDIA_STATES, SUPPORTED_COUNTRIES } from "@/lib/checkout/types";
+import { ORDER_STATUS_LABEL, type Order } from "@/lib/orders/types";
 import styles from "./OrderConfirmation.module.css";
 
 export interface OrderConfirmationProps {
   order: Order;
 }
-
-const STATUS_LABEL: Record<Order["status"], string> = {
-  pending: "Pending",
-  awaiting_payment: "Awaiting payment",
-  paid: "Order received",
-  payment_failed: "Payment failed",
-  cancelled: "Cancelled",
-};
 
 /**
  * Order confirmation.
@@ -28,7 +17,7 @@ const STATUS_LABEL: Record<Order["status"], string> = {
  * the system has no way to keep.
  */
 export function OrderConfirmation({ order }: OrderConfirmationProps) {
-  const hasCustom = order.lines.some((line) => line.type === "custom");
+  const hasCustom = order.items.some((item) => item.type === "custom");
 
   // Codes are how the address is stored; names are how it is read.
   const state =
@@ -68,7 +57,7 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
               manufacturing vocabulary — queued, printing, packaging — and using
               it here would put "paid" on the same scale as "printing".
             */}
-            <Tag tone="success">{STATUS_LABEL[order.status]}</Tag>
+            <Tag tone="success">{ORDER_STATUS_LABEL[order.status]}</Tag>
           </dd>
         </div>
       </dl>
@@ -78,14 +67,14 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
           Items
         </h2>
         <ul className={styles.items}>
-          {order.lines.map((line, index) => (
-            <li key={`${line.name}-${index}`} className={styles.item}>
+          {order.items.map((item) => (
+            <li key={item.id} className={styles.item}>
               <span className={styles.itemMeta}>
-                <span className={styles.itemName}>{line.name}</span>
-                <span className={styles.itemSpec}>{line.spec}</span>
+                <span className={styles.itemName}>{item.name}</span>
+                <span className={styles.itemSpec}>{item.spec}</span>
               </span>
-              <span className={styles.itemQty}>× {line.quantity}</span>
-              <span className={styles.itemPrice}>{formatINR(line.lineTotal)}</span>
+              <span className={styles.itemQty}>× {item.quantity}</span>
+              <span className={styles.itemPrice}>{formatINR(item.lineTotal)}</span>
             </li>
           ))}
         </ul>
@@ -121,8 +110,8 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
           What happens next
         </h2>
         <p className={styles.note}>
-          The order is with SADA 3D for review. Production scheduling and
-          tracking are not available yet.
+          The order is with SADA 3D for review. Follow its progress on the
+          tracking page.
         </p>
         {hasCustom && (
           <p className={styles.note}>
@@ -140,7 +129,12 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
       </section>
 
       <div className={styles.actions}>
-        <Button href="/shop" size="lg">
+        {/* The receipt cookie already grants this browser access, so the
+            tracking page opens without a second lookup. */}
+        <Button href={`/orders/${order.reference}`} size="lg">
+          Track this order
+        </Button>
+        <Button href="/shop" variant="secondary" size="lg">
           Continue browsing
         </Button>
       </div>

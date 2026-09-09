@@ -31,7 +31,7 @@ const COLUMNS: readonly FooterColumn[] = [
   {
     title: "Account",
     links: [
-      { href: "/account/orders", label: "Orders" },
+      { href: "/orders", label: "Orders" },
       { href: "/account/designs", label: "Saved designs" },
       { href: "/track", label: "Track an order" },
       { href: "/account/settings", label: "Settings" },

@@ -9,7 +9,7 @@ import {
   checkoutIdempotencyKey,
   memoryIdempotencyStore,
 } from "./idempotency";
-import { memoryOrderRepository } from "./orders";
+import { memoryOrderRepository } from "@/lib/orders/repository";
 import { checkDestination, shippingPolicy, taxPolicy } from "./policies";
 import {
   normaliseAddress,
@@ -17,7 +17,8 @@ import {
   validateAddress,
   validateContact,
 } from "./validation";
-import { EMPTY_ADDRESS, type Contact, type Order, type ShippingAddress } from "./types";
+import { EMPTY_ADDRESS, type Contact, type ShippingAddress } from "./types";
+import type { Order } from "@/lib/orders/types";
 
 const CONTACT: Contact = {
   name: "A Kumar",
@@ -208,9 +209,11 @@ test("an order can be read back by its reference", async () => {
   const reference = await memoryOrderRepository.nextReference();
   const order: Order = {
     reference,
-    status: "paid",
+    status: "confirmed",
     cartId: "cart_1",
-    lines: [],
+    payment: { status: "paid" },
+    items: [],
+    shipments: [],
     totals: {
       currency: "INR",
       subtotal: 798,
@@ -224,11 +227,12 @@ test("an order can be read back by its reference", async () => {
     contact: CONTACT,
     address: ADDRESS,
     placedAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
     provisional: true,
   };
 
-  await memoryOrderRepository.create(order);
-  const found = await memoryOrderRepository.find(reference);
+  await memoryOrderRepository.createOrder(order);
+  const found = await memoryOrderRepository.findOrder(reference);
 
   assert.equal(found?.reference, reference);
   assert.equal(found?.totals.total, 798);
