@@ -5,6 +5,7 @@ import { LocalTime } from "@/components/tracking";
 import type { CustomerDesignView } from "@/lib/account/types";
 import { formatBytes } from "@/lib/bytes";
 
+import { DesignDeleteButton } from "./DesignDeleteButton";
 import styles from "./DesignCard.module.css";
 
 export interface DesignCardProps {
@@ -15,16 +16,13 @@ export interface DesignCardProps {
  * One saved design.
  *
  * Renders `CustomerDesignView`, which carries no storage reference — the
- * private object key stays on the server, and a download will be an authorised
- * request rather than a link to a bucket.
+ * private object key stays on the server. Download is a link to the authorised
+ * file route, which checks ownership and redirects to a two-minute signed URL;
+ * it is never a link to the bucket.
  *
- * The preview stage is a placeholder until Phase 16 stores one. It is drawn as
- * an empty stage rather than as a fake render: a thumbnail that is not the
- * customer's part is worse than no thumbnail.
- *
- * The only action offered is one that works: the orders this design was made
- * for, when there are any. There is no "Open" button, because there is nothing
- * to open until the file can be retrieved.
+ * The preview stage stays an empty stage rather than a fake render: no preview
+ * image is generated yet, and a thumbnail that is not the customer's part is
+ * worse than no thumbnail.
  */
 export function DesignCard({ design }: DesignCardProps) {
   const [firstOrder] = design.orderReferences;
@@ -63,13 +61,26 @@ export function DesignCard({ design }: DesignCardProps) {
           </div>
         </dl>
 
-        {firstOrder && (
-          <p className={styles.actions}>
+        <div className={styles.actions}>
+          {/* A plain anchor: the route answers with a redirect, not a page. */}
+          <a
+            href={`/api/designs/${encodeURIComponent(design.id)}/file`}
+            className={styles.action}
+          >
+            <Icon name="download" size={14} />
+            Download
+          </a>
+
+          {firstOrder && (
             <Link href={`/account/orders/${firstOrder}`} className={styles.action}>
               View related order
             </Link>
-          </p>
-        )}
+          )}
+
+          <span className={styles.actionsSpacer} />
+
+          <DesignDeleteButton designId={design.id} name={design.name} />
+        </div>
       </div>
     </article>
   );

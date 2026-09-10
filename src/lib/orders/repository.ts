@@ -104,7 +104,17 @@ export interface OrderRepository {
 function cloneOrder(order: Order): Order {
   return {
     ...order,
-    items: order.items.map((item) => ({ ...item })),
+    items: order.items.map((item) => ({
+      ...item,
+      ...(item.sourceFile
+        ? {
+            sourceFile: {
+              ...item.sourceFile,
+              configuration: { ...item.sourceFile.configuration },
+            },
+          }
+        : {}),
+    })),
     shipments: order.shipments.map((shipment) => ({
       ...shipment,
       itemIds: [...shipment.itemIds],

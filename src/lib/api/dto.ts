@@ -279,6 +279,95 @@ export function quoteDto(quote: ManufacturingQuote): QuoteDto {
 }
 
 /* ------------------------------------------------------------------ *
+ * Designs
+ * ------------------------------------------------------------------ */
+
+/**
+ * A stored design, for its owner.
+ *
+ * Absent by construction: the storage key, the customer id, the content type
+ * the server chose, the checksum, and every maintenance timestamp. A client
+ * needs to name the design, show its state and explain a refusal — nothing
+ * here lets it address storage.
+ */
+export interface DesignDto {
+  id: string;
+  name: string;
+  format: string;
+  sizeBytes: number;
+  state: "pending" | "verified" | "failed";
+  createdAt: string;
+  verifiedAt?: string;
+  /** Why verification refused the file. Written for the customer. */
+  failure?: { code: string; message: string };
+}
+
+export function designDto(design: {
+  id: string;
+  name: string;
+  format: string;
+  sizeBytes: number;
+  storageState: string;
+  createdAt: string;
+  verifiedAt?: string;
+  failure?: { code: string; message: string };
+}): DesignDto {
+  const state: DesignDto["state"] =
+    design.storageState === "verified"
+      ? "verified"
+      : design.storageState === "pending"
+        ? "pending"
+        : "failed";
+
+  return {
+    id: design.id,
+    name: design.name,
+    format: design.format,
+    sizeBytes: design.sizeBytes,
+    state,
+    createdAt: design.createdAt,
+    ...(design.verifiedAt ? { verifiedAt: design.verifiedAt } : {}),
+    ...(state === "failed" && design.failure
+      ? { failure: { code: design.failure.code, message: design.failure.message } }
+      : {}),
+  };
+}
+
+/**
+ * Where and how to send the bytes.
+ *
+ * The URL is a short-lived credential for one PUT of one object. It is returned
+ * to the design's owner on a `no-store` response and is never logged, never
+ * stored and never returned again — a retry gets a fresh one. Its path contains
+ * the object key, as any URL addressing an object must; nothing accepts that
+ * key back, and it authorises nothing beyond this one upload.
+ */
+export interface UploadTargetDto {
+  method: "PUT";
+  url: string;
+  /** Send exactly these; they are covered by the signature. */
+  headers: Readonly<Record<string, string>>;
+  expiresAt: string;
+}
+
+export interface UploadIntentDto {
+  design: DesignDto;
+  /** Null when the same file is already stored and verified: nothing to send. */
+  upload: UploadTargetDto | null;
+}
+
+export interface DesignDetailDto {
+  design: DesignDto;
+  analysis: AnalysisDto | null;
+  /**
+   *   available    measured from the stored bytes
+   *   unsupported  the format is not a mesh (STEP) and is never measured
+   *   unavailable  not measured yet: the design is not verified
+   */
+  analysisState: "available" | "unsupported" | "unavailable";
+}
+
+/* ------------------------------------------------------------------ *
  * Analysis
  * ------------------------------------------------------------------ */
 

@@ -126,15 +126,25 @@ catalog, so agreeing to a change cannot be turned into setting a price.
 > A custom part does not become an order unless its manufacturing file can be
 > durably referenced for fulfilment.
 
-Today it cannot: the file is still in the browser, exactly as Phase 7 left it.
-So a custom line can be added to the cart, priced and edited — and checkout
-refuses to turn it into an order, saying why. An order whose file cannot be
-retrieved is an order that cannot be made, and creating one would be a promise
-the system has no way to keep.
+Since Stage 16 the file is uploaded straight to private Cloudflare R2 storage
+and verified by the server (see `lib/storage/README.md`).
+`modelFileAvailability` in `lib/custom-print/availability.ts` is the seam, and
+it answers yes only when the line's model id is a design that:
 
-`modelFileAvailability` in `lib/custom-print/storage.ts` is the seam. Phase 16
-replaces the local adapter with a presigned R2 upload and this stops returning
-false — nothing else changes.
+1. belongs to the signed-in customer,
+2. is stored and **verified** — size and SHA-256 confirmed over the stored
+   bytes, format read from the bytes,
+3. has a durable geometry analysis, when the format is a mesh, and
+4. at checkout, still exists in storage (a HEAD request, just before payment).
+
+A model that was never stored — a guest, or a deployment without storage — can
+still be added, priced and edited, and checkout refuses it with the reason. An
+order whose file cannot be retrieved is an order that cannot be made.
+
+When the order is created, each custom item records an immutable snapshot of
+its file — key, SHA-256, name, size, format, analysis identity and the quoted
+configuration — in `order_items.source_*`. Deleting the design later does not
+change the order, and the storage sweep never removes an object an order names.
 
 ## Checkout
 

@@ -1,6 +1,7 @@
+import { linkOrderToDesigns, resolveManufacturingFiles } from "@/lib/account/design-files";
 import { getCustomerContext } from "@/lib/account/identity";
 import { EVENTS, log } from "@/lib/observability";
-import { cartFingerprint } from "@/lib/cart/identity";
+import { cartFingerprint, isCustomLine } from "@/lib/cart/identity";
 import { cartRepository } from "@/lib/cart/repository";
 import { priceCart } from "@/lib/cart/validation";
 import type { PricedCart } from "@/lib/cart/types";
@@ -11,7 +12,7 @@ import { checkoutIdempotencyKey, idempotencyStore } from "./idempotency";
 import { createManufacturingJobs } from "@/lib/orders/service";
 import { orderRepository } from "@/lib/orders/repository";
 import { aggregateOrderStatus } from "@/lib/orders/aggregate";
-import type { Order, OrderItem } from "@/lib/orders/types";
+import type { Order, OrderItem, OrderItemSourceFile } from "@/lib/orders/types";
 import { shippingPolicy, taxPolicy } from "./policies";
 import { normaliseAddress, normaliseContact, validateCheckoutInput } from "./validation";
 import type { CheckoutInput, CheckoutResult } from "./types";
@@ -59,22 +60,37 @@ export async function reviewCheckout(address?: CheckoutInput["address"]): Promis
  * Each gets its own identity and its own fulfilment status, because an order
  * may hold a stocked part that ships tomorrow beside a custom part that takes a
  * week, and one status could not describe both.
+ *
+ * A custom item also takes the snapshot of its manufacturing file, keyed by the
+ * cart line it came from. The snapshot is written with the order and never
+ * rewritten, so what fulfilment makes does not depend on the design record
+ * still looking the way it did.
  */
-function toOrderItems(cart: PricedCart, reference: string): OrderItem[] {
-  return cart.lines.map((priced, index) => ({
-    id: `${reference}-${String(index + 1).padStart(2, "0")}`,
-    type: priced.line.type,
-    name: priced.name,
-    spec: priced.spec,
-    quantity: priced.line.quantity,
-    unitPrice: priced.unitPrice ?? 0,
-    lineTotal: priced.lineTotal ?? 0,
-    quoteRulesVersion:
-      priced.line.type === "custom" ? priced.line.quote.rulesVersion : undefined,
-    // Nothing has started. A custom item moves to in_progress when its
-    // manufacturing job is created, below.
-    fulfillmentStatus: "pending" as const,
-  }));
+export function toOrderItems(
+  cart: PricedCart,
+  reference: string,
+  files: ReadonlyMap<string, OrderItemSourceFile> = new Map(),
+): OrderItem[] {
+  return cart.lines.map((priced, index) => {
+    const sourceFile =
+      priced.line.type === "custom" ? files.get(priced.line.id) : undefined;
+
+    return {
+      id: `${reference}-${String(index + 1).padStart(2, "0")}`,
+      type: priced.line.type,
+      name: priced.name,
+      spec: priced.spec,
+      quantity: priced.line.quantity,
+      unitPrice: priced.unitPrice ?? 0,
+      lineTotal: priced.lineTotal ?? 0,
+      quoteRulesVersion:
+        priced.line.type === "custom" ? priced.line.quote.rulesVersion : undefined,
+      // Nothing has started. A custom item moves to in_progress when its
+      // manufacturing job is created, below.
+      fulfillmentStatus: "pending" as const,
+      ...(sourceFile ? { sourceFile } : {}),
+    };
+  });
 }
 
 export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> {
@@ -109,6 +125,29 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
       status: "cart_invalid",
       messages: ["This cart has no payable total."],
     };
+  }
+
+  /*
+   * Ownership, when there is an account to own it. There is no authentication
+   * until Phase 17, so in a production build this is undefined and the order is
+   * a guest order reachable through the receipt grant.
+   */
+  const { identity } = await getCustomerContext();
+
+  /*
+   * The manufacturing files, checked against storage itself — not only the
+   * database — before any money moves. The cart page already refused unstored
+   * files; this is the last look, and it is what catches an object that went
+   * missing after it was verified. Every custom line must resolve, or nothing
+   * is charged.
+   */
+  const manufacturingFiles = await resolveManufacturingFiles(
+    identity,
+    cart.lines.filter(isCustomLine),
+  );
+
+  if (!manufacturingFiles.ok) {
+    return { status: "cart_invalid", messages: manufacturingFiles.messages };
   }
 
   /*
@@ -191,16 +230,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   }
 
   const placedAt = new Date().toISOString();
-  const items = toOrderItems(priced, reference);
-
-  /*
-   * Ownership, when there is an account to own it. There is no authentication
-   * until Phase 17, so this is undefined for every order placed today and the
-   * order stays a guest order reachable through the receipt grant. Wired now so
-   * that an order placed by a signed-in customer arrives in their portal
-   * without a second change.
-   */
-  const { identity } = await getCustomerContext();
+  const items = toOrderItems(priced, reference, manufacturingFiles.files);
 
   const payload = {
     reference,
@@ -248,12 +278,11 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     customerId: identity?.id,
   });
 
+  await linkOrderToDesigns(order);
+
   /*
-   * Custom items become manufacturing jobs; catalog items do not. Today no
-   * custom item can reach this point — checkout refuses one whose file is not
-   * durably stored — so this runs against nothing until Phase 16. It is wired
-   * now so that when the file seam opens, an order arrives in production
-   * without a second change.
+   * Custom items become manufacturing jobs; catalog items do not. A custom item
+   * reaches this point only with a verified, stored file snapshotted onto it.
    */
   const withJobs = await createManufacturingJobs(order);
 

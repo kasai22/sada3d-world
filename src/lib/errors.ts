@@ -28,6 +28,8 @@ export type DomainErrorKind =
   | "model_parse"
   | "model_analysis"
   | "manufacturability"
+  | "upload_rejected"
+  | "rate_limited"
   | "infrastructure";
 
 export interface FieldIssue {
@@ -121,6 +123,38 @@ export class ManufacturabilityError extends DomainError {
   }
 }
 
+/**
+ * A stored upload that verification refused.
+ *
+ * `reason` is a stable code — `checksum_mismatch`, `size_mismatch`,
+ * `format_invalid`, `model_unreadable` — for logs and for a client that wants
+ * to branch on it. `message` says what was wrong in the customer's terms.
+ * Repeating the request repeats the same answer: the verdict is recorded.
+ */
+export class UploadRejectedError extends DomainError {
+  readonly reason: string;
+
+  constructor(reason: string, message: string) {
+    super("upload_rejected", message);
+    this.reason = reason;
+  }
+}
+
+/**
+ * Too many requests of this kind, from this caller, in this window.
+ *
+ * Carries when to try again, so the response can say so in `Retry-After`
+ * rather than leaving a client to guess and hammer.
+ */
+export class RateLimitedError extends DomainError {
+  readonly retryAfterSeconds: number;
+
+  constructor(message: string, retryAfterSeconds: number) {
+    super("rate_limited", message);
+    this.retryAfterSeconds = Math.max(1, Math.ceil(retryAfterSeconds));
+  }
+}
+
 /** A dependency was unreachable. Never the customer's fault and never their detail. */
 export class InfrastructureError extends DomainError {
   constructor(message = "This is temporarily unavailable. Try again shortly.") {
@@ -149,6 +183,8 @@ const STATUS: Record<DomainErrorKind, number> = {
   model_parse: 422,
   model_analysis: 422,
   manufacturability: 422,
+  upload_rejected: 422,
+  rate_limited: 429,
   infrastructure: 503,
 };
 

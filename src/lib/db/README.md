@@ -53,8 +53,29 @@ nobody reviewed. Migrations are committed files.
 | --- | --- |
 | `customer_addresses` | partial unique on `(customer_id) WHERE is_default` |
 | `saved_items` | unique `(customer_id, product_id)` |
-| `customer_designs` | `storage_key` nullable — Phase 16 fills it |
+| `customer_designs` | unique `storage_key`; partial unique `(customer_id, sha256)` while pending/verified; CHECK a verified row has key, checksum and time |
 | `customer_design_orders` | FK to designs, `ON DELETE CASCADE` |
+| `geometry_analyses` | PK `(sha256, analysis_version)` |
+| `order_items.source_*` | CHECK all-or-nothing, custom items only; insert-only in the repository |
+
+### Stage 16 — `0002_design_storage`
+
+Durable design storage (see `lib/storage/README.md`). Additive only; no existing
+column or order semantics change.
+
+| Change | Why |
+| --- | --- |
+| enum `design_storage_state` (`pending`, `verified`, `failed`, `deleted`) | the file's storage lifecycle, kept apart from manufacturing state |
+| `customer_designs.storage_state`, `content_type`, `sha256`, `upload_expires_at`, `verified_at`, `analysis_identity`, `failure_code`, `failure_message`, `deleted_at`, `object_removed_at` | what verification established, why it refused, and what cleanup still owes |
+| unique index `customer_designs_storage_key_idx` | one object, one design — deleting one design can never remove another's file |
+| partial unique `customer_designs_customer_sha256_active_idx` | a retried or repeated upload of the same file converges on one design |
+| partial index `customer_designs_cleanup_idx` | the sweep's backlog, without scanning the table |
+| partial index `customer_designs_pending_idx` | finding abandoned uploads |
+| CHECK `customer_designs_verified_identity_check` | no row can claim verification without a key, a checksum and a time |
+| table `geometry_analyses` | measurements keyed by content hash and analyser version, reusable and durable |
+| `order_items.source_design_id`, `source_storage_key`, `source_sha256`, `source_file_name`, `source_size_bytes`, `source_format`, `source_content_type`, `source_analysis_identity`, `source_configuration` | the immutable file snapshot an order is fulfilled from |
+| partial index `order_items_source_storage_key_idx` | "does any order still need this object" is one index lookup |
+| CHECK `order_items_source_file_check` | a snapshot is complete or absent, and only on custom items |
 
 Every table is indexed on `customer_id`, because every read is "this customer's
 rows".

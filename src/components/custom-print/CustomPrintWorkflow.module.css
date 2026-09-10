@@ -124,6 +124,28 @@
   display: flex;
 }
 
+/* ---- storage status, beneath the model stage ---- */
+
+.uploadStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-4);
+}
+
+.uploadStatus > :first-child {
+  align-self: stretch;
+}
+
+p.uploadStatus {
+  flex-direction: row;
+}
+
+.success {
+  color: var(--status-success);
+}
+
 .actions {
   display: flex;
   gap: var(--spacing-3);

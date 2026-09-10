@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { DomainError, ValidationError, errorBody, statusForError } from "@/lib/errors";
+import {
+  DomainError,
+  RateLimitedError,
+  ValidationError,
+  errorBody,
+  statusForError,
+} from "@/lib/errors";
 
 /**
  * The HTTP boundary.
@@ -63,7 +69,12 @@ export function failure(error: unknown, context: string): NextResponse {
 
   return NextResponse.json(errorBody(error), {
     status: statusForError(error),
-    headers: { "Cache-Control": "private, no-store" },
+    headers: {
+      "Cache-Control": "private, no-store",
+      ...(error instanceof RateLimitedError
+        ? { "Retry-After": String(error.retryAfterSeconds) }
+        : {}),
+    },
   });
 }
 

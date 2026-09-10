@@ -18,7 +18,7 @@ import type {
 } from "@/lib/manufacturing/types";
 
 import type { OrderRepository } from "./repository";
-import type { Order, OrderItem, Shipment } from "./types";
+import type { Order, OrderItem, OrderItemSourceFile, Shipment } from "./types";
 
 /**
  * The order domain, stored in PostgreSQL.
@@ -88,7 +88,44 @@ type ShipmentRow = typeof shipments.$inferSelect;
 
 const iso = (value: Date) => value.toISOString();
 
+function readConfiguration(value: unknown): OrderItemSourceFile["configuration"] {
+  const record =
+    typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+  const text = (field: string) =>
+    typeof record[field] === "string" ? (record[field] as string) : "";
+
+  return { material: text("material"), quality: text("quality"), finish: text("finish") };
+}
+
+/** The file snapshot, when the row has a complete one. */
+function toSourceFile(row: ItemRow): OrderItemSourceFile | undefined {
+  if (
+    !row.sourceStorageKey ||
+    !row.sourceDesignId ||
+    !row.sourceSha256 ||
+    !row.sourceFileName ||
+    row.sourceSizeBytes === null ||
+    !row.sourceFormat
+  ) {
+    return undefined;
+  }
+
+  return {
+    designId: row.sourceDesignId,
+    storageKey: row.sourceStorageKey,
+    sha256: row.sourceSha256,
+    fileName: row.sourceFileName,
+    sizeBytes: row.sourceSizeBytes,
+    format: row.sourceFormat,
+    ...(row.sourceContentType ? { contentType: row.sourceContentType } : {}),
+    ...(row.sourceAnalysisIdentity ? { analysisIdentity: row.sourceAnalysisIdentity } : {}),
+    configuration: readConfiguration(row.sourceConfiguration),
+  };
+}
+
 function toItem(row: ItemRow, jobId?: string): OrderItem {
+  const sourceFile = toSourceFile(row);
+
   return {
     id: row.id,
     type: row.type,
@@ -107,6 +144,7 @@ function toItem(row: ItemRow, jobId?: string): OrderItem {
      */
     ...(jobId ? { manufacturingJobId: jobId } : {}),
     ...(row.shipmentId ? { shipmentId: row.shipmentId } : {}),
+    ...(sourceFile ? { sourceFile } : {}),
   };
 }
 
@@ -263,6 +301,15 @@ function itemValues(order: Order, item: OrderItem, position: number) {
     fulfillmentStatus: item.fulfillmentStatus,
     shipmentId: item.shipmentId ?? null,
     position,
+    sourceDesignId: item.sourceFile?.designId ?? null,
+    sourceStorageKey: item.sourceFile?.storageKey ?? null,
+    sourceSha256: item.sourceFile?.sha256 ?? null,
+    sourceFileName: item.sourceFile?.fileName ?? null,
+    sourceSizeBytes: item.sourceFile?.sizeBytes ?? null,
+    sourceFormat: item.sourceFile?.format ?? null,
+    sourceContentType: item.sourceFile?.contentType ?? null,
+    sourceAnalysisIdentity: item.sourceFile?.analysisIdentity ?? null,
+    sourceConfiguration: item.sourceFile?.configuration ?? null,
   };
 }
 
@@ -289,7 +336,26 @@ async function writeOrder(
 
   for (const [position, item] of order.items.entries()) {
     const row = itemValues(order, item, position);
-    const { id: _id, orderReference: _ref, ...itemUpdatable } = row;
+    /*
+     * The file snapshot is insert-only. An update — a fulfilment status moving,
+     * a shipment assigned — carries the whole item back through here, and
+     * excluding these columns from the SET is what makes it impossible for any
+     * later save to rewrite which file the order was placed against.
+     */
+    const {
+      id: _id,
+      orderReference: _ref,
+      sourceDesignId: _sourceDesignId,
+      sourceStorageKey: _sourceStorageKey,
+      sourceSha256: _sourceSha256,
+      sourceFileName: _sourceFileName,
+      sourceSizeBytes: _sourceSizeBytes,
+      sourceFormat: _sourceFormat,
+      sourceContentType: _sourceContentType,
+      sourceAnalysisIdentity: _sourceAnalysisIdentity,
+      sourceConfiguration: _sourceConfiguration,
+      ...itemUpdatable
+    } = row;
 
     await db
       .insert(orderItems)

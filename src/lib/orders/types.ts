@@ -124,6 +124,36 @@ export function isItemActive(status: OrderItemFulfillmentStatus): boolean {
  * ------------------------------------------------------------------ */
 
 /**
+ * The manufacturing file a custom item is made from, as it was when the order
+ * was placed.
+ *
+ * A snapshot, for the same reason the price is one. A design is a mutable
+ * record — it can be deleted, and a later upload of the same name is a
+ * different file — and fulfilment must make the part that was paid for, not
+ * whatever the customer's account holds today. So the order records the exact
+ * object and its checksum, and the storage sweep will not remove an object any
+ * order still names.
+ *
+ * `storageKey` is private. No DTO carries it and the checkout action does not
+ * return it; it exists for fulfilment, server-side.
+ */
+export interface OrderItemSourceFile {
+  designId: string;
+  storageKey: string;
+  /** Lowercase hex SHA-256, confirmed over the stored bytes. */
+  sha256: string;
+  fileName: string;
+  sizeBytes: number;
+  /** Uppercase format label, e.g. "3MF". */
+  format: string;
+  contentType?: string;
+  /** The durable geometry analysis the file was verified with, when analysable. */
+  analysisIdentity?: string;
+  /** What was quoted, in machine-readable form. `spec` is the display copy. */
+  configuration: { material: string; quality: string; finish: string };
+}
+
+/**
  * One thing that was bought, snapshotted at the moment it was ordered.
  *
  * A snapshot rather than a reference: the catalog will be re-priced tomorrow
@@ -148,6 +178,11 @@ export interface OrderItem {
   manufacturingJobId?: string;
   /** Set when the item has been assigned to a parcel. */
   shipmentId?: string;
+  /**
+   * Custom items placed since Stage 16: the stored file this part is made
+   * from. Written once, when the order is created, and never rewritten.
+   */
+  sourceFile?: OrderItemSourceFile;
 }
 
 /* ------------------------------------------------------------------ *

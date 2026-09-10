@@ -5,6 +5,7 @@ import { SpecTable, type SpecRow } from "@/components/structure";
 import { Viewer3DLazy } from "@/components/viewer";
 import { formatBytes } from "@/lib/custom-print/inspect";
 import { modelObjectUrl } from "@/lib/custom-print/modelBlobs";
+import { designFileUrl } from "@/lib/custom-print/storage";
 import type { UploadedModel } from "@/lib/custom-print/types";
 import { formatForExtension } from "@/lib/viewer/types";
 import styles from "./ModelStage.module.css";
@@ -20,13 +21,19 @@ export interface ModelStageProps {
 /**
  * The model stage.
  *
- * Renders the customer's own uploaded geometry through the shared viewer. The
- * bytes come from the in-memory registry, so nothing binary is persisted and
- * the workflow's model of identity is unchanged.
+ * Renders the customer's own geometry through the shared viewer — the one
+ * Stage 9 built, with the exploded view Stage 10 added. There is no second
+ * viewer; only the source of the bytes changes:
+ *
+ *   just selected   the in-memory object URL for the local file, so the part is
+ *                   on screen before a byte has been uploaded
+ *   stored          the authorised file route, which redirects to a short-lived
+ *                   signed URL for the verified object. This is what survives a
+ *                   reload, and it is resolved through the storage abstraction
+ *                   rather than constructed here.
  *
  * The summary below reports only facts read from the file. Loading a model is
- * not analysis: volume, weight and print time are still absent, because
- * displaying geometry does not measure it.
+ * not analysis: displaying geometry does not measure it.
  */
 export function ModelStage({
   model,
@@ -37,12 +44,15 @@ export function ModelStage({
   const { inspection } = model;
 
   const format = formatForExtension(model.extension);
-  const url = modelObjectUrl(model.id);
+  const url =
+    modelObjectUrl(model.id) ?? (model.stored ? designFileUrl(model.id) : undefined);
 
   // Three distinct reasons the viewer may have nothing to draw, each stated
   // plainly rather than collapsed into one silent empty box.
   const notice = !format
-    ? `A 3D preview isn't available for ${model.extension.slice(1).toUpperCase()} files. The file is uploaded and will be prepared for manufacturing.`
+    ? model.stored
+      ? `A 3D preview isn't available for ${model.extension.slice(1).toUpperCase()} files. The file is stored and will be prepared for manufacturing.`
+      : `A 3D preview isn't available for ${model.extension.slice(1).toUpperCase()} files.`
     : !url
       ? "Model view unavailable after refresh. Re-upload the model to continue."
       : undefined;

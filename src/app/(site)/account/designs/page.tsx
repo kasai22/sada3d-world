@@ -24,14 +24,14 @@ export const dynamic = "force-dynamic";
  *
  * Three states, and the difference between the first two is the point:
  *
- *   unavailable  designs cannot be stored yet, and the page says why. This is
- *                what it shows today — `lib/custom-print/storage.ts` keeps an
- *                uploaded model in the browser and sends it nowhere.
- *   empty        storage works and this customer has saved nothing.
- *   populated    the designs, each rendered from a view with no storage key.
+ *   unavailable  designs cannot be stored in this deployment — no storage or
+ *                no database — and the page says why.
+ *   empty        storage works and this customer has stored nothing.
+ *   populated    their verified designs, each rendered from a view with no
+ *                storage key, each downloadable through the authorised route.
  *
- * Showing "no saved designs" today would imply designs could be saved and that
- * this customer had not, which is not what is true.
+ * Showing "no saved designs" where storage is not configured would imply
+ * designs could be saved and that this customer had not.
  */
 export default async function AccountDesignsPage() {
   const gate = await requireCustomerContext();
@@ -61,8 +61,8 @@ export default async function AccountDesignsPage() {
         >
           <p>{result.reason}</p>
           <p>
-            You can still upload a model, get a quote and order a part — the
-            file stays in your browser for the length of that session.
+            You can still select a model and get a quote. The file stays in
+            your browser, and a part cannot be ordered until its file is stored.
           </p>
         </AccountState>
       ) : result.items.length === 0 ? (
@@ -76,7 +76,10 @@ export default async function AccountDesignsPage() {
             </Button>
           }
         >
-          <p>Your designs will appear here when you save or upload one.</p>
+          <p>
+            Models you upload in Custom print are stored here once they have
+            been verified.
+          </p>
         </AccountState>
       ) : (
         <ul className={styles.grid}>

@@ -14,8 +14,9 @@
  * event is allowed to name.
  *
  *   never   uploaded model bytes, file contents, secrets, auth tokens,
- *           payment session identifiers, private storage keys, customer names,
- *           emails, phone numbers or addresses
+ *           payment session identifiers, private storage keys, signed URLs
+ *           (their query string is a credential), storage access keys,
+ *           customer filenames, names, emails, phone numbers or addresses
  *   fine    order references, job ids, model identities, durations, counts,
  *           formats, states, error kinds
  *
@@ -109,4 +110,26 @@ export const EVENTS = {
   quoteCalculated: "quote.calculated",
   modelAnalyzed: "model.analyzed",
   modelAnalysisFailed: "model.analysis.failed",
+
+  /*
+   * Stage 16 — durable design storage. Every one of these names a design id,
+   * never a storage key: the id finds the row, and the row holds the key for
+   * whoever is entitled to it.
+   */
+  designUploadIntentCreated: "design.upload.intent_created",
+  designUploadFinalized: "design.upload.finalized",
+  designObjectVerified: "design.object.verified",
+  designObjectRejected: "design.object.rejected",
+  designObjectMissing: "design.object.missing",
+  designAnalysisStarted: "design.analysis.started",
+  designAnalysisCompleted: "design.analysis.completed",
+  designDownloadGranted: "design.download.granted",
+  designDownloadDenied: "design.download.denied",
+  designDeleted: "design.deleted",
+  designObjectDeleteFailed: "design.object.delete_failed",
+  storageCleanupRequired: "storage.cleanup.required",
+  storageCleanupCompleted: "storage.cleanup.completed",
+  storageUnavailable: "storage.unavailable",
+  storageNotConfigured: "storage.not_configured",
+  requestRateLimited: "api.rate_limited",
 } as const;

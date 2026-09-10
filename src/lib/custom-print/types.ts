@@ -24,6 +24,39 @@ export const ACCEPTED_EXTENSIONS = [
   ".obj",
 ] as const;
 
+export type AcceptedExtension = (typeof ACCEPTED_EXTENSIONS)[number];
+
+export function isAcceptedExtension(extension: string): extension is AcceptedExtension {
+  return ACCEPTED_EXTENSIONS.includes(extension as AcceptedExtension);
+}
+
+/**
+ * The content type a model is stored under, chosen by the server from the
+ * extension.
+ *
+ * Not the browser's `File.type`: for the same `.stl` that is
+ * `model/stl` on one machine, `application/vnd.ms-pki.stl` on another and an
+ * empty string on a third, and in every case it is a claim made by the client.
+ * These are the IANA-registered `model/*` types. The type is signed into the
+ * upload URL, so an upload that declares anything else is refused by storage.
+ */
+export const MODEL_CONTENT_TYPES: Readonly<Record<AcceptedExtension, string>> = {
+  ".3mf": "model/3mf",
+  ".stl": "model/stl",
+  ".step": "model/step",
+  ".stp": "model/step",
+  ".obj": "model/obj",
+};
+
+/** Uppercase label stored on a design, e.g. "3MF". */
+export const MODEL_FORMAT_LABELS: Readonly<Record<AcceptedExtension, string>> = {
+  ".3mf": "3MF",
+  ".stl": "STL",
+  ".step": "STEP",
+  ".stp": "STEP",
+  ".obj": "OBJ",
+};
+
 /** 200 MB. Beyond this a browser upload is the wrong transport. */
 export const MAX_MODEL_BYTES = 200 * 1024 * 1024;
 
@@ -55,8 +88,18 @@ export type ModelStatus = "idle" | "inspecting" | "uploading" | "ready" | "error
 
 /** A model the customer has selected, as the workflow knows it. */
 export interface UploadedModel {
-  /** Assigned by the storage adapter. */
+  /**
+   * A tab-local `mdl_…` id until the file is stored, then the design's
+   * `dsn_…` id. The cart line carries whichever it is, and checkout accepts
+   * only the second.
+   */
   id: string;
+  /**
+   * True once the file is in private storage and the server has verified it.
+   * A stored model survives a reload: the viewer reads it back through the
+   * authorised file route.
+   */
+  stored?: boolean;
   name: string;
   /** Lowercase extension including the dot. */
   extension: string;

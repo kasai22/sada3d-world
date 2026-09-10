@@ -39,12 +39,15 @@ function invalidate(tag: ContentTag): void {
     try {
       const { revalidateTag } = await import("next/cache");
       /*
-       * "max" is the profile Next recommends for content of this kind: a
-       * request after a publish is served the previous version while the new
-       * one is built behind it, rather than blocking on the rebuild. The
-       * single-argument form is deprecated in Next 16.
+       * `expire: 0`, not "max". "max" serves the previous catalog to the first
+       * request after a publish while the new one builds behind it — and the
+       * product route has `dynamicParams = false`, so a product published a
+       * moment ago is absent from that stale catalog and its page 404s.
+       * Expiring immediately makes that request wait for the rebuild instead,
+       * which for a catalog this size is one query. The single-argument form is
+       * deprecated in Next 16.
        */
-      revalidateTag(CONTENT_TAGS[tag], "max");
+      revalidateTag(CONTENT_TAGS[tag], { expire: 0 });
     } catch {
       // No request context: a seed, an import or a migration. Nothing cached.
     }

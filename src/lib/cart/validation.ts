@@ -1,6 +1,6 @@
 import { getProductById, isQuoteOnly, productHref } from "@/lib/catalog/query";
 import { MATERIALS } from "@/lib/catalog/taxonomy";
-import { modelFileAvailability } from "@/lib/custom-print/storage";
+import { modelFileAvailability } from "@/lib/custom-print/availability";
 import {
   finishOption,
   materialOption,
@@ -143,7 +143,7 @@ async function priceCatalogLine(line: CatalogCartLine): Promise<PricedCartLine> 
  * Custom lines
  * ------------------------------------------------------------------ */
 
-function priceCustomLine(line: CustomCartLine): PricedCartLine {
+async function priceCustomLine(line: CustomCartLine): Promise<PricedCartLine> {
   const issues: CartIssue[] = [];
 
   // The quote is recomputed from the stored configuration. cartLine.quote.total
@@ -198,11 +198,11 @@ function priceCustomLine(line: CustomCartLine): PricedCartLine {
 
   /*
    * The manufacturing file. A custom part cannot become an order unless the
-   * file can be reached for fulfilment, and today it cannot: it is still in the
-   * browser. Saying so is the whole point — an order without its file is an
-   * order that cannot be made.
+   * file can be reached for fulfilment: stored, verified and the customer's
+   * own. The cart asks the database; checkout additionally asks storage whether
+   * the object is still there, just before it takes money.
    */
-  const availability = modelFileAvailability(line.model.modelId);
+  const availability = await modelFileAvailability(line.model.modelId);
   if (!availability.durable) {
     issues.push({
       code: "model_file_pending",

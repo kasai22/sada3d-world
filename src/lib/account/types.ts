@@ -159,28 +159,47 @@ export interface CustomerManufacturingItem {
  * ------------------------------------------------------------------ */
 
 /**
+ * Where a design's file is in its storage lifecycle. See `customer_designs` in
+ * `lib/db/schema.ts` for what each state means and why there are four.
+ */
+export type DesignStorageState = "pending" | "verified" | "failed" | "deleted";
+
+/**
  * A manufacturing design a customer has stored.
  *
  * `fileKey` is the private storage reference. It stays on this side of the
- * boundary: a component renders `CustomerDesignView`, and an object key never
- * reaches a browser. Phase 16 turns the key into a short-lived authorised URL
- * requested per download; it never becomes a public address.
+ * boundary: a component renders `CustomerDesignView`, an API responds with a
+ * `DesignDto`, and neither carries it. A download is a short-lived signed URL
+ * issued per authorised request; the key never becomes a public address.
  */
 export interface CustomerDesign {
   id: string;
   customerId: string;
+  /** The customer's filename, sanitised. */
   name: string;
   /** Uppercase format label, e.g. "STL". */
   format: string;
   sizeBytes: number;
   createdAt: string;
   updatedAt: string;
-  /** Private object reference. Never sent to a browser. */
+  /** Private object reference. Never sent to a browser. Empty when none. */
   fileKey: string;
   /** Private object reference for a rendered preview, when one exists. */
   previewKey?: string;
   /** Orders this design has been manufactured for. */
   orderReferences: readonly string[];
+
+  storageState: DesignStorageState;
+  contentType?: string;
+  /** Lowercase hex SHA-256. Confirmed over the stored bytes once verified. */
+  sha256?: string;
+  uploadExpiresAt?: string;
+  verifiedAt?: string;
+  analysisIdentity?: string;
+  /** Why verification refused the file. Only on a failed design. */
+  failure?: { code: string; message: string };
+  deletedAt?: string;
+  objectRemovedAt?: string;
 }
 
 /** A design as a component receives it. No storage references. */

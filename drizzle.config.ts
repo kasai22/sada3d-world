@@ -29,6 +29,7 @@ export default {
     "saved_items",
     "customer_designs",
     "customer_design_orders",
+    "geometry_analyses",
     "orders",
     "order_items",
     "manufacturing_jobs",

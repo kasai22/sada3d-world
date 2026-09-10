@@ -1,5 +1,11 @@
+import { designFileAvailability } from "@/lib/account/design-files";
+import { getCustomerContext } from "@/lib/account/identity";
 import { getProductById, isQuoteOnly } from "@/lib/catalog/query";
+import { extensionOf } from "@/lib/custom-print/inspect";
+import { measurementValue } from "@/lib/geometry/types";
+import { findStoredAnalysis } from "@/lib/models/analysis-store";
 import { calculateQuote } from "@/lib/pricing/calculateQuote";
+import { isDesignId } from "@/lib/storage/keys";
 import {
   finishOption,
   materialOption,
@@ -179,11 +185,51 @@ export interface AddCustomLineInput {
  * configuration, which is the only figure the customer can later be asked to
  * agree to.
  *
- * Note what this does NOT do: it does not claim the model file has been
- * stored. It has not. The line carries the model's identity so that checkout
- * can ask whether the file is reachable, and checkout will find that it is not
- * until Phase 16.
+ * ── Where the model facts come from ──────────────────────────────────────
+ *
+ * A stored design (a `dsn_…` id) is looked up for the signed-in customer, and
+ * its name, size and format are taken from the verified record — not from the
+ * request. A design that is not theirs, not verified or not found is refused
+ * here, with the reason, rather than added and refused later.
+ *
+ * A model that was never stored — a guest, or a deployment without storage —
+ * is added as Stage 15 added it, from what the browser reports. That line is
+ * priced but cannot be ordered: checkout asks whether its file is durable and
+ * the answer is no.
  */
+async function resolveLineModel(
+  model: AddCustomLineInput["model"],
+): Promise<{ ok: true; model: AddCustomLineInput["model"] } | { ok: false; message: string }> {
+  if (!isDesignId(model.modelId)) return { ok: true, model };
+
+  const { identity } = await getCustomerContext();
+  const availability = await designFileAvailability(identity, model.modelId, {
+    verifyObject: false,
+  });
+
+  if (!availability.durable) return { ok: false, message: availability.reason };
+
+  const { design } = availability;
+
+  // The measured count, where the stored analysis has one. A fact about the
+  // bytes on the server, not a number the browser read from a header.
+  const analysis = design.sha256 ? await findStoredAnalysis(design.sha256) : null;
+  const triangles = analysis ? measurementValue(analysis.triangleCount) : undefined;
+
+  return {
+    ok: true,
+    model: {
+      modelId: design.id,
+      name: design.name,
+      extension: extensionOf(design.name),
+      sizeBytes: design.sizeBytes,
+      formatLabel: design.format,
+      ...(triangles !== undefined ? { triangles } : {}),
+    },
+  };
+}
+
+/** Adds a custom manufacturing part, quoted server-side. See the note above. */
 export async function addCustomLine(
   input: AddCustomLineInput,
 ): Promise<CartMutation> {
@@ -205,12 +251,16 @@ export async function addCustomLine(
     };
   }
 
+  const resolved = await resolveLineModel(input.model);
+  if (!resolved.ok) return resolved;
+  const model = resolved.model;
+
   const response = calculateQuote({
     model: {
-      name: input.model.name,
-      extension: input.model.extension,
-      sizeBytes: input.model.sizeBytes,
-      triangles: input.model.triangles,
+      name: model.name,
+      extension: model.extension,
+      sizeBytes: model.sizeBytes,
+      triangles: model.triangles,
     },
     material: input.material,
     quality: input.quality,
@@ -236,9 +286,9 @@ export async function addCustomLine(
 
   const line: CustomCartLine = {
     type: "custom",
-    id: customLineKey({ model: { modelId: input.model.modelId }, configuration }),
+    id: customLineKey({ model: { modelId: model.modelId }, configuration }),
     quantity,
-    model: input.model,
+    model,
     configuration,
     quote: {
       rulesVersion: response.quote.rulesVersion,

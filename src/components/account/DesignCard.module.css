@@ -25,7 +25,7 @@
   background-image: var(--bg-grid);
 }
 
-/* An empty stage, not an invented render. Phase 16 stores a real preview. */
+/* An empty stage, not an invented render. No preview image is generated yet. */
 .placeholder {
   position: absolute;
   inset: 0;
@@ -83,13 +83,48 @@
 }
 
 .actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-3) var(--spacing-4);
   margin: 0;
   padding-top: var(--spacing-3);
   border-top: 1px solid var(--border-subtle);
 }
 
+.actionsSpacer {
+  flex: 1;
+}
+
 .action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font: var(--type-label);
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  flex-basis: 100%;
+}
+
+.confirmText {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.confirmActions {
+  display: flex;
+  gap: var(--spacing-3);
+}
+
+.error {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--status-danger);
 }

@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -227,8 +228,53 @@ export const orderItems = pgTable(
     shipmentId: text("shipment_id"),
     /** Ordering within the order, so items read back as they were bought. */
     position: integer("position").notNull().default(0),
+
+    /* ---- Stage 16: the manufacturing file, snapshotted at ordering ---- */
+
+    /**
+     * The design the part was ordered from. A reference for the account's
+     * "orders this design was made for", not the source of truth for what to
+     * make — the columns below are.
+     */
+    sourceDesignId: text("source_design_id"),
+    /**
+     * The private object the part is made from, as it was when the order was
+     * placed. Never rewritten: a design's record can change or be deleted after
+     * ordering, and fulfilment must still make the part that was paid for.
+     * Server-side only; no DTO carries it.
+     */
+    sourceStorageKey: text("source_storage_key"),
+    /** Lowercase hex SHA-256 of the file, confirmed at verification. */
+    sourceSha256: text("source_sha256"),
+    sourceFileName: text("source_file_name"),
+    sourceSizeBytes: integer("source_size_bytes"),
+    /** Uppercase format label, e.g. "3MF". */
+    sourceFormat: text("source_format"),
+    sourceContentType: text("source_content_type"),
+    /** Which durable geometry analysis the part was verified with, if analysable. */
+    sourceAnalysisIdentity: text("source_analysis_identity"),
+    /** The machine-readable configuration the quote was produced for. */
+    sourceConfiguration: jsonb("source_configuration"),
   },
-  (table) => [index("order_items_order_idx").on(table.orderReference)],
+  (table) => [
+    index("order_items_order_idx").on(table.orderReference),
+    /*
+     * The storage sweep asks "does any order still need this object" before it
+     * removes one. That question has to be cheap, and it has to be asked of the
+     * order record rather than of the mutable design.
+     */
+    index("order_items_source_storage_key_idx")
+      .on(table.sourceStorageKey)
+      .where(sql`${table.sourceStorageKey} is not null`),
+    /*
+     * A file snapshot is all or nothing, and only custom parts have one. A
+     * half-written snapshot is a part nobody can make.
+     */
+    check(
+      "order_items_source_file_check",
+      sql`${table.sourceStorageKey} is null or (${table.type} = 'custom' and ${table.sourceDesignId} is not null and ${table.sourceSha256} is not null and ${table.sourceFileName} is not null and ${table.sourceSizeBytes} is not null and ${table.sourceFormat} is not null)`,
+    ),
+  ],
 );
 
 /* ------------------------------------------------------------------ *

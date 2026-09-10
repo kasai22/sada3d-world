@@ -1,30 +1,38 @@
 import { formatBytes } from "@/lib/bytes";
 
 import {
-  ACCEPTED_EXTENSIONS,
   MAX_MODEL_BYTES,
+  isAcceptedExtension,
+  ACCEPTED_EXTENSIONS,
   type ModelFormat,
   type ModelInspection,
 } from "./types";
 
 /**
- * Local model inspection.
+ * Model inspection, from the head of the file.
  *
- * Reads the first few hundred bytes of the selected file and reports only what
- * those bytes actually say. Binary STL states its triangle count in the header
- * and has a fixed record size, so both the count and a structural check are
- * real. Everything else is limited to identifying the format.
+ * Reads the first few hundred bytes and reports only what those bytes actually
+ * say. Binary STL states its triangle count in the header and has a fixed record
+ * size, so both the count and a structural check are real. Everything else is
+ * limited to identifying the format.
  *
- * This is explicitly NOT manufacturing analysis. Volume, weight, bounding box,
- * wall thickness, overhangs, manifoldness and print time all require parsing
- * the full geometry and belong to the analysis layer, not to file selection.
- * Nothing here estimates them.
+ * ── Two callers, one rule ────────────────────────────────────────────────
+ *
+ * The browser runs this on a selected `File` so a customer hears about a wrong
+ * file before uploading 200 MB of it. The server runs the *same* functions on
+ * the first bytes of the stored object during upload verification, where it is
+ * a security check rather than a courtesy. `inspectModelHead` is the shared
+ * core and takes plain bytes, so neither side has its own idea of what an STL
+ * looks like.
+ *
+ * This is explicitly NOT manufacturing analysis. Volume, bounding box,
+ * manifoldness and the rest belong to the geometry analyser.
  */
 
 export class ModelFileError extends Error {}
 
 /** Bytes read from the head of the file. Enough for every signature we check. */
-const HEAD_BYTES = 512;
+export const HEAD_BYTES = 512;
 
 /** Binary STL: 80-byte header, uint32 triangle count, then 50 bytes each. */
 const STL_HEADER_BYTES = 80;
@@ -36,7 +44,7 @@ export function extensionOf(fileName: string): string {
   return dot === -1 ? "" : fileName.slice(dot).toLowerCase();
 }
 
-function formatFor(extension: string): ModelFormat | undefined {
+export function formatFor(extension: string): ModelFormat | undefined {
   if (extension === ".3mf") return "3mf";
   if (extension === ".stl") return "stl";
   if (extension === ".step" || extension === ".stp") return "step";
@@ -50,27 +58,31 @@ export { formatBytes };
 /**
  * Validates what can genuinely be determined before reading the file.
  *
- * Extension and size only. A browser cannot tell whether a model is printable,
- * and this does not pretend otherwise.
+ * Extension and size only. Written against a name and a size rather than a
+ * `File`, so the server applies the identical rule to a declared upload.
  */
-export function validateModelFile(file: File): void {
-  const extension = extensionOf(file.name);
+export function validateModelDescriptor(name: string, size: number): void {
+  const extension = extensionOf(name);
 
-  if (!ACCEPTED_EXTENSIONS.includes(extension as (typeof ACCEPTED_EXTENSIONS)[number])) {
+  if (!isAcceptedExtension(extension)) {
     throw new ModelFileError(
       `This file type isn't supported. Upload an ${ACCEPTED_EXTENSIONS.map((e) => e.slice(1).toUpperCase()).join(", ")} file.`,
     );
   }
 
-  if (file.size === 0) {
+  if (!Number.isSafeInteger(size) || size <= 0) {
     throw new ModelFileError("This file is empty.");
   }
 
-  if (file.size > MAX_MODEL_BYTES) {
+  if (size > MAX_MODEL_BYTES) {
     throw new ModelFileError(
       `This file exceeds the current upload limit of ${formatBytes(MAX_MODEL_BYTES)}.`,
     );
   }
+}
+
+export function validateModelFile(file: File): void {
+  validateModelDescriptor(file.name, file.size);
 }
 
 function looksLikeText(bytes: Uint8Array): boolean {
@@ -82,9 +94,9 @@ function decode(bytes: Uint8Array): string {
   return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
 }
 
-async function inspectStl(file: File, head: Uint8Array): Promise<ModelInspection> {
+function inspectStl(size: number, head: Uint8Array): ModelInspection {
   // Binary STL declares its triangle count; the file length must agree.
-  if (file.size > STL_HEADER_BYTES + STL_COUNT_BYTES) {
+  if (size > STL_HEADER_BYTES + STL_COUNT_BYTES && head.byteLength >= STL_HEADER_BYTES + STL_COUNT_BYTES) {
     const view = new DataView(
       head.buffer,
       head.byteOffset + STL_HEADER_BYTES,
@@ -94,7 +106,7 @@ async function inspectStl(file: File, head: Uint8Array): Promise<ModelInspection
     const expected =
       STL_HEADER_BYTES + STL_COUNT_BYTES + triangles * STL_TRIANGLE_BYTES;
 
-    if (expected === file.size) {
+    if (expected === size) {
       return {
         format: "stl",
         formatLabel: "Binary STL",
@@ -119,8 +131,7 @@ async function inspectStl(file: File, head: Uint8Array): Promise<ModelInspection
  *
  * A 3MF is a ZIP, so the first four bytes are the local-file-header magic. That
  * is all this step checks — reading the package, its model part and its
- * geometry is the analyser's job, and doing it here would mean parsing a
- * 200 MB archive during file selection.
+ * geometry is the analyser's job.
  */
 function inspectThreeMf(head: Uint8Array): ModelInspection {
   const [a, b, c, d] = head;
@@ -158,17 +169,42 @@ function inspectObj(head: Uint8Array): ModelInspection {
 }
 
 /**
- * Identifies the file from its own contents.
+ * Identifies a model from its name, its total size and its first bytes.
+ *
+ * The shared core. `head` should be the first `HEAD_BYTES` of the file, or all
+ * of it when the file is shorter.
+ */
+export function inspectModelHead(input: {
+  fileName: string;
+  size: number;
+  head: Uint8Array;
+}): ModelInspection {
+  validateModelDescriptor(input.fileName, input.size);
+
+  const format = formatFor(extensionOf(input.fileName));
+  if (!format) {
+    throw new ModelFileError("This file type isn't supported.");
+  }
+
+  switch (format) {
+    case "3mf":
+      return inspectThreeMf(input.head);
+    case "stl":
+      return inspectStl(input.size, input.head);
+    case "step":
+      return inspectStep(input.head);
+    case "obj":
+      return inspectObj(input.head);
+  }
+}
+
+/**
+ * Identifies a selected file from its own contents, in the browser.
  *
  * Reads at most the first 512 bytes, so a 200 MB model costs nothing to check.
  */
 export async function inspectModelFile(file: File): Promise<ModelInspection> {
   validateModelFile(file);
-
-  const format = formatFor(extensionOf(file.name));
-  if (!format) {
-    throw new ModelFileError("This file type isn't supported.");
-  }
 
   let head: Uint8Array;
   try {
@@ -177,14 +213,5 @@ export async function inspectModelFile(file: File): Promise<ModelInspection> {
     throw new ModelFileError("The file couldn't be read. Try selecting it again.");
   }
 
-  switch (format) {
-    case "3mf":
-      return inspectThreeMf(head);
-    case "stl":
-      return inspectStl(file, head);
-    case "step":
-      return inspectStep(head);
-    case "obj":
-      return inspectObj(head);
-  }
+  return inspectModelHead({ fileName: file.name, size: file.size, head });
 }

@@ -1,4 +1,4 @@
-import type { AnalysisDto } from "@/lib/api/dto";
+import type { AnalysisDto, DesignDetailDto } from "@/lib/api/dto";
 
 import { ACCEPTED_EXTENSIONS } from "./types";
 import { extensionOf } from "./inspect";
@@ -43,6 +43,27 @@ export type ModelAnalysisState =
   | { status: "error"; message: string };
 
 export const NOT_ANALYZED: ModelAnalysisState = { status: "not_analyzed" };
+
+export const STEP_UNSUPPORTED_REASON =
+  "STEP files describe surfaces rather than a mesh, so dimensions and volume cannot be measured here. The file can still be quoted and manufactured.";
+
+/**
+ * The analysis state for a stored design.
+ *
+ * Since Stage 16 this is the authoritative measurement: taken by the server
+ * from the bytes in storage, not from anything this tab sent.
+ */
+export function analysisFromDetail(detail: DesignDetailDto): ModelAnalysisState {
+  if (detail.analysisState === "available" && detail.analysis) {
+    return { status: "available", analysis: detail.analysis };
+  }
+
+  if (detail.analysisState === "unsupported") {
+    return { status: "unsupported", reason: STEP_UNSUPPORTED_REASON };
+  }
+
+  return NOT_ANALYZED;
+}
 
 /** Formats accepted for upload that the mesh analyser cannot measure. */
 const UNANALYZABLE = [".step", ".stp"];
@@ -102,11 +123,13 @@ export interface AnalyzeOptions {
 }
 
 /**
- * Measures a selected file.
+ * Measures a selected file that is not being stored.
  *
  * The bytes go to the server, which parses and measures them and returns the
- * result. Nothing is stored: the response is a measurement, not a receipt, and
- * durable model storage is Phase 16.
+ * result. Nothing is stored: the response is a measurement, not a receipt. This
+ * is the path for a file that stays in the browser — a signed-out visitor, or a
+ * deployment without storage. A stored file is measured by the server from
+ * storage during verification instead, and that measurement is authoritative.
  *
  * A cached result short-circuits the request entirely, so stepping back and
  * forward through the workflow re-reads a measurement rather than re-taking it.
@@ -122,7 +145,7 @@ export async function analyzeUpload(
       status: "unsupported",
       reason:
         extension === ".step" || extension === ".stp"
-          ? "STEP files describe surfaces rather than a mesh, so dimensions and volume cannot be measured here. The file can still be quoted and manufactured."
+          ? STEP_UNSUPPORTED_REASON
           : "This file type cannot be measured.",
     };
   }
