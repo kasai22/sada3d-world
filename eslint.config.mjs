@@ -25,6 +25,13 @@ const eslintConfig = defineConfig([
     // Vendored copy of the SADA 3D Design System package. Read-only reference
     // material (prototype JSX, specimen HTML) — not application source.
     "design-system/**",
+    /*
+     * Payload writes these from the collection definitions, and rewrites them
+     * whenever `payload migrate:create` runs. Linting generated SQL wrappers
+     * reports unused hook arguments that are part of Payload's own signature,
+     * and any fix would be discarded by the next generation.
+     */
+    "src/payload/migrations/**",
   ]),
 ]);
 

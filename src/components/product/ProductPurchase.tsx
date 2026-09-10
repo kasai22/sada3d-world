@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button, Icon } from "@/components/core";
 import { QuantityStepper } from "@/components/forms";
 import { submitCartIntent } from "@/lib/cart/intent";
-import { formatPrice, isQuoteOnly } from "@/lib/catalog/query";
+import { formatPrice, isQuoteOnly } from "@/lib/catalog/format";
 import { MATERIALS } from "@/lib/catalog/taxonomy";
 import type { MaterialValue, Product } from "@/lib/catalog/types";
 

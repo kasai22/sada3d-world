@@ -7,6 +7,7 @@ import {
   CUSTOMER_STAGES,
   CUSTOMER_STAGE_LABEL,
   HOLD_MESSAGE,
+  furthestStageInHistory,
   stageIndex,
   type CustomerManufacturingStage,
   type CustomerManufacturingTracking,
@@ -54,7 +55,9 @@ export function ItemTracking({ item, manufacturing, shipment }: ItemTrackingProp
    * un-happens.
    */
   const current = manufacturing?.stage ?? null;
-  const reached = manufacturing ? furthestFromHistory(manufacturing) : null;
+  const reached = manufacturing
+    ? furthestStageInHistory(manufacturing.history)
+    : null;
 
   const stages: ManufacturingStage[] = CUSTOMER_STAGES.map((stage) => {
     const index = stageIndex(stage);
@@ -256,17 +259,6 @@ export function ItemTracking({ item, manufacturing, shipment }: ItemTrackingProp
       )}
     </li>
   );
-}
-
-/** The furthest stage the recorded history reached. */
-function furthestFromHistory(
-  tracking: CustomerManufacturingTracking,
-): CustomerManufacturingStage | null {
-  let best = -1;
-  for (const event of tracking.history) {
-    best = Math.max(best, stageIndex(event.stage));
-  }
-  return best === -1 ? null : (CUSTOMER_STAGES[best] ?? null);
 }
 
 /** When a stage was last reached, from the customer-visible history. */

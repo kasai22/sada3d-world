@@ -1,0 +1,172 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--space-inset-panel);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+}
+
+.heading {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.heading + .heading,
+.parts + .heading {
+  margin-top: var(--spacing-3);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.subheading {
+  margin: 0 0 var(--spacing-3);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--titanium);
+  border-top-color: var(--orange-500);
+  border-radius: var(--radius-pill);
+  animation: sada-spin 700ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
+
+.technical {
+  font-family: var(--font-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+}
+
+/* Never a number. A phrase, and the reason beneath it. */
+.unavailable {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+}
+
+.reason {
+  max-width: 34ch;
+  font: var(--type-technical-sm);
+  color: var(--text-muted);
+  text-align: right;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.warn { color: var(--status-warning); }
+
+.note,
+.problem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.problem { color: var(--status-danger); }
+
+.note svg,
+.problem svg { margin-top: 2px; }
+
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.constraintNote {
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.findings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.findings li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  font: var(--type-body-sm);
+}
+
+.findings li svg { margin-top: 2px; }
+
+.blocking { color: var(--status-danger); }
+.advisory { color: var(--text-muted); }
+
+.parts { margin-top: var(--spacing-2); }
+
+.partList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.part {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: var(--spacing-4);
+  padding: var(--spacing-3) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.partName {
+  font: var(--type-body-sm);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.partSize,
+.partVolume {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .part {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-1);
+  }
+  .partSize, .partVolume { white-space: normal; }
+  .unavailable { align-items: flex-start; }
+  .reason { text-align: left; }
+}

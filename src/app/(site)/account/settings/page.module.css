@@ -1,0 +1,39 @@
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-10);
+  max-width: 72ch;
+}
+
+.table {
+  margin-top: var(--spacing-6);
+}
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin: var(--spacing-5) 0 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.note svg {
+  margin-top: 3px;
+}
+
+.action {
+  margin: var(--spacing-5) 0 0;
+}
+
+.body {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 767px) {
+  .sections {
+    gap: var(--spacing-9);
+  }
+}

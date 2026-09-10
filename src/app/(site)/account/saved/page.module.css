@@ -1,0 +1,15 @@
+.footnote {
+  margin: var(--spacing-8) 0 0;
+  padding-top: var(--spacing-5);
+  border-top: 1px solid var(--border-subtle);
+  max-width: 60ch;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.count {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

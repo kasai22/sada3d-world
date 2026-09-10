@@ -1,0 +1,15 @@
+.page {
+  padding: var(--spacing-9) 0 var(--spacing-12);
+}
+
+.crumbs {
+  margin-bottom: var(--spacing-6);
+}
+
+.layout {
+  max-width: var(--container-narrow);
+}
+
+@media (max-width: 767px) {
+  .page { padding: var(--spacing-7) 0 var(--spacing-9); }
+}

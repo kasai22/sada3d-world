@@ -232,8 +232,8 @@ test("merging never drops a guest line", () => {
  * Totals
  * ------------------------------------------------------------------ */
 
-test("the subtotal is the sum of the line totals", () => {
-  const cart = priceCart(cartOf(catalogLine({ quantity: 2 })));
+test("the subtotal is the sum of the line totals", async () => {
+  const cart = await priceCart(cartOf(catalogLine({ quantity: 2 })));
   const line = cart.lines[0];
 
   assert.ok(line?.lineTotal);
@@ -249,14 +249,14 @@ test("shipping and tax are unknown rather than zero", () => {
   assert.deepEqual([...totals.excluded], ["Shipping", "GST"]);
 });
 
-test("an unknown component is left out of the total, not counted as nothing", () => {
-  const cart = priceCart(cartOf(catalogLine({ quantity: 3 })));
+test("an unknown component is left out of the total, not counted as nothing", async () => {
+  const cart = await priceCart(cartOf(catalogLine({ quantity: 3 })));
   assert.equal(cart.totals.total, cart.totals.subtotal);
   assert.ok(cart.totals.excluded.length > 0);
 });
 
-test("a known shipping amount joins the total", () => {
-  const cart = priceCart(cartOf(catalogLine()), {
+test("a known shipping amount joins the total", async () => {
+  const cart = await priceCart(cartOf(catalogLine()), {
     shipping: { known: true, amount: 120 },
   });
 
@@ -264,8 +264,8 @@ test("a known shipping amount joins the total", () => {
   assert.deepEqual([...cart.totals.excluded], ["GST"]);
 });
 
-test("the header count is total units, not lines", () => {
-  const cart = priceCart(
+test("the header count is total units, not lines", async () => {
+  const cart = await priceCart(
     cartOf(catalogLine({ quantity: 2 }), customLine({ quantity: 3 })),
   );
 
@@ -273,8 +273,8 @@ test("the header count is total units, not lines", () => {
   assert.equal(unitCount(cart.lines.map((l) => l.line)), 5);
 });
 
-test("a line that cannot be priced contributes nothing rather than a guess", () => {
-  const cart = priceCart(cartOf(catalogLine({ productId: "p-does-not-exist" })));
+test("a line that cannot be priced contributes nothing rather than a guess", async () => {
+  const cart = await priceCart(cartOf(catalogLine({ productId: "p-does-not-exist" })));
 
   assert.equal(cart.lines[0]?.lineTotal, null);
   assert.equal(cart.totals.subtotal, 0);
@@ -284,16 +284,16 @@ test("a line that cannot be priced contributes nothing rather than a guess", () 
  * Price trust
  * ------------------------------------------------------------------ */
 
-test("the catalog price wins over the price stored on the line", () => {
+test("the catalog price wins over the price stored on the line", async () => {
   // A tampered store claiming the gear costs one rupee.
-  const priced = priceLine(catalogLine({ priceAtAdd: 1 }));
+  const priced = await priceLine(catalogLine({ priceAtAdd: 1 }));
 
   assert.equal(priced.unitPrice, GEAR?.price);
   assert.notEqual(priced.unitPrice, 1);
 });
 
-test("a price that moved since it was added blocks checkout and says so", () => {
-  const cart = priceCart(cartOf(catalogLine({ priceAtAdd: 349 })));
+test("a price that moved since it was added blocks checkout and says so", async () => {
+  const cart = await priceCart(cartOf(catalogLine({ priceAtAdd: 349 })));
   const issue = cart.issues.find((entry) => entry.code === "price_changed");
 
   assert.ok(issue, "no price change was reported");
@@ -302,15 +302,15 @@ test("a price that moved since it was added blocks checkout and says so", () => 
   assert.equal(cart.checkoutReady, false);
 });
 
-test("a product that left the catalog cannot be checked out", () => {
-  const cart = priceCart(cartOf(catalogLine({ productId: "p-removed" })));
+test("a product that left the catalog cannot be checked out", async () => {
+  const cart = await priceCart(cartOf(catalogLine({ productId: "p-removed" })));
 
   assert.equal(cart.issues[0]?.code, "product_unavailable");
   assert.equal(cart.checkoutReady, false);
 });
 
-test("a quote-only product cannot be bought as a catalog line", () => {
-  const cart = priceCart(cartOf(catalogLine({ productId: CUSTOM?.id ?? "p-036" })));
+test("a quote-only product cannot be bought as a catalog line", async () => {
+  const cart = await priceCart(cartOf(catalogLine({ productId: CUSTOM?.id ?? "p-036" })));
 
   assert.ok(cart.issues.some((issue) => issue.code === "product_not_purchasable"));
   assert.equal(cart.checkoutReady, false);
@@ -320,9 +320,9 @@ test("a quote-only product cannot be bought as a catalog line", () => {
  * Custom lines
  * ------------------------------------------------------------------ */
 
-test("a custom line is priced by re-running the quote engine", () => {
+test("a custom line is priced by re-running the quote engine", async () => {
   const line = customLine();
-  const priced = priceLine(line);
+  const priced = await priceLine(line);
 
   const expected = calculateQuote({
     model: {
@@ -341,15 +341,15 @@ test("a custom line is priced by re-running the quote engine", () => {
   assert.equal(priced.lineTotal, expected.status === "available" ? expected.quote.total : -1);
 });
 
-test("a stored quote total is never trusted as the price", () => {
-  const priced = priceLine(customLine({ quote: { total: 5 } as never }));
+test("a stored quote total is never trusted as the price", async () => {
+  const priced = await priceLine(customLine({ quote: { total: 5 } as never }));
 
   assert.notEqual(priced.lineTotal, 5);
   assert.ok(priced.issues.some((issue) => issue.code === "quote_stale"));
 });
 
-test("a quote from older rules needs review", () => {
-  const priced = priceLine(
+test("a quote from older rules needs review", async () => {
+  const priced = await priceLine(
     customLine({ quote: { rulesVersion: "demo-2020-01" } as never }),
   );
 
@@ -358,38 +358,38 @@ test("a quote from older rules needs review", () => {
   assert.equal(issue.severity, "blocking");
 });
 
-test("a custom part cannot be ordered while its file is only in the browser", () => {
-  const priced = priceLine(customLine());
+test("a custom part cannot be ordered while its file is only in the browser", async () => {
+  const priced = await priceLine(customLine());
   const issue = priced.issues.find((entry) => entry.code === "model_file_pending");
 
   assert.ok(issue, "a part with no stored file was allowed through");
   assert.equal(issue.severity, "blocking");
 });
 
-test("a cart holding a custom part is not checkout ready", () => {
-  assert.equal(priceCart(cartOf(customLine())).checkoutReady, false);
+test("a cart holding a custom part is not checkout ready", async () => {
+  assert.equal((await priceCart(cartOf(customLine()))).checkoutReady, false);
 });
 
-test("a catalog-only cart with no problems is checkout ready", () => {
-  assert.equal(priceCart(cartOf(catalogLine())).checkoutReady, true);
+test("a catalog-only cart with no problems is checkout ready", async () => {
+  assert.equal((await priceCart(cartOf(catalogLine()))).checkoutReady, true);
 });
 
-test("an empty cart is not checkout ready", () => {
-  assert.equal(priceCart(cartOf()).checkoutReady, false);
+test("an empty cart is not checkout ready", async () => {
+  assert.equal((await priceCart(cartOf())).checkoutReady, false);
 });
 
 /* ------------------------------------------------------------------ *
  * Reconciliation
  * ------------------------------------------------------------------ */
 
-test("pricing the same cart twice gives the same total", () => {
+test("pricing the same cart twice gives the same total", async () => {
   const cart = cartOf(catalogLine({ quantity: 3 }), catalogLine({
     productId: BRACKET?.id ?? "p-020",
     quantity: 2,
   }));
 
-  const first = priceCart(cart);
-  const second = priceCart(cart);
+  const first = await priceCart(cart);
+  const second = await priceCart(cart);
 
   assert.equal(first.totals.total, second.totals.total);
   assert.equal(

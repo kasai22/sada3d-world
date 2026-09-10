@@ -138,10 +138,19 @@ const EVENT_MESSAGE: Record<ManufacturingEventType, string | null> = {
 /**
  * Turns an internal event into a customer-visible one, or discards it.
  *
- * Only the id, the stage, the time and a written message survive. The event
- * type, the actor and any note do not cross this line.
+ * Only the stage, the time and a written message survive. The event type, the
+ * actor and any note do not cross this line.
+ *
+ * Neither does the internal id. It reads as a harmless key, and it is not: ids
+ * are built as `${jobId}_${index}_${type}`, so passing one through would put
+ * `QUALITY_REJECTED` into the page as a React key — the exact internal
+ * vocabulary the message above is carefully worded to avoid. The customer's
+ * event gets its own identity, assigned by position in the visible history.
  */
-function toCustomerEvent(event: ManufacturingEvent): CustomerVisibleEvent | null {
+function toCustomerEvent(
+  event: ManufacturingEvent,
+  position: number,
+): CustomerVisibleEvent | null {
   const message = EVENT_MESSAGE[event.type];
   if (!message) return null;
 
@@ -150,7 +159,7 @@ function toCustomerEvent(event: ManufacturingEvent): CustomerVisibleEvent | null
   const stage = customerStage(event.to) ?? customerStage(event.from);
   if (!stage) return null;
 
-  return { id: event.id, stage, occurredAt: event.occurredAt, message };
+  return { id: `ev_${position}`, stage, occurredAt: event.occurredAt, message };
 }
 
 /**
@@ -201,10 +210,28 @@ export function toCustomerTracking(
       showHold && job.hold && holdReason
         ? { reason: holdReason, since: job.hold.startedAt }
         : undefined,
-    history: orderEvents(job.events)
-      .map(toCustomerEvent)
-      .filter((event): event is CustomerVisibleEvent => event !== null),
+    history: visibleHistory(job.events),
   };
+}
+
+/**
+ * The customer-visible history, in order and numbered.
+ *
+ * Numbered by position among the events that survive, not among all of them, so
+ * the identity carries no information about how many internal events there were
+ * or which of them were discarded.
+ */
+function visibleHistory(
+  events: readonly ManufacturingEvent[],
+): CustomerVisibleEvent[] {
+  const visible: CustomerVisibleEvent[] = [];
+
+  for (const event of orderEvents(events)) {
+    const projected = toCustomerEvent(event, visible.length + 1);
+    if (projected) visible.push(projected);
+  }
+
+  return visible;
 }
 
 /**
@@ -245,6 +272,26 @@ export function furthestStageReached(
 
   for (const event of events) {
     best = Math.max(best, stageIndex(customerStage(event.to)));
+  }
+
+  return best === -1 ? null : (CUSTOMER_ORDER[best] ?? null);
+}
+
+/**
+ * The same question, asked of the customer-visible history.
+ *
+ * `furthestStageReached` reads internal events and is for code that holds a
+ * job. Anything downstream of `toCustomerTracking` holds only the projection,
+ * and must reach the same answer from it — one function so the account portal
+ * and the guest tracking page can never mark a different stage as reached.
+ */
+export function furthestStageInHistory(
+  history: readonly CustomerVisibleEvent[],
+): CustomerManufacturingStage | null {
+  let best = -1;
+
+  for (const event of history) {
+    best = Math.max(best, stageIndex(event.stage));
   }
 
   return best === -1 ? null : (CUSTOMER_ORDER[best] ?? null);

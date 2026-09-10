@@ -4,7 +4,8 @@ export type { PricingRules } from "./rules";
 export { quoteService, localQuoteService } from "./service";
 export type { QuoteService } from "./service";
 export type {
-  GeometryAnalysis,
+  GeometryPricing,
+  QuoteGeometryInput,
   ManufacturingQuote,
   QuoteBasis,
   QuoteErrorField,

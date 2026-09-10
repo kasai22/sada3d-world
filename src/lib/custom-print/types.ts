@@ -6,10 +6,23 @@
  * to R2 (Phase 16) — each behind its own seam in this folder.
  */
 
-export type ModelFormat = "stl" | "step" | "obj";
+export type ModelFormat = "3mf" | "stl" | "step" | "obj";
 
-/** Accepted extensions. Nothing outside this list is offered or accepted. */
-export const ACCEPTED_EXTENSIONS = [".stl", ".step", ".stp", ".obj"] as const;
+/**
+ * Accepted extensions, best first.
+ *
+ * 3MF leads because it is the only one that records its own unit and its own
+ * object structure — a measurement from a 3MF rests on what the file says,
+ * where STL and OBJ rest on a convention. STEP is accepted and is not
+ * mesh-analysable; the interface says so rather than failing obscurely.
+ */
+export const ACCEPTED_EXTENSIONS = [
+  ".3mf",
+  ".stl",
+  ".step",
+  ".stp",
+  ".obj",
+] as const;
 
 /** 200 MB. Beyond this a browser upload is the wrong transport. */
 export const MAX_MODEL_BYTES = 200 * 1024 * 1024;

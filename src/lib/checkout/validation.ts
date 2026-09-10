@@ -26,12 +26,31 @@ const INDIA_PHONE = /^(?:\+?91[\s-]?)?[6-9]\d{9}$/;
 /** Indian PIN codes: six digits, first digit 1–9. */
 const INDIA_PIN = /^[1-9]\d{5}$/;
 
+/**
+ * A person's name, addressed to a named field.
+ *
+ * Exported because a name is validated in more than one place — checkout takes
+ * one, and a saved address takes a recipient. Two copies of the rule would
+ * eventually disagree about what a valid name is.
+ *
+ * Deliberately permissive: it checks that something was entered, not that it
+ * looks like a name. Names that a stricter rule would reject are real.
+ */
+export function nameError(value: string, field: string): FieldError | null {
+  return value.trim().length < 2 ? { field, message: "Enter the full name." } : null;
+}
+
+export function phoneError(value: string, field: string): FieldError | null {
+  return INDIA_PHONE.test(value.replace(/\s|-/g, ""))
+    ? null
+    : { field, message: "Enter a 10-digit Indian mobile number." };
+}
+
 export function validateContact(contact: Contact): FieldError[] {
   const errors: FieldError[] = [];
 
-  if (contact.name.trim().length < 2) {
-    errors.push({ field: "contact.name", message: "Enter the full name." });
-  }
+  const name = nameError(contact.name, "contact.name");
+  if (name) errors.push(name);
 
   if (!EMAIL.test(contact.email.trim())) {
     errors.push({
@@ -40,13 +59,8 @@ export function validateContact(contact: Contact): FieldError[] {
     });
   }
 
-  const phone = contact.phone.replace(/\s|-/g, "");
-  if (!INDIA_PHONE.test(phone)) {
-    errors.push({
-      field: "contact.phone",
-      message: "Enter a 10-digit Indian mobile number.",
-    });
-  }
+  const phone = phoneError(contact.phone, "contact.phone");
+  if (phone) errors.push(phone);
 
   return errors;
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { StatusDot, type ManufacturingStatus } from "@/components/core";
-import { formatPrice, isQuoteOnly } from "@/lib/catalog/query";
+import { formatPrice, isQuoteOnly } from "@/lib/catalog/format";
 import { categoryLabel } from "@/lib/catalog/taxonomy";
 import type { Product } from "@/lib/catalog/types";
 

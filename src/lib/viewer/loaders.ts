@@ -39,6 +39,27 @@ const stlLoader: ModelLoader = {
   },
 };
 
+/**
+ * 3MF, for display.
+ *
+ * three's loader resolves the package, its objects and their build transforms
+ * into a scene graph — which is what the exploded view then reads, so a
+ * multi-object 3MF gets component separation for free from the file's own
+ * structure rather than from anything inferred.
+ *
+ * Loaded on demand: a page showing an STL never downloads the ZIP and XML
+ * machinery this needs.
+ */
+const threeMfLoader: ModelLoader = {
+  canLoad: (format) => format === "3mf",
+  async load(source) {
+    const { ThreeMFLoader } = await import(
+      "three/examples/jsm/loaders/3MFLoader.js"
+    );
+    return new ThreeMFLoader().loadAsync(source.url);
+  },
+};
+
 const objLoader: ModelLoader = {
   canLoad: (format) => format === "obj",
   async load(source) {
@@ -56,7 +77,12 @@ const gltfLoader: ModelLoader = {
   },
 };
 
-const LOADERS: readonly ModelLoader[] = [stlLoader, objLoader, gltfLoader];
+const LOADERS: readonly ModelLoader[] = [
+  threeMfLoader,
+  stlLoader,
+  objLoader,
+  gltfLoader,
+];
 
 /** Bounding box and sphere, in the model's own space. */
 export function measureBounds(object: Object3D): ModelBounds {

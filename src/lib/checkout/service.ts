@@ -1,3 +1,5 @@
+import { getCustomerContext } from "@/lib/account/identity";
+import { EVENTS, log } from "@/lib/observability";
 import { cartFingerprint } from "@/lib/cart/identity";
 import { cartRepository } from "@/lib/cart/repository";
 import { priceCart } from "@/lib/cart/validation";
@@ -41,7 +43,7 @@ import type { CheckoutInput, CheckoutResult } from "./types";
  */
 export async function reviewCheckout(address?: CheckoutInput["address"]): Promise<PricedCart> {
   const cart = await cartRepository.load();
-  const priced = priceCart(cart);
+  const priced = await priceCart(cart);
 
   if (!address) return priced;
 
@@ -89,7 +91,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   }
 
   // Revalidated here, not trusted from the page the customer was looking at.
-  const priced = priceCart(cart, {
+  const priced = await priceCart(cart, {
     shipping: shippingPolicy.quote(address, []),
     tax: taxPolicy.calculate(address, 0),
   });
@@ -191,9 +193,19 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   const placedAt = new Date().toISOString();
   const items = toOrderItems(priced, reference);
 
+  /*
+   * Ownership, when there is an account to own it. There is no authentication
+   * until Phase 17, so this is undefined for every order placed today and the
+   * order stays a guest order reachable through the receipt grant. Wired now so
+   * that an order placed by a signed-in customer arrives in their portal
+   * without a second change.
+   */
+  const { identity } = await getCustomerContext();
+
   const payload = {
     reference,
     cartId: cart.id,
+    customerId: identity?.id,
     payment: {
       // The commercial fact, kept out of the order status. Manufacturing knows
       // nothing about it and it knows nothing about manufacturing.
@@ -220,6 +232,21 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   // One write. In Postgres this is one transaction covering the order, its
   // items and the payment reference.
   await orderRepository.createOrder(order);
+
+  /*
+   * Identifiers and counts. Not the customer's name, email, phone or address,
+   * and not the payment session — an operator needs to find this order, not to
+   * read who placed it.
+   */
+  log.info(EVENTS.orderCreated, {
+    orderReference: reference,
+    items: items.length,
+    units: priced.totals.unitCount,
+    total: priced.totals.total,
+    currency: priced.totals.currency,
+    provisional: payload.provisional,
+    customerId: identity?.id,
+  });
 
   /*
    * Custom items become manufacturing jobs; catalog items do not. Today no

@@ -527,3 +527,78 @@ test("scheduling is recorded internally and not shown to the customer", () => {
 
   assert.equal(tracking.history.length, 0);
 });
+
+test("a customer event carries no internal id", () => {
+  /*
+   * Internal event ids are built as `${jobId}_${index}_${type}`, so passing one
+   * through would put QUALITY_REJECTED into the page as a React key — the exact
+   * vocabulary the customer message is worded to avoid.
+   */
+  const tracking = toCustomerTracking(
+    job({
+      state: "rework",
+      events: [
+        {
+          id: "job_S3D-000001_i1_3_QUALITY_REJECTED",
+          type: "QUALITY_REJECTED",
+          occurredAt: "2026-09-01T10:00:00.000Z",
+          actor: "operations",
+          note: "Layer shift on the left flange.",
+          from: "quality_check",
+          to: "rework",
+        },
+      ],
+    }),
+  );
+
+  const [event] = tracking.history;
+  assert.ok(event);
+
+  const serialised = JSON.stringify(tracking);
+  for (const internal of [
+    "QUALITY_REJECTED",
+    "job_S3D-000001",
+    "operations",
+    "Layer shift",
+  ]) {
+    assert.ok(
+      !serialised.includes(internal),
+      `${internal} crossed the customer boundary`,
+    );
+  }
+});
+
+test("customer event ids are stable and unique across a history", () => {
+  const tracking = toCustomerTracking(
+    job({
+      events: [
+        {
+          id: "x_0_DESIGN_APPROVED",
+          type: "DESIGN_APPROVED",
+          occurredAt: "2026-09-01T10:00:00.000Z",
+          from: "design_review",
+          to: "file_preparation",
+        },
+        // Discarded: it tells the customer nothing. The numbering must not skip.
+        {
+          id: "x_1_JOB_SCHEDULED",
+          type: "JOB_SCHEDULED",
+          occurredAt: "2026-09-01T11:00:00.000Z",
+          from: "material_preparation",
+          to: "scheduled",
+        },
+        {
+          id: "x_2_PRINT_STARTED",
+          type: "PRINT_STARTED",
+          occurredAt: "2026-09-01T12:00:00.000Z",
+          from: "scheduled",
+          to: "printing",
+        },
+      ],
+    }),
+  );
+
+  const ids = tracking.history.map((event) => event.id);
+  assert.deepEqual(ids, ["ev_1", "ev_2"]);
+  assert.equal(new Set(ids).size, ids.length);
+});

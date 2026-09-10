@@ -1,5 +1,7 @@
+import { memoize, persistenceMode, warnMemoryPersistence } from "@/lib/db/persistence";
 import type { ManufacturingJob } from "@/lib/manufacturing/types";
 
+import { postgresOrderRepository } from "./repository.postgres";
 import type { Order } from "./types";
 
 /**
@@ -7,10 +9,9 @@ import type { Order } from "./types";
  *
  * ── The current implementation ────────────────────────────────────────────
  *
- * PROVISIONAL and in-process. Postgres is not provisioned — Phase 14 brings
- * Payload and the schema — so orders and jobs live in the server process and do
- * not survive a restart. They are held on globalThis so a development reload
- * does not lose them. That is a convenience, not durability.
+ * PostgreSQL, since Phase 15 — see `repository.postgres.ts`. The in-process
+ * store below is kept for development without a database and for the pure
+ * state-machine tests; production has no such fallback.
  *
  * Everything above this file is written as though the store were a database:
  * reads are async, writes are async, and no caller holds a reference to a
@@ -196,4 +197,46 @@ export const memoryOrderRepository: OrderRepository = {
   },
 };
 
-export const orderRepository: OrderRepository = memoryOrderRepository;
+/* ------------------------------------------------------------------ *
+ * Selection
+ * ------------------------------------------------------------------ */
+
+const postgres = memoize(() => postgresOrderRepository());
+
+/**
+ * The repository the application uses.
+ *
+ * A facade, re-deciding per call from `persistenceMode()` — the same shape the
+ * Phase 13 account repositories use. With a database configured, orders,
+ * items, jobs, events and shipments are in PostgreSQL and event application is
+ * serialised by a row lock. Without one, development falls back to the
+ * in-process store; production does not fall back at all.
+ *
+ * Everything above this line — the four state machines, the aggregation, the
+ * customer projection, the account portal, the tracking page — is unchanged by
+ * which one answers.
+ */
+function repository(): OrderRepository {
+  if (persistenceMode() === "postgres") return postgres();
+
+  warnMemoryPersistence();
+  return memoryOrderRepository;
+}
+
+export const orderRepository: OrderRepository = {
+  get name() {
+    return repository().name;
+  },
+  nextReference: () => repository().nextReference(),
+  createOrder: (order) => repository().createOrder(order),
+  saveOrder: (order) => repository().saveOrder(order),
+  findOrder: (reference) => repository().findOrder(reference),
+  listOrders: () => repository().listOrders(),
+  createJob: (job) => repository().createJob(job),
+  saveJob: (job) => repository().saveJob(job),
+  findJob: (id) => repository().findJob(id),
+  findJobsForOrder: (reference) => repository().findJobsForOrder(reference),
+  applyExclusively: (jobId, work) => repository().applyExclusively(jobId, work),
+  hasSeeded: () => repository().hasSeeded(),
+  markSeeded: () => repository().markSeeded(),
+};

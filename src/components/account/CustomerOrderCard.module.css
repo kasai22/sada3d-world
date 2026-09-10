@@ -1,0 +1,226 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--space-inset-card);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+  transition: var(--transition-control);
+}
+
+.card:hover {
+  border-color: var(--border-default);
+}
+
+/* The link covers the card, so the ring belongs to the card rather than to a
+   text node the customer cannot see the edges of. */
+.card:has(.link:focus-visible) {
+  border-color: var(--border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-5);
+  flex-wrap: wrap;
+}
+
+.identity {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 var(--spacing-1);
+  font: var(--type-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.reference {
+  margin: 0;
+  font: var(--type-h4);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: inherit;
+  border-bottom: 0;
+  font-family: var(--font-technical);
+}
+
+.link:hover {
+  color: var(--text-accent);
+  border-bottom: 0;
+}
+
+/* Covers the card so the whole surface is the link, with one tab stop. */
+.link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.link:focus-visible {
+  outline: none;
+}
+
+.placed {
+  margin: var(--spacing-2) 0 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.figures {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-1);
+  text-align: right;
+}
+
+.total {
+  font: var(--type-h4);
+  font-family: var(--font-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+}
+
+.units {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.demo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin: 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: var(--spacing-2) var(--spacing-4);
+  margin: 0;
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.fact {
+  display: contents;
+}
+
+.factKey {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  align-self: center;
+}
+
+.factValue {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin: 0;
+  min-width: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.stage {
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.stageMeta {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* A held part is named as held; the colour supports the word, never replaces it. */
+.held {
+  padding: 2px var(--spacing-2);
+  border: 1px solid var(--status-warning);
+  border-radius: var(--radius-chip);
+  background: var(--status-warning-surface);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--status-warning);
+}
+
+.view {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: var(--transition-control);
+}
+
+.card:hover .view,
+.card:focus-within .view {
+  color: var(--text-accent);
+}
+
+@media (max-width: 767px) {
+  .card {
+    padding: var(--spacing-5);
+  }
+
+  .figures {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-1);
+  }
+
+  .fact {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    padding-bottom: var(--spacing-3);
+  }
+
+  .fact:last-child {
+    padding-bottom: 0;
+  }
+}
+
+/* Same shape as the paused chip: the word carries the meaning, the colour
+   supports it. */
+.issue {
+  padding: 2px var(--spacing-2);
+  border: 1px solid var(--status-danger);
+  border-radius: var(--radius-chip);
+  background: var(--status-danger-surface);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--status-danger);
+}

@@ -1,5 +1,5 @@
 import { ProductCard } from "@/components/commerce";
-import { formatPrice } from "@/lib/catalog/query";
+import { formatPrice } from "@/lib/catalog/format";
 import { AVAILABILITY, COLORS, MATERIALS } from "@/lib/catalog/taxonomy";
 import type { Product } from "@/lib/catalog/types";
 import styles from "./ProductGrid.module.css";

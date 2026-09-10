@@ -1,0 +1,4 @@
+.placed {
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}

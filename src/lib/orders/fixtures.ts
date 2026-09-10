@@ -1,3 +1,7 @@
+import {
+  DEVELOPMENT_CUSTOMER_ID,
+  developmentIdentityEnabled,
+} from "@/lib/account/development";
 import type { CartTotals } from "@/lib/cart/types";
 import type { ManufacturingEventType } from "@/lib/manufacturing/types";
 
@@ -108,6 +112,17 @@ async function buildOrder(
   const order: Order = {
     reference,
     cartId: `cart_${reference}`,
+    /*
+     * Attributed to the development identity, and only ever to that. In a
+     * production build `developmentIdentityEnabled()` is false, so these are
+     * ownerless guest orders exactly as before — no account can reach them.
+     *
+     * This attributes existing, plainly-labelled demonstration records to the
+     * only customer a local build has. It does not create customer orders: the
+     * account portal seeds nothing, and with the development identity switched
+     * off it shows the empty state, which is what production shows.
+     */
+    customerId: developmentIdentityEnabled() ? DEVELOPMENT_CUSTOMER_ID : undefined,
     status: aggregateOrderStatus({ items: orderItems, payment }),
     payment,
     items: orderItems,
@@ -194,6 +209,23 @@ async function jobIdFor(reference: string): Promise<string> {
 export async function seedTrackingFixtures(): Promise<void> {
   if (!demoOrdersEnabled()) return;
   if (orderRepository.hasSeeded()) return;
+
+  /*
+   * Ask the store, not just this process.
+   *
+   * `hasSeeded()` is process-local, which was right when the store was too. A
+   * durable store outlives the process, so without this check every dev-server
+   * restart would rebuild seven orders and replay forty-seven events against a
+   * database that already has them — idempotent, and a hundred seconds of
+   * round trips before the first page renders.
+   *
+   * One query instead. The fixtures are the only DEMO-… orders there can be.
+   */
+  if (await orderRepository.findOrder("DEMO-0001")) {
+    orderRepository.markSeeded();
+    return;
+  }
+
   orderRepository.markSeeded();
 
   // 1. Queued — accepted, nothing started.

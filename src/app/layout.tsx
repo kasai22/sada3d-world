@@ -65,7 +65,10 @@ export default function RootLayout({
       lang="en-IN"
       className={`${saira.variable} ${archivo.variable} ${jetbrainsMono.variable}`}
     >
-      <body>{children}</body>
+      {/* Browser extensions stamp attributes onto <body> before hydration
+          (e.g. data-demoway-document-id). This silences that one element's
+          attribute diff only; mismatches in children are still reported. */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

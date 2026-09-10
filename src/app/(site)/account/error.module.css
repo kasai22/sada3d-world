@@ -1,0 +1,11 @@
+.page {
+  padding-block: var(--space-section);
+}
+
+.layout {
+  max-width: var(--container-narrow);
+}
+
+@media (max-width: 767px) {
+  .page { padding-block: var(--space-section-mobile); }
+}

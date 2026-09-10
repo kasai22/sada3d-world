@@ -204,6 +204,16 @@ export interface Order {
   /** The cart this order was created from. */
   cartId: string;
   /**
+   * The account that owns this order, when it was placed by one.
+   *
+   * Absent on a guest order, and absent on every order placed today: there is
+   * no authentication until Phase 17, so nothing sets it. It is the ownership
+   * key the account portal reads — `lib/account/orders.ts` matches on it and on
+   * nothing else, so an order without one belongs to no account and is
+   * reachable only through the Phase 12 guest grant.
+   */
+  customerId?: string;
+  /**
    * Derived by aggregateOrderStatus and stored so orders can be listed and
    * filtered without recomputing. Recomputed on every write — never assigned.
    */

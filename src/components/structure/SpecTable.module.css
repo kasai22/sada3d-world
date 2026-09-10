@@ -24,6 +24,9 @@
   font: var(--type-technical);
   letter-spacing: var(--ls-technical);
   color: var(--text-primary);
+  /* A long email or reference has nowhere to break; without this it widens the
+     table and the page scrolls sideways on a phone. */
+  overflow-wrap: anywhere;
 }
 
 .highlight {

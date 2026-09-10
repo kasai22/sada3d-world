@@ -24,6 +24,13 @@ import {
 import { submitCustomCartIntent } from "@/lib/cart/intent";
 import type { QuoteResponse } from "@/lib/pricing/types";
 import { forgetModelFile, rememberModelFile } from "@/lib/custom-print/modelBlobs";
+import {
+  NOT_ANALYZED,
+  analyzeUpload,
+  type ModelAnalysisState,
+} from "@/lib/custom-print/analysis";
+
+import { ModelAnalysis } from "./ModelAnalysis";
 import { modelStorage } from "@/lib/custom-print/storage";
 import {
   ACCEPTED_EXTENSIONS,
@@ -73,6 +80,13 @@ export function CustomPrintWorkflow() {
   const [replacing, setReplacing] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<ModelAnalysisState>(NOT_ANALYZED);
+  /*
+   * Aborts the analysis of a file the customer has already replaced. Without
+   * this, a slow measurement of the first model can land after the second is
+   * on screen and describe the wrong part.
+   */
+  const analysisRun = useRef<AbortController | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [quoting, setQuoting] = useState(false);
@@ -144,6 +158,10 @@ export function CustomPrintWorkflow() {
     setFileError(null);
     setBlocked(null);
 
+    analysisRun.current?.abort();
+    analysisRun.current = null;
+    setAnalysis(NOT_ANALYZED);
+
     if (!file) {
       forgetModelFile();
       setConfiguration((current) => ({ ...current, model: undefined }));
@@ -159,6 +177,22 @@ export function CustomPrintWorkflow() {
       rememberModelFile(model.id, file);
       setConfiguration((current) => ({ ...current, model }));
       setReplacing(false);
+
+      /*
+       * Measurement runs after the file is accepted, not during selection: it
+       * reads the whole model, and a customer should see the part on screen
+       * rather than waiting on a number. Deliberately not awaited here — the
+       * workflow stays usable while it runs.
+       */
+      const run = new AbortController();
+      analysisRun.current = run;
+      setAnalysis({ status: "analyzing" });
+
+      void analyzeUpload(file, { signal: run.signal }).then((result) => {
+        // A newer file has already replaced this one; its result is stale.
+        if (analysisRun.current !== run) return;
+        setAnalysis(result);
+      });
     } catch (cause) {
       setFileError(
         cause instanceof ModelFileError
@@ -234,6 +268,9 @@ export function CustomPrintWorkflow() {
   }
 
   function onStartOver() {
+    analysisRun.current?.abort();
+    analysisRun.current = null;
+    setAnalysis(NOT_ANALYZED);
     forgetModelFile();
     setReplacing(false);
     clearConfiguration();
@@ -286,6 +323,9 @@ export function CustomPrintWorkflow() {
                 setStep("upload");
               }}
               onRemove={() => {
+                analysisRun.current?.abort();
+                analysisRun.current = null;
+                setAnalysis(NOT_ANALYZED);
                 forgetModelFile();
                 setReplacing(false);
                 setConfiguration((current) => ({ ...current, model: undefined }));
@@ -302,6 +342,13 @@ export function CustomPrintWorkflow() {
               onFileChange={onFileChange}
             />
           )}
+
+          {/*
+            File facts and manufacturing checks, beneath the model they describe
+            and above the configuration that follows. Price appears later, in
+            the review panel, so the three categories never share a surface.
+          */}
+          <ModelAnalysis state={analysis} />
         </div>
 
         <div className={styles.panel} ref={panelRef}>

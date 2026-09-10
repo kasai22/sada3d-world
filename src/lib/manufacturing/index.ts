@@ -10,6 +10,8 @@ export type { TransitionResult } from "./machine";
 export {
   HOLD_MESSAGE,
   customerStage,
+  furthestStageInHistory,
+  furthestStageReached,
   orderEvents,
   stageIndex,
   toCustomerTracking,

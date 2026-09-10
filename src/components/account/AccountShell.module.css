@@ -1,0 +1,92 @@
+.page {
+  padding: var(--spacing-9) 0 var(--spacing-12);
+}
+
+.crumbs {
+  margin-bottom: var(--spacing-6);
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-6);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-8);
+}
+
+.identity {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 var(--spacing-2);
+  font: var(--type-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-h1);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+  /* Order references are long and unbreakable; the page must not widen. */
+  overflow-wrap: anywhere;
+}
+
+.description {
+  margin: var(--spacing-3) 0 0;
+  max-width: 56ch;
+  font: var(--type-body);
+  color: var(--text-muted);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: var(--account-nav-width, 220px) minmax(0, 1fr);
+  gap: var(--spacing-9);
+  align-items: start;
+}
+
+/* min-width: 0 so a wide table or a long reference scrolls inside the column
+   rather than stretching the grid track. */
+.content {
+  min-width: 0;
+}
+
+@media (max-width: 1279px) {
+  .layout {
+    gap: var(--spacing-7);
+  }
+}
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-7);
+  }
+
+  .nav {
+    margin-bottom: var(--spacing-1);
+  }
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: var(--spacing-7) 0 var(--spacing-9);
+  }
+
+  .head {
+    margin-bottom: var(--spacing-6);
+  }
+}

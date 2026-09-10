@@ -1,0 +1,108 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--space-inset-panel);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  flex-wrap: wrap;
+}
+
+.identity {
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.order {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+  margin: var(--spacing-2) 0 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+}
+
+.demo {
+  text-transform: uppercase;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.heldStage {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------ *
+ * Stage strip
+ * ------------------------------------------------------------------ */
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.segment {
+  position: relative;
+  height: 3px;
+  background: var(--titanium);
+}
+
+.reached {
+  background: var(--orange-700);
+}
+
+.here {
+  background: var(--orange-500);
+  box-shadow: var(--glow-line);
+}
+
+.updated {
+  margin: 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+}
+
+@media (max-width: 767px) {
+  .item {
+    padding: var(--spacing-4);
+  }
+}

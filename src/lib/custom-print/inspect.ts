@@ -1,3 +1,5 @@
+import { formatBytes } from "@/lib/bytes";
+
 import {
   ACCEPTED_EXTENSIONS,
   MAX_MODEL_BYTES,
@@ -35,17 +37,15 @@ export function extensionOf(fileName: string): string {
 }
 
 function formatFor(extension: string): ModelFormat | undefined {
+  if (extension === ".3mf") return "3mf";
   if (extension === ".stl") return "stl";
   if (extension === ".step" || extension === ".stp") return "step";
   if (extension === ".obj") return "obj";
   return undefined;
 }
 
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+/** Re-exported so the custom-print surface keeps one import path. */
+export { formatBytes };
 
 /**
  * Validates what can genuinely be determined before reading the file.
@@ -114,6 +114,28 @@ async function inspectStl(file: File, head: Uint8Array): Promise<ModelInspection
   );
 }
 
+/**
+ * 3MF, from its container signature alone.
+ *
+ * A 3MF is a ZIP, so the first four bytes are the local-file-header magic. That
+ * is all this step checks — reading the package, its model part and its
+ * geometry is the analyser's job, and doing it here would mean parsing a
+ * 200 MB archive during file selection.
+ */
+function inspectThreeMf(head: Uint8Array): ModelInspection {
+  const [a, b, c, d] = head;
+  const isZip =
+    a === 0x50 && b === 0x4b && (c === 0x03 || c === 0x05) && (d === 0x04 || d === 0x06);
+
+  if (!isZip) {
+    throw new ModelFileError(
+      "This file couldn't be read as a 3MF. A 3MF is a ZIP package; this file is not one.",
+    );
+  }
+
+  return { format: "3mf", formatLabel: "3MF", structureValid: true };
+}
+
 function inspectStep(head: Uint8Array): ModelInspection {
   // STEP part 21 files begin with the ISO-10303-21 marker.
   if (!decode(head).includes("ISO-10303-21")) {
@@ -156,6 +178,8 @@ export async function inspectModelFile(file: File): Promise<ModelInspection> {
   }
 
   switch (format) {
+    case "3mf":
+      return inspectThreeMf(head);
     case "stl":
       return inspectStl(file, head);
     case "step":

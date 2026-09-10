@@ -23,7 +23,7 @@ import { siteUrl } from "@/lib/site";
 import styles from "./page.module.css";
 
 /** Every valid category/slug pair in the catalog. */
-export function generateStaticParams() {
+export async function generateStaticParams() {
   return productParams();
 }
 
@@ -43,7 +43,7 @@ interface RouteParams {
 
 export async function generateMetadata({ params }: RouteParams): Promise<Metadata> {
   const { category, slug } = await params;
-  const product = getProduct(category, slug);
+  const product = await getProduct(category, slug);
 
   if (!product) return {};
 
@@ -65,11 +65,11 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
 
 export default async function ProductPage({ params }: RouteParams) {
   const { category, slug } = await params;
-  const product = getProduct(category, slug);
+  const product = await getProduct(category, slug);
 
   if (!product) notFound();
 
-  const related = getRelatedProducts(product);
+  const related = await getRelatedProducts(product);
 
   /*
    * Product structured data, built from catalog values only. Price is omitted

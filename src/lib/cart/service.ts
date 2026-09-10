@@ -62,7 +62,7 @@ async function commit(cart: Cart): Promise<CartMutation> {
     return { ok: false, message: "The cart could not be saved. Try again." };
   }
 
-  return { ok: true, cart: priceCart(next) };
+  return { ok: true, cart: await priceCart(next) };
 }
 
 /* ------------------------------------------------------------------ *
@@ -88,7 +88,7 @@ export interface AddCatalogLineInput {
 export async function addCatalogLine(
   input: AddCatalogLineInput,
 ): Promise<CartMutation> {
-  const product = getProductById(input.productId);
+  const product = await getProductById(input.productId);
 
   if (!product) {
     return { ok: false, message: "That part is no longer available." };
@@ -334,14 +334,16 @@ export async function removeLine(id: string): Promise<CartMutation> {
 export async function acceptPriceChange(id: string): Promise<CartMutation> {
   const cart = await cartRepository.load();
 
-  const lines = cart.lines.map((line) => {
-    if (line.type !== "catalog" || line.id !== id) return line;
+  const lines = await Promise.all(
+    cart.lines.map(async (line) => {
+      if (line.type !== "catalog" || line.id !== id) return line;
 
-    const product = getProductById(line.productId);
-    if (!product || isQuoteOnly(product)) return line;
+      const product = await getProductById(line.productId);
+      if (!product || isQuoteOnly(product)) return line;
 
-    return { ...line, priceAtAdd: product.price };
-  });
+      return { ...line, priceAtAdd: product.price };
+    }),
+  );
 
   return commit({ ...cart, lines });
 }

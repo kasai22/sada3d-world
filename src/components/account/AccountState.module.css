@@ -1,0 +1,84 @@
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+  padding: var(--spacing-11) var(--spacing-7);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+}
+
+.glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  color: var(--text-muted);
+}
+
+.code {
+  margin: 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.title {
+  margin: 0;
+  max-width: 24ch;
+  font: var(--type-h3);
+  letter-spacing: var(--ls-heading);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.body {
+  max-width: 52ch;
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+.body p {
+  margin: 0 0 var(--spacing-3);
+}
+
+.body p:last-child {
+  margin-bottom: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-2);
+}
+
+/* Tone is carried by the marker and the glyph, never by colour alone — the
+   code text says which state this is. */
+.unavailable .code {
+  color: var(--status-warning);
+}
+
+.unavailable .glyph {
+  border-color: var(--status-warning);
+  color: var(--status-warning);
+}
+
+.problem .code {
+  color: var(--status-danger);
+}
+
+.problem .glyph {
+  border-color: var(--status-danger);
+  color: var(--status-danger);
+}
+
+@media (max-width: 767px) {
+  .state {
+    padding: var(--spacing-9) var(--spacing-5);
+  }
+}

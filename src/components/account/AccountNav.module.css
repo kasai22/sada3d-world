@@ -1,0 +1,141 @@
+/* Sidebar from 1024px, horizontal rail below it. One list, two layouts. */
+
+.nav {
+  position: sticky;
+  top: calc(var(--header-height) + var(--spacing-6));
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  min-height: var(--control-height-md);
+  padding: var(--spacing-3) var(--spacing-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  color: var(--text-secondary);
+  font: var(--type-ui);
+  letter-spacing: var(--ls-interface);
+  transition: var(--transition-control);
+}
+
+.link:hover {
+  background: var(--interactive-hover-surface);
+  color: var(--text-primary);
+}
+
+.link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.glyph {
+  display: inline-flex;
+  color: var(--text-muted);
+  transition: var(--transition-control);
+}
+
+.link:hover .glyph {
+  color: var(--text-secondary);
+}
+
+.label {
+  min-width: 0;
+}
+
+/* The Titanium Orange Line, marking position rather than decorating it. */
+.rule {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: var(--border-width-signal);
+  height: 0;
+  transform: translateY(-50%);
+  background: var(--gradient-orange-line);
+  transition: height var(--motion-fast) var(--ease-standard);
+}
+
+.active {
+  background: var(--interactive-selected-surface);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.active .glyph {
+  color: var(--text-accent);
+}
+
+.active .rule {
+  height: 60%;
+}
+
+/* ------------------------------------------------------------------ *
+ * Rail
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .nav {
+    /* A scroller needs a positioned ancestor, so anything absolutely positioned
+       inside resolves against it rather than widening the document. */
+    position: relative;
+    margin-inline: calc(var(--gutter-tablet) * -1);
+    padding-inline: var(--gutter-tablet);
+    border-bottom: 1px solid var(--border-subtle);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .list {
+    flex-direction: row;
+    gap: var(--spacing-1);
+    width: max-content;
+    padding-bottom: var(--spacing-2);
+  }
+
+  .link {
+    /* Comfortably past the 44px touch minimum, and the label never wraps mid-
+       rail — the rail scrolls instead. */
+    min-height: var(--target-min);
+    white-space: nowrap;
+    border-radius: var(--radius-button);
+  }
+
+  .rule {
+    left: var(--spacing-4);
+    right: var(--spacing-4);
+    top: auto;
+    bottom: 0;
+    width: auto;
+    height: var(--border-width-signal);
+    transform: none;
+    opacity: 0;
+    transition: opacity var(--motion-fast) var(--ease-standard);
+  }
+
+  .active .rule {
+    height: var(--border-width-signal);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .nav {
+    margin-inline: calc(var(--gutter-mobile) * -1);
+    padding-inline: var(--gutter-mobile);
+  }
+}

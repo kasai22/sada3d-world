@@ -70,9 +70,9 @@ function customSpec(line: CustomCartLine): string {
  * Catalog lines
  * ------------------------------------------------------------------ */
 
-function priceCatalogLine(line: CatalogCartLine): PricedCartLine {
+async function priceCatalogLine(line: CatalogCartLine): Promise<PricedCartLine> {
   const issues: CartIssue[] = [];
-  const product = getProductById(line.productId);
+  const product = await getProductById(line.productId);
 
   if (!product) {
     return {
@@ -229,7 +229,7 @@ function priceCustomLine(line: CustomCartLine): PricedCartLine {
  * Cart
  * ------------------------------------------------------------------ */
 
-export function priceLine(line: CartLine): PricedCartLine {
+export async function priceLine(line: CartLine): Promise<PricedCartLine> {
   return line.type === "catalog" ? priceCatalogLine(line) : priceCustomLine(line);
 }
 
@@ -240,8 +240,15 @@ export function priceLine(line: CartLine): PricedCartLine {
  * costs and what is wrong with it. Nothing downstream recalculates any part of
  * it.
  */
-export function priceCart(cart: Cart, totals: TotalsInput = {}): PricedCart {
-  const lines = cart.lines.map(priceLine);
+export async function priceCart(
+  cart: Cart,
+  totals: TotalsInput = {},
+): Promise<PricedCart> {
+  /*
+   * Resolved together. Each line's product is a catalog read, and awaiting them
+   * one at a time would make a ten-line cart ten sequential round trips.
+   */
+  const lines = await Promise.all(cart.lines.map(priceLine));
   const issues = lines.flatMap((priced) => priced.issues);
 
   return {

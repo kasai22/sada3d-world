@@ -4,6 +4,7 @@ import { useId, useRef, useState, type DragEvent } from "react";
 import clsx from "clsx";
 
 import { Icon, IconButton } from "@/components/core";
+import { formatBytes } from "@/lib/bytes";
 import styles from "./FileUpload.module.css";
 
 /**
@@ -35,12 +36,6 @@ export interface FileUploadProps {
    */
   fill?: boolean;
   className?: string;
-}
-
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function FileUpload({

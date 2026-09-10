@@ -96,8 +96,8 @@ export default async function CategoryPage({
   // never appears as a removable chip, so what the sidebar shows and what the
   // URL says can never disagree.
   const query = { ...parseQuery(await searchParams), scopeCategory: category };
-  const result = queryCatalog(query);
-  const railCounts = queryCatalog(EMPTY_QUERY).facets.category;
+  const result = await queryCatalog(query);
+  const railCounts = (await queryCatalog(EMPTY_QUERY)).facets.category;
 
   return (
     <div className={`bg-commerce ${styles.page}`}>

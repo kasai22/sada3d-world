@@ -1,0 +1,95 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  overflow: hidden;
+  transition: var(--transition-control);
+}
+
+.card:hover {
+  border-color: var(--border-default);
+}
+
+.stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--gradient-viewer);
+  overflow: hidden;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image: var(--bg-grid);
+}
+
+/* An empty stage, not an invented render. Phase 16 stores a real preview. */
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--titanium-2);
+}
+
+.format {
+  position: absolute;
+  top: var(--spacing-3);
+  left: var(--spacing-3);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--space-inset-panel);
+}
+
+.name {
+  margin: 0;
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: var(--spacing-2) var(--spacing-4);
+  margin: 0;
+}
+
+.metaRow {
+  display: contents;
+}
+
+.metaKey {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.metaValue {
+  margin: 0;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.actions {
+  margin: 0;
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.action {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}

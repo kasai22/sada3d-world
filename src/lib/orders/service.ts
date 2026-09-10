@@ -11,6 +11,8 @@ import type {
   QualityResult,
 } from "@/lib/manufacturing/types";
 
+import { EVENTS, log } from "@/lib/observability";
+
 import { aggregateOrderStatus, itemStatusForManufacturing } from "./aggregate";
 import { orderRepository } from "./repository";
 import {
@@ -160,7 +162,22 @@ export async function applyManufacturingEvent(
     }
 
     const result = transitionManufacturingState(job.state, input.type);
-    if (!result.ok) return { ok: false as const, reason: result.reason };
+    if (!result.ok) {
+      /*
+       * A refused transition is worth seeing: it is either an operator surface
+       * reporting out of order or a customer asking for something the machine
+       * does not allow, and both are worth knowing about. Identifiers only —
+       * the reason is the machine's own words and carries nothing private.
+       */
+      log.warn(EVENTS.orderEventRefused, {
+        jobId,
+        orderReference: job.orderReference,
+        from: job.state,
+        type: input.type,
+        reason: result.reason,
+      });
+      return { ok: false as const, reason: result.reason };
+    }
 
     if (!result.changed) {
       // A valid repeat of a milestone already reached: recorded as having been
@@ -200,6 +217,20 @@ export async function applyManufacturingEvent(
 
     await orderRepository.saveJob(updated);
     await syncItemToJob(updated);
+
+    /*
+     * Emitted after the write, so a line in the log means a committed
+     * transition rather than an attempted one. No actor and no note: both are
+     * internal and neither is needed to find the record.
+     */
+    log.info(EVENTS.orderStateTransition, {
+      jobId,
+      orderReference: job.orderReference,
+      eventId,
+      type: input.type,
+      from: event.from,
+      to: event.to,
+    });
 
     return { ok: true as const, value: updated, changed: true };
   });

@@ -48,18 +48,18 @@ export default async function ShopPage({
   searchParams: Promise<SearchParams>;
 }) {
   const query = parseQuery(await searchParams);
-  const result = queryCatalog(query);
+  const result = await queryCatalog(query);
 
   // Rail counts describe the whole catalog, so the rail reads the same however
   // the results are currently filtered.
-  const railCounts = queryCatalog(EMPTY_QUERY).facets.category;
+  const railCounts = (await queryCatalog(EMPTY_QUERY)).facets.category;
 
   return (
     <div className={`bg-commerce ${styles.page}`}>
       <div className="u-container">
         <MarketplaceIntro
           crumbs={[{ label: "Shop" }]}
-          eyebrow={`${catalogSize()} parts in catalog`}
+          eyebrow={`${await catalogSize()} parts in catalog`}
           title="Explore what's possible."
           description={DESCRIPTION}
         />

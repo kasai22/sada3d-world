@@ -1,0 +1,16 @@
+.orders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guest {
+  margin: var(--spacing-8) 0 0;
+  padding-top: var(--spacing-5);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}

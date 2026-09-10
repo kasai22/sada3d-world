@@ -1,7 +1,7 @@
 import { ProductCard } from "@/components/commerce";
 import { Tag } from "@/components/core";
 import { SectionHeading, SpecTable, type SpecRow } from "@/components/structure";
-import { formatPrice, partId } from "@/lib/catalog/query";
+import { formatPrice, partId } from "@/lib/catalog/format";
 import { AVAILABILITY, COLORS, MATERIALS, TECHNOLOGIES } from "@/lib/catalog/taxonomy";
 import type { Product } from "@/lib/catalog/types";
 import styles from "./ProductSections.module.css";

@@ -14,10 +14,23 @@ import type { Object3D, Quaternion, Vector3 } from "three";
  * STEP is deliberately absent. It is a boundary-representation format, not a
  * mesh, and cannot be rendered without a conversion pipeline. The viewer says
  * so rather than failing obscurely.
+ *
+ * 3MF joined in Phase 15. Note that the viewer's 3MF loader and the analyser's
+ * are different code doing different jobs: this one builds a scene graph for
+ * WebGL, and `lib/models/threemf.ts` produces triangles for measurement on a
+ * server where there is no WebGL. Neither is a substitute for the other, and
+ * measurements shown in the interface come from the analyser — never from
+ * whatever the viewer happens to have drawn.
  */
-export type ViewerFormat = "stl" | "obj" | "glb" | "gltf";
+export type ViewerFormat = "3mf" | "stl" | "obj" | "glb" | "gltf";
 
-export const RENDERABLE_FORMATS: readonly ViewerFormat[] = ["stl", "obj", "glb", "gltf"];
+export const RENDERABLE_FORMATS: readonly ViewerFormat[] = [
+  "3mf",
+  "stl",
+  "obj",
+  "glb",
+  "gltf",
+];
 
 export interface ViewerModelSource {
   /**
@@ -80,6 +93,8 @@ export class ModelLoadError extends Error {}
 /** Maps a file extension to a renderable format, or undefined. */
 export function formatForExtension(extension: string): ViewerFormat | undefined {
   switch (extension.toLowerCase()) {
+    case ".3mf":
+      return "3mf";
     case ".stl":
       return "stl";
     case ".obj":

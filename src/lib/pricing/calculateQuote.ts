@@ -19,7 +19,7 @@ import type {
  * the result as `basis: "configuration"` and stated in the interface.
  */
 
-export const ACCEPTED_MODEL_EXTENSIONS = [".stl", ".step", ".stp", ".obj"];
+export const ACCEPTED_MODEL_EXTENSIONS = [".3mf", ".stl", ".step", ".stp", ".obj"];
 
 /** Whole rupees, half away from zero. The one rounding point in the pipeline. */
 export function roundRupees(value: number): number {
@@ -168,14 +168,25 @@ export function calculateQuote(
 
   const quote: ManufacturingQuote = {
     currency: rules.currency,
-    // Geometry is never present yet; when analysis arrives this becomes
-    // "geometry" and the interface stops calling the figure an estimate.
-    basis: request.geometry ? "geometry" : "configuration",
+    /*
+     * Always "configuration", even when geometry was supplied. No rule in
+     * `rules.ts` reads a measured value, so the figure is derived from the
+     * selections alone and saying otherwise would misdescribe it. This becomes
+     * "geometry" in the same change that adds a geometry-dependent rule.
+     */
+    basis: "configuration",
     quantity,
     lines,
     total,
     excluded: EXCLUDED_FROM_ESTIMATE,
     rulesVersion: rules.version,
+    geometry: request.geometry
+      ? {
+          state: "supplied_not_priced",
+          reason:
+            "Your model has been measured, and no approved pricing rule uses those measurements yet. The figure reflects your selections.",
+        }
+      : { state: "absent" },
     provisional: rules.provisional,
   };
 

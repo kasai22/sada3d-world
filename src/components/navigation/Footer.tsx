@@ -31,10 +31,12 @@ const COLUMNS: readonly FooterColumn[] = [
   {
     title: "Account",
     links: [
-      { href: "/orders", label: "Orders" },
+      { href: "/account", label: "Your account" },
+      { href: "/account/orders", label: "Orders" },
       { href: "/account/designs", label: "Saved designs" },
-      { href: "/track", label: "Track an order" },
-      { href: "/account/settings", label: "Settings" },
+      // The guest route. Someone who ordered without an account has no account
+      // orders to look at, and this is the page that actually helps them.
+      { href: "/orders", label: "Track an order" },
     ],
   },
 ];

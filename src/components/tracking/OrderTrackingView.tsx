@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { Button, Icon, Tag } from "@/components/core";
 import { formatINR } from "@/lib/money";
 import type { CustomerManufacturingTracking } from "@/lib/manufacturing";
@@ -16,6 +18,16 @@ export interface OrderTrackingViewProps {
   order: Order;
   /** Customer projections, keyed by manufacturing job id. */
   jobs: Record<string, CustomerManufacturingTracking>;
+  /**
+   * Renders the reference as this view's own h1.
+   *
+   * Set false where the surrounding page already names the order — the account
+   * portal heads the page with the reference, and a second h1 inside it would
+   * give the document two.
+   */
+  heading?: boolean;
+  /** Trailing action. Defaults to a link back to the catalog. */
+  action?: ReactNode;
 }
 
 /** Which tone the order-level status carries. Never colour alone: it is text. */
@@ -43,7 +55,12 @@ const STATUS_TONE: Record<OrderStatus, "neutral" | "accent" | "success" | "warni
  * cannot change any of it, and the only client code on the page formats
  * timestamps into the reader's timezone.
  */
-export function OrderTrackingView({ order, jobs }: OrderTrackingViewProps) {
+export function OrderTrackingView({
+  order,
+  jobs,
+  heading = true,
+  action,
+}: OrderTrackingViewProps) {
   const state =
     INDIA_STATES.find((entry) => entry.code === order.address.state)?.label ??
     order.address.state;
@@ -68,13 +85,15 @@ export function OrderTrackingView({ order, jobs }: OrderTrackingViewProps) {
         </p>
       )}
 
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>Order</p>
-        <h1 className={styles.reference}>{order.reference}</h1>
-        <p className={styles.placed}>
-          Placed <LocalTime value={order.placedAt} />
-        </p>
-      </header>
+      {heading && (
+        <header className={styles.head}>
+          <p className={styles.eyebrow}>Order</p>
+          <h1 className={styles.reference}>{order.reference}</h1>
+          <p className={styles.placed}>
+            Placed <LocalTime value={order.placedAt} />
+          </p>
+        </header>
+      )}
 
       <dl className={styles.facts}>
         <div className={styles.fact}>
@@ -151,9 +170,11 @@ export function OrderTrackingView({ order, jobs }: OrderTrackingViewProps) {
       <div className={styles.actions}>
         {/* Large, like the checkout actions: the default 40px control is under
             the 44px touch target this project holds itself to. */}
-        <Button href="/shop" variant="secondary" size="lg">
-          Continue browsing
-        </Button>
+        {action ?? (
+          <Button href="/shop" variant="secondary" size="lg">
+            Continue browsing
+          </Button>
+        )}
       </div>
     </div>
   );

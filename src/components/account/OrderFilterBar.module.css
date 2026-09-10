@@ -1,0 +1,65 @@
+.bar {
+  position: relative;
+  display: flex;
+  gap: var(--spacing-1);
+  margin-bottom: var(--spacing-6);
+  padding-bottom: var(--spacing-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.bar::-webkit-scrollbar {
+  display: none;
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-height: var(--control-height-md);
+  padding: 0 var(--spacing-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-button);
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: var(--transition-control);
+}
+
+.filter:hover {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.filter:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.count {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+}
+
+/* Applied state: orange border and orange count, plus aria-current. Never the
+   colour alone — the count and the current marker both say it too. */
+.active {
+  border-color: var(--border-accent);
+  background: var(--surface-accent-soft);
+  color: var(--text-primary);
+}
+
+.active .count {
+  color: var(--text-accent);
+}
+
+@media (pointer: coarse) {
+  .filter {
+    min-height: var(--target-min);
+  }
+}

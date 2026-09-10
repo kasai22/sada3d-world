@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import clsx from "clsx";
 
 import { Viewer3DLazy } from "@/components/viewer";
-import { partId } from "@/lib/catalog/query";
+import { partId } from "@/lib/catalog/format";
 import type { Product, ProductImage } from "@/lib/catalog/types";
 import styles from "./ProductVisual.module.css";
 

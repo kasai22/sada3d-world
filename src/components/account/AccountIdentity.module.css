@@ -1,0 +1,67 @@
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.development {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: var(--spacing-3) var(--spacing-4);
+  border: 1px solid var(--status-warning);
+  border-radius: var(--radius-card);
+  background: var(--status-warning-surface);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.development svg {
+  color: var(--status-warning);
+  margin-top: 2px;
+}
+
+.body {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  color: var(--text-muted);
+}
+
+.detail {
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  font: var(--type-h4);
+  letter-spacing: var(--ls-interface);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.missing {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-muted);
+}
+
+.contact {
+  margin: var(--spacing-1) 0 0;
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
