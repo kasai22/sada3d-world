@@ -1,6 +1,6 @@
 import type { AnalysisDto, DesignDetailDto } from "@/lib/api/dto";
 
-import { ACCEPTED_EXTENSIONS } from "./types";
+import { ACCEPTED_EXTENSIONS, MAX_INLINE_ANALYSIS_BYTES } from "./types";
 import { extensionOf } from "./inspect";
 
 /**
@@ -147,6 +147,18 @@ export async function analyzeUpload(
         extension === ".step" || extension === ".stp"
           ? STEP_UNSUPPORTED_REASON
           : "This file type cannot be measured.",
+    };
+  }
+
+  /*
+   * A file too large to send in one request is not sent at all. The server
+   * would refuse it with a 413, and the upload would already have cost the
+   * customer the bytes; stored files are measured from storage instead.
+   */
+  if (file.size > MAX_INLINE_ANALYSIS_BYTES) {
+    return {
+      status: "error",
+      message: `Files larger than ${MAX_INLINE_ANALYSIS_BYTES / (1024 * 1024)} MB are measured after they are stored. Sign in to upload this file and see its measurements.`,
     };
   }
 

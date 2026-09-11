@@ -2,6 +2,7 @@ import { ModelParseError } from "@/lib/errors";
 import type { AnalysisWarning, UnitResolution } from "@/lib/geometry/types";
 
 import { modelIdentity } from "./identity";
+import { MODEL_LIMITS, tooComplex, type ModelLimits } from "./limits";
 import {
   extensionOf,
   type ModelInput,
@@ -64,9 +65,13 @@ function isBinaryStl(bytes: Uint8Array): boolean {
   );
 }
 
-function parseBinaryStl(bytes: Uint8Array): ParsedMesh {
+function parseBinaryStl(bytes: Uint8Array, limits: ModelLimits): ParsedMesh {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const triangles = view.getUint32(STL_HEADER_BYTES, true);
+
+  // Checked against the header, before the array it would size is allocated.
+  if (triangles > limits.maxTriangles) throw tooComplex("triangles", limits.maxTriangles);
+
   const positions = new Float64Array(triangles * 9);
 
   let offset = STL_HEADER_BYTES + STL_COUNT_BYTES;
@@ -90,12 +95,14 @@ function parseBinaryStl(bytes: Uint8Array): ParsedMesh {
   return { positions };
 }
 
-function parseAsciiStl(text: string): ParsedMesh {
+function parseAsciiStl(text: string, limits: ModelLimits): ParsedMesh {
   const values: number[] = [];
   const vertex = /vertex\s+(-?[\d.eE+]+)\s+(-?[\d.eE+]+)\s+(-?[\d.eE+]+)/g;
+  const maxValues = limits.maxTriangles * 9;
 
   let match: RegExpExecArray | null;
   while ((match = vertex.exec(text)) !== null) {
+    if (values.length >= maxValues) throw tooComplex("triangles", limits.maxTriangles);
     values.push(
       Number.parseFloat(match[1] ?? ""),
       Number.parseFloat(match[2] ?? ""),
@@ -128,10 +135,12 @@ export const stlParser: ModelParser = {
   async parse(input: ModelInput): Promise<ParsedModel> {
     stlParser.validate(input);
 
+    const limits = input.limits ?? MODEL_LIMITS;
     const mesh = isBinaryStl(input.bytes)
-      ? parseBinaryStl(input.bytes)
+      ? parseBinaryStl(input.bytes, limits)
       : parseAsciiStl(
           new TextDecoder("utf-8", { fatal: false }).decode(input.bytes),
+          limits,
         );
 
     return {
@@ -187,6 +196,7 @@ export const objParser: ModelParser = {
 
     const text = new TextDecoder("utf-8", { fatal: false }).decode(input.bytes);
     const warnings: AnalysisWarning[] = [];
+    const limits = input.limits ?? MODEL_LIMITS;
 
     const vertices: number[] = [];
     const groups: { name?: string; values: number[] }[] = [];
@@ -194,12 +204,25 @@ export const objParser: ModelParser = {
     groups.push(currentGroup);
 
     let fannedPolygons = 0;
+    let triangleCount = 0;
 
-    for (const rawLine of text.split(/\r?\n/)) {
-      const line = rawLine.trim();
+    /*
+     * Line by line with `indexOf`, not `split`. Splitting a 200 MB file first
+     * would hold millions of line strings at once before a single one was read.
+     */
+    let lineStart = 0;
+    while (lineStart <= text.length) {
+      let lineEnd = text.indexOf("\n", lineStart);
+      if (lineEnd === -1) lineEnd = text.length;
+      const line = text.slice(lineStart, lineEnd).trim();
+      lineStart = lineEnd + 1;
+
       if (line.length === 0 || line.startsWith("#")) continue;
 
       if (line.startsWith("v ")) {
+        if (vertices.length >= limits.maxVertices * 3) {
+          throw tooComplex("vertices", limits.maxVertices);
+        }
         const parts = line.slice(2).trim().split(/\s+/);
         vertices.push(
           Number.parseFloat(parts[0] ?? ""),
@@ -240,6 +263,11 @@ export const objParser: ModelParser = {
           ];
 
           if (triangle.some((index) => index < 0 || index >= vertexCount)) continue;
+
+          triangleCount += 1;
+          if (triangleCount > limits.maxTriangles) {
+            throw tooComplex("triangles", limits.maxTriangles);
+          }
 
           for (const index of triangle) {
             currentGroup.values.push(

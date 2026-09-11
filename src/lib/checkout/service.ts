@@ -30,10 +30,20 @@ import type { CheckoutInput, CheckoutResult } from "./types";
  *   reserve an idempotency key
  *   create the payment session for the server's figure
  *   record the order
- *   clear the cart
+ *   mark the key as having produced that order
+ *   link designs, create manufacturing jobs, clear the cart
  *
  * Nothing in a request contributes an amount. The browser sends a name, an
  * email, a phone number and an address; every rupee comes from this side.
+ *
+ * ── A request that dies partway ──────────────────────────────────────────
+ *
+ * The key is marked complete the moment the order is written, before any of
+ * the follow-up steps. A request that fails after that point — a timeout, a
+ * crashed instance, a database blip while creating jobs — leaves an order the
+ * key already points at, so the customer's retry is answered with that order
+ * rather than a second payment. The retry also finishes what the first
+ * request did not: every follow-up step is idempotent.
  */
 
 /**
@@ -93,6 +103,33 @@ export function toOrderItems(
   });
 }
 
+/**
+ * What follows a recorded order. Every step is safe to repeat:
+ *
+ *   linkOrderToDesigns       an existing link is kept
+ *   createManufacturingJobs  an item that already has a job is skipped, and a
+ *                            job id is derived from the item, so a second
+ *                            attempt writes the same row
+ *   cartRepository.clear     an empty cart stays empty
+ *
+ * which is what lets a duplicate submission finish an order whose first
+ * request stopped partway.
+ */
+async function completePlacement(order: Order): Promise<Order> {
+  await linkOrderToDesigns(order);
+
+  /*
+   * Custom items become manufacturing jobs; catalog items do not. A custom item
+   * reaches this point only with a verified, stored file snapshotted onto it.
+   */
+  const withJobs = await createManufacturingJobs(order);
+
+  // The cart has become an order and is no longer a cart.
+  await cartRepository.clear();
+
+  return withJobs;
+}
+
 export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> {
   const contact = normaliseContact(input.contact);
   const address = normaliseAddress(input.address);
@@ -128,9 +165,8 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   }
 
   /*
-   * Ownership, when there is an account to own it. There is no authentication
-   * until Phase 17, so in a production build this is undefined and the order is
-   * a guest order reachable through the receipt grant.
+   * Ownership, when there is an account to own it. A signed-out customer's
+   * order has no owner and is a guest order reachable through the receipt grant.
    */
   const { identity } = await getCustomerContext();
 
@@ -166,7 +202,10 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
 
   if (reservation.status === "duplicate") {
     const existing = await orderRepository.findOrder(reservation.orderReference);
-    if (existing) return { status: "placed", order: existing };
+    if (existing) {
+      // The same order, finished if the request that placed it was not.
+      return { status: "placed", order: await completePlacement(existing) };
+    }
     // The reservation outlived its order, which should not happen. Treat the
     // request as unsafe to repeat rather than charging again.
     return {
@@ -261,7 +300,26 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
 
   // One write. In Postgres this is one transaction covering the order, its
   // items and the payment reference.
-  await orderRepository.createOrder(order);
+  try {
+    await orderRepository.createOrder(order);
+  } catch (error) {
+    /*
+     * The payment exists and the order does not. The reservation is kept on
+     * purpose: releasing it would let the customer's retry start a second
+     * payment for the same cart. It expires on its own, and this line is what
+     * an operator reconciles from — the reference, never the payment session.
+     */
+    log.error(EVENTS.checkoutFailed, {
+      stage: "order_write",
+      orderReference: reference,
+      provider: payment.session.provider,
+      error: error instanceof Error ? error.name : "unknown",
+    });
+    throw error;
+  }
+
+  // From here a retry finds this order instead of starting again.
+  await idempotencyStore.complete(key, reference);
 
   /*
    * Identifiers and counts. Not the customer's name, email, phone or address,
@@ -278,20 +336,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
     customerId: identity?.id,
   });
 
-  await linkOrderToDesigns(order);
-
-  /*
-   * Custom items become manufacturing jobs; catalog items do not. A custom item
-   * reaches this point only with a verified, stored file snapshotted onto it.
-   */
-  const withJobs = await createManufacturingJobs(order);
-
-  await idempotencyStore.complete(key, reference);
-
-  // The cart has become an order and is no longer a cart.
-  await cartRepository.clear();
-
-  return { status: "placed", order: withJobs };
+  return { status: "placed", order: await completePlacement(order) };
 }
 
 export async function findOrder(reference: string): Promise<Order | undefined> {

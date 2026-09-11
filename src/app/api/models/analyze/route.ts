@@ -1,55 +1,76 @@
 import { analysisDto } from "@/lib/api/dto";
-import { failure, ok } from "@/lib/api/respond";
-import { ValidationError } from "@/lib/errors";
+import { RATE_LIMITS, enforceRateLimit, sourceSubject } from "@/lib/api/rate-limit";
+import { failure, ok, readBoundedBytes } from "@/lib/api/respond";
+import { PayloadTooLargeError, ValidationError } from "@/lib/errors";
 import {
   checkManufacturability,
   configuredConstraints,
 } from "@/lib/manufacturing/manufacturability";
-import { analyzeModel } from "@/lib/models";
+import { MODEL_LIMITS, analyzeModel } from "@/lib/models";
 import { EVENTS, log } from "@/lib/observability";
-import { MAX_MODEL_BYTES } from "@/lib/custom-print/types";
 
 /**
- * POST /api/models/analyze — measure an uploaded model.
+ * POST /api/models/analyze — measure a small model without storing it.
  *
  * Multipart, because the payload is a file. The bytes are read into memory,
  * measured, and dropped: **nothing is written to disk and nothing is stored.**
- * Durable model storage is Phase 16, and a route that quietly kept a copy would
- * be creating exactly the persistence this phase says does not exist yet.
+ *
+ * ── Small files only ─────────────────────────────────────────────────────
+ *
+ * This route receives the file in its request body, so it is bounded by what a
+ * serverless function can receive — Vercel refuses bodies above 4.5 MB — and
+ * by what it is sensible to push through one. It accepts
+ * `MODEL_LIMITS.maxInlineAnalysisBytes` and refuses anything larger with a 413
+ * before the body is buffered. A larger file is uploaded directly to storage
+ * with a signed URL and measured from there (`lib/account/design-uploads`);
+ * it never passes through a function.
  *
  * ── The order of checks ──────────────────────────────────────────────────
  *
- *   size      before anything is read into memory
+ *   rate      before any byte is read
+ *   size      while reading, stopping at the limit
  *   extension before any parser is chosen
  *   container before any XML is scanned
  *   XML       before any geometry is trusted
+ *   geometry  triangle and object counts before memory is allocated
  *
  * Each layer refuses on its own terms, so a hostile file meets the cheapest
  * possible rejection rather than being carried to the expensive one.
  */
 export const dynamic = "force-dynamic";
 
-/** Bytes accepted by this route, matching the workflow's upload limit. */
-const MAX_BYTES = MAX_MODEL_BYTES;
+const MAX_FILE_BYTES = MODEL_LIMITS.maxInlineAnalysisBytes;
+
+/** Multipart framing around the file: the boundary, part headers, a filename. */
+const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
+
+const TOO_LARGE_MESSAGE = `Files larger than ${MAX_FILE_BYTES / (1024 * 1024)} MB are measured after they are stored. Sign in to upload this file and it will be measured from storage.`;
 
 export async function POST(request: Request) {
   try {
+    // Analysis is seconds of CPU per file, and this route is public.
+    enforceRateLimit(RATE_LIMITS.modelAnalysisSource, sourceSubject(request.headers));
+
     const type = request.headers.get("content-type") ?? "";
     if (!type.includes("multipart/form-data")) {
       throw new ValidationError("Send the model as multipart/form-data.");
     }
 
-    /*
-     * Checked before the body is read where the transport declares it. A
-     * declared length is not trusted on its own — the byte length is checked
-     * again below — but refusing early avoids buffering a gigabyte to find out.
-     */
-    const declared = Number(request.headers.get("content-length") ?? "0");
-    if (Number.isFinite(declared) && declared > MAX_BYTES) {
-      throw new ValidationError("This file is larger than the upload limit.");
+    let body: Uint8Array;
+    try {
+      body = await readBoundedBytes(request, MAX_FILE_BYTES + MULTIPART_OVERHEAD_BYTES);
+    } catch (error) {
+      if (error instanceof PayloadTooLargeError) throw new PayloadTooLargeError(TOO_LARGE_MESSAGE);
+      throw error;
     }
 
-    const form = await request.formData();
+    let form: FormData;
+    try {
+      form = await new Response(body as BodyInit, { headers: { "content-type": type } }).formData();
+    } catch {
+      throw new ValidationError("The upload could not be read as multipart/form-data.");
+    }
+
     const file = form.get("file");
 
     if (!(file instanceof File)) {
@@ -59,9 +80,7 @@ export async function POST(request: Request) {
     }
 
     if (file.size === 0) throw new ValidationError("This file is empty.");
-    if (file.size > MAX_BYTES) {
-      throw new ValidationError("This file is larger than the upload limit.");
-    }
+    if (file.size > MAX_FILE_BYTES) throw new PayloadTooLargeError(TOO_LARGE_MESSAGE);
 
     const bytes = new Uint8Array(await file.arrayBuffer());
 

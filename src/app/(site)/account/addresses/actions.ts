@@ -10,7 +10,16 @@ import {
 } from "@/lib/account/addresses";
 import { requireCustomerContext } from "@/lib/account/identity";
 import type { CustomerAddressInput } from "@/lib/account/types";
+import {
+  MAX_ID_LENGTH,
+  UNREADABLE,
+  asRecord,
+  isOptionalText,
+  isText,
+} from "@/lib/api/action-input";
+import { readShippingAddress } from "@/lib/checkout/input";
 import type { FieldError } from "@/lib/checkout/types";
+import { ValidationError } from "@/lib/errors";
 
 /**
  * Address actions.
@@ -26,6 +35,10 @@ import type { FieldError } from "@/lib/checkout/types";
  * therefore not an authorization failure to get right; it is a lookup that
  * misses.
  *
+ * Arguments are read as `unknown`: the id must be bounded text, and the address
+ * is projected field by field (the address part through the same reader
+ * checkout uses) before `normaliseCustomerAddress` and validation see it.
+ *
  * What comes back to the browser is the outcome and, where the form was wrong,
  * the field errors. Never a stored record, and never anything about a customer
  * who is not the caller.
@@ -40,18 +53,57 @@ const SIGNED_OUT: AddressActionResult = {
   message: "Sign in to manage your addresses.",
 };
 
+const REFUSED: AddressActionResult = { ok: false, message: UNREADABLE };
+
 /** Re-renders the list from the server after any change. */
 function refresh(): void {
   revalidatePath("/account/addresses");
 }
 
-export async function createAddressAction(
-  input: CustomerAddressInput,
-): Promise<AddressActionResult> {
+type Parsed = { ok: true; input: CustomerAddressInput } | { ok: false; result: AddressActionResult };
+
+function readAddressInput(value: unknown): Parsed {
+  const raw = asRecord(value);
+  if (
+    !raw ||
+    !isOptionalText(raw.label, 80) ||
+    !isText(raw.fullName, 200) ||
+    !isText(raw.phone, 32) ||
+    !(raw.isDefault === undefined || typeof raw.isDefault === "boolean")
+  ) {
+    return { ok: false, result: REFUSED };
+  }
+
+  try {
+    return {
+      ok: true,
+      input: {
+        ...(typeof raw.label === "string" ? { label: raw.label } : {}),
+        fullName: raw.fullName,
+        phone: raw.phone,
+        address: readShippingAddress(raw.address),
+        ...(raw.isDefault === true ? { isDefault: true } : {}),
+      },
+    };
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return {
+        ok: false,
+        result: { ok: false, errors: error.issues.map(({ field, message }) => ({ field, message })) },
+      };
+    }
+    throw error;
+  }
+}
+
+export async function createAddressAction(input: unknown): Promise<AddressActionResult> {
+  const parsed = readAddressInput(input);
+  if (!parsed.ok) return parsed.result;
+
   const gate = await requireCustomerContext();
   if (!gate.authenticated) return SIGNED_OUT;
 
-  const result = await createCustomerAddress(gate.context.identity, input);
+  const result = await createCustomerAddress(gate.context.identity, parsed.input);
   if (!result.ok) return result;
 
   refresh();
@@ -59,26 +111,27 @@ export async function createAddressAction(
 }
 
 export async function updateAddressAction(
-  addressId: string,
-  input: CustomerAddressInput,
+  addressId: unknown,
+  input: unknown,
 ): Promise<AddressActionResult> {
+  if (!isText(addressId, MAX_ID_LENGTH)) return REFUSED;
+
+  const parsed = readAddressInput(input);
+  if (!parsed.ok) return parsed.result;
+
   const gate = await requireCustomerContext();
   if (!gate.authenticated) return SIGNED_OUT;
 
-  const result = await updateCustomerAddress(
-    gate.context.identity,
-    addressId,
-    input,
-  );
+  const result = await updateCustomerAddress(gate.context.identity, addressId, parsed.input);
   if (!result.ok) return result;
 
   refresh();
   return { ok: true };
 }
 
-export async function deleteAddressAction(
-  addressId: string,
-): Promise<AddressActionResult> {
+export async function deleteAddressAction(addressId: unknown): Promise<AddressActionResult> {
+  if (!isText(addressId, MAX_ID_LENGTH)) return REFUSED;
+
   const gate = await requireCustomerContext();
   if (!gate.authenticated) return SIGNED_OUT;
 
@@ -89,9 +142,9 @@ export async function deleteAddressAction(
   return { ok: true };
 }
 
-export async function setDefaultAddressAction(
-  addressId: string,
-): Promise<AddressActionResult> {
+export async function setDefaultAddressAction(addressId: unknown): Promise<AddressActionResult> {
+  if (!isText(addressId, MAX_ID_LENGTH)) return REFUSED;
+
   const gate = await requireCustomerContext();
   if (!gate.authenticated) return SIGNED_OUT;
 

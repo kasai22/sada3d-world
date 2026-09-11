@@ -150,6 +150,13 @@ bundle. A partial configuration is reported at use time by variable **name**.
 4. **Endpoint.** R2 → bucket → Settings → S3 API:
    `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`. Set `R2_ACCOUNT_ID`, or set
    `R2_ENDPOINT` directly (required for an EU-jurisdiction bucket).
+
+   The dashboard shows the S3 API URL **with the bucket name appended**
+   (`…r2.cloudflarestorage.com/<bucket>`). `R2_ENDPOINT` must be the origin
+   only: the adapter uses path-style addressing and adds the bucket itself, and
+   the configuration refuses an endpoint with a path. The bucket goes in
+   `R2_BUCKET` (not `R2_BUCKET_NAME`). Both mistakes were made, and caught, when
+   the real bucket was connected in Stage 19.
 5. **CORS.** The browser PUTs to R2 and the 3D viewer GETs from it, so the
    bucket needs a CORS policy for the site's origins (bucket → Settings → CORS):
 
@@ -166,6 +173,15 @@ bundle. A partial configuration is reported at use time by variable **name**.
    ```
 
    Add each Vercel preview domain you test uploads from.
+
+   Origins are compared **exactly**: no trailing slash
+   (`https://example.com`, not `https://example.com/` — the production origin was
+   first entered with one and every preflight from it got 403), and
+   `http://localhost:3000` is not `http://127.0.0.1:3000`. Nothing in the
+   application needs `HEAD`, `DELETE` or `POST`, or any request header other
+   than `content-type`: in Chrome the upload sends a preflighted `PUT`, and the
+   viewer and downloads send a plain `GET` (verified in Stage 19, see
+   `SECURITY.md`).
 6. **Vercel.** Project → Settings → Environment Variables: add the four `R2_*`
    variables for Production and Preview (mark the secret *Sensitive*), then
    redeploy.

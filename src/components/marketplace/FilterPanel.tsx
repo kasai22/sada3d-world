@@ -5,7 +5,9 @@ import { useTransition, type CSSProperties } from "react";
 import clsx from "clsx";
 
 import { Icon } from "@/components/core";
-import { FilterTree, type FilterGroup } from "@/components/navigation";
+// Direct, not through the navigation barrel: that barrel also exports the
+// server-rendered Header and Footer, which have no place in a client bundle.
+import { FilterTree, type FilterGroup } from "@/components/navigation/FilterTree";
 import { COLORS } from "@/lib/catalog/taxonomy";
 import {
   activeFilterCount,

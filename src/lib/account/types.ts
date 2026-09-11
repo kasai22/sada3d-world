@@ -52,6 +52,12 @@ export interface CustomerProfile {
   name?: string;
   email?: string;
   phone?: string;
+  /**
+   * Whether the identity provider has confirmed the email address. Read from
+   * the provider's own record on every request; never set by this application.
+   * Absent when the identity did not come from a provider.
+   */
+  emailVerified?: boolean;
 }
 
 /**
@@ -70,6 +76,12 @@ export interface CustomerContext {
    * to something real.
    */
   development: boolean;
+  /**
+   * True when the request carried a session the provider no longer accepts —
+   * expired, revoked or for a deleted user. The customer is signed out either
+   * way; this only lets the page say why.
+   */
+  sessionExpired: boolean;
 }
 
 /** A context that has an identity. The only thing account data is read for. */

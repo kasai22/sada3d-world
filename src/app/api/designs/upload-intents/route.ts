@@ -4,7 +4,7 @@ import { sweepDesignStorage } from "@/lib/account/design-files";
 import { createUploadIntent } from "@/lib/account/design-uploads";
 import { parseUploadIntent, requireIdentity, uploadIntentDto } from "@/lib/api/designs";
 import { RATE_LIMITS, enforceRateLimit } from "@/lib/api/rate-limit";
-import { created, failure, ok, readJson } from "@/lib/api/respond";
+import { assertSameOrigin, created, failure, ok, readJson } from "@/lib/api/respond";
 import { EVENTS, log } from "@/lib/observability";
 
 /**
@@ -28,6 +28,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    assertSameOrigin(request);
     const identity = await requireIdentity();
     enforceRateLimit(RATE_LIMITS.uploadIntent, identity.id);
 

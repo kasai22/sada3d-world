@@ -1,5 +1,7 @@
 import type { AnalyzableFormat, AnalysisWarning, UnitResolution } from "@/lib/geometry/types";
 
+import type { ModelLimits } from "./limits";
+
 /**
  * Model parsing.
  *
@@ -111,6 +113,11 @@ export interface ModelInput {
   bytes: Uint8Array;
   /** The declared content type, where the transport supplied one. */
   contentType?: string;
+  /**
+   * Analysis limits, for tests that exercise them without building a 100 MB
+   * fixture. Never set from a request; production uses `MODEL_LIMITS`.
+   */
+  limits?: ModelLimits;
 }
 
 export function extensionOf(fileName: string): string {

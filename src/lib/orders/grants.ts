@@ -17,8 +17,10 @@ import { ORDER_COOKIE } from "@/lib/checkout/cookies";
  * write them. The reference inside is still checked against the store on every
  * read — a grant naming an order that does not exist opens nothing.
  *
- * Phase 17 replaces all of this with account ownership: the grant becomes
- * "this order belongs to the signed-in user", and this module goes away.
+ * Since Stage 17 a signed-in customer reads their orders through account
+ * ownership instead. These grants remain for what they were built for: orders
+ * placed without an account, which have no owner to match. The two proofs stay
+ * separate — the account portal never honours a grant.
  */
 
 export const ORDER_ACCESS_COOKIE = "sada3d_order_access";

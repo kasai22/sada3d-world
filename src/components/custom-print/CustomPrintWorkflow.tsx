@@ -22,6 +22,7 @@ import {
   pricingSignature,
   requestQuote,
 } from "@/lib/custom-print/quote";
+import { signInHref } from "@/lib/account/routes";
 import { submitCustomCartIntent } from "@/lib/cart/intent";
 import type { QuoteResponse } from "@/lib/pricing/types";
 import { forgetModelFile, rememberModelFile } from "@/lib/custom-print/modelBlobs";
@@ -90,7 +91,7 @@ type UploadState =
   | { status: "uploading"; loaded: number; total: number }
   | { status: "verifying"; analyzable: boolean }
   | { status: "stored" }
-  | { status: "local"; message: string }
+  | { status: "local"; message: string; signInRequired: boolean }
   | { status: "failed"; message: string; designId?: string };
 
 const IDLE: UploadState = { status: "idle" };
@@ -275,7 +276,11 @@ export function CustomPrintWorkflow() {
       }
 
       case "not_stored":
-        setUpload({ status: "local", message: result.message });
+        setUpload({
+          status: "local",
+          message: result.message,
+          signInRequired: result.reason === "signed_out",
+        });
         if (file) analyseLocally(file);
         return;
 
@@ -891,12 +896,20 @@ function UploadStatus({ state, onRetry }: { state: UploadState; onRetry: () => v
 
     case "local":
       return (
-        <p className={`${styles.notice} ${styles.uploadStatus}`} role="status">
-          <span className={styles.noticeGlyph}>
-            <Icon name="info" size={16} />
-          </span>
-          {state.message}
-        </p>
+        <div className={styles.uploadStatus}>
+          <p className={styles.notice} role="status">
+            <span className={styles.noticeGlyph}>
+              <Icon name="info" size={16} />
+            </span>
+            {state.message}
+          </p>
+          {state.signInRequired && (
+            // Back here afterwards; `/custom-print` is on the return allowlist.
+            <Button href={signInHref("/custom-print")} variant="secondary" size="sm" iconLeft="user">
+              Sign in to store it
+            </Button>
+          )}
+        </div>
       );
 
     case "failed":

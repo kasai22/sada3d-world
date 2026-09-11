@@ -1,7 +1,7 @@
 import { completeUpload } from "@/lib/account/design-uploads";
 import { designDetailDto, requireIdentity } from "@/lib/api/designs";
 import { RATE_LIMITS, enforceRateLimit } from "@/lib/api/rate-limit";
-import { failure, ok } from "@/lib/api/respond";
+import { assertSameOrigin, failure, ok } from "@/lib/api/respond";
 
 /**
  * POST /api/designs/[id]/upload-complete — verify what was uploaded.
@@ -21,10 +21,11 @@ import { failure, ok } from "@/lib/api/respond";
 export const dynamic = "force-dynamic";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    assertSameOrigin(request);
     const identity = await requireIdentity();
     enforceRateLimit(RATE_LIMITS.uploadComplete, identity.id);
 

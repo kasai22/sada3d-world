@@ -1,7 +1,7 @@
 import { deleteCustomerDesign, readCustomerDesign } from "@/lib/account/design-files";
 import { designDetailDto, requireIdentity } from "@/lib/api/designs";
 import { RATE_LIMITS, enforceRateLimit } from "@/lib/api/rate-limit";
-import { failure, ok } from "@/lib/api/respond";
+import { assertSameOrigin, failure, ok } from "@/lib/api/respond";
 
 /**
  * /api/designs/[id] — one of the signed-in customer's designs.
@@ -32,8 +32,9 @@ export async function GET(_request: Request, { params }: Context) {
   }
 }
 
-export async function DELETE(_request: Request, { params }: Context) {
+export async function DELETE(request: Request, { params }: Context) {
   try {
+    assertSameOrigin(request);
     const identity = await requireIdentity();
     enforceRateLimit(RATE_LIMITS.designDelete, identity.id);
 

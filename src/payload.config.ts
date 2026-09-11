@@ -108,7 +108,17 @@ export default buildConfig({
    * Adding a richText field means adding an editor back.
    */
   db: postgresAdapter({
-    pool: { connectionString: process.env.DATABASE_URL ?? "" },
+    pool: {
+      connectionString: process.env.DATABASE_URL ?? "",
+      /*
+       * A database that cannot be reached fails a request in ten seconds rather
+       * than holding it until the platform's own timeout. No query timeout here:
+       * Payload's migrations run through this pool and may legitimately be long.
+       */
+      connectionTimeoutMillis: 10_000,
+      idleTimeoutMillis: 30_000,
+      max: Number(process.env.DATABASE_POOL_MAX ?? 5),
+    },
     /*
      * Migrations, never push. `push` diffs a running database against whatever
      * schema the current checkout happens to have and applies the difference —

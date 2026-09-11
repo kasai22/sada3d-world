@@ -29,6 +29,7 @@ export type DomainErrorKind =
   | "model_analysis"
   | "manufacturability"
   | "upload_rejected"
+  | "payload_too_large"
   | "rate_limited"
   | "infrastructure";
 
@@ -117,6 +118,17 @@ export class ModelAnalysisError extends DomainError {
   }
 }
 
+/**
+ * A model beyond what analysis will attempt: too many triangles, vertices,
+ * objects or placements. Refused before the work, never answered with a partial
+ * measurement.
+ */
+export class ModelTooComplexError extends DomainError {
+  constructor(message: string) {
+    super("model_analysis", message);
+  }
+}
+
 export class ManufacturabilityError extends DomainError {
   constructor(message: string) {
     super("manufacturability", message);
@@ -137,6 +149,13 @@ export class UploadRejectedError extends DomainError {
   constructor(reason: string, message: string) {
     super("upload_rejected", message);
     this.reason = reason;
+  }
+}
+
+/** A request body larger than the route accepts. Refused before it is buffered. */
+export class PayloadTooLargeError extends DomainError {
+  constructor(message = "This request is too large.") {
+    super("payload_too_large", message);
   }
 }
 
@@ -184,6 +203,7 @@ const STATUS: Record<DomainErrorKind, number> = {
   model_analysis: 422,
   manufacturability: 422,
   upload_rejected: 422,
+  payload_too_large: 413,
   rate_limited: 429,
   infrastructure: 503,
 };

@@ -10,7 +10,7 @@ CUSTOMER DOMAIN SEAMS         lib/account — orders · designs · saved · addr
       ↓
 AUTH ADAPTER                  lib/account/identity.ts
       ↓
-REAL SUPABASE AUTH            Phase 17
+SUPABASE AUTH                 lib/auth — see lib/auth/README.md
 ```
 
 Orders, their four state machines and the customer-safe manufacturing
@@ -54,12 +54,17 @@ typeof order.customerId === "string" && order.customerId === identity.id
 customer. That is the bug this shape exists to prevent, and there is a test for
 it.
 
-## Today there is no customer
+## Where the customer comes from
 
-`noCustomerAuth` returns null, always. That is not a placeholder to be filled
-with something weaker — without Supabase Auth there is no trusted identity, and
-claiming one would be fake authentication. In production every account route
-renders its sign-in requirement.
+Since Stage 17, `resolveCustomerAuthAdapter()` returns the Supabase adapter
+whenever `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are
+configured: the session is validated with Supabase on the server and mapped to a
+`cus_…` customer id through the `customers` table. See `lib/auth/README.md`.
+
+Without that configuration, `noCustomerAuth` returns null — in production every
+account route renders its sign-in requirement and there is no fallback. A
+broken configuration (one variable missing, a service-role key in the public
+variable) also signs nobody in.
 
 `developmentCustomerAuth` exists so the portal can be built, reviewed and
 tested. Four properties keep it from being an authentication mechanism:
@@ -86,8 +91,9 @@ does **not** accept those: an account page that honoured a receipt cookie would
 show orders the account does not own. The two paths answer to two different
 proofs and neither weakens the other.
 
-Phase 17 joins them: `Supabase identity → customer ownership → order access →
-safe tracking DTO`, with the grant cookies retired.
+Stage 17 made the account path real — `Supabase identity → customer ownership →
+order access → safe tracking DTO` — and kept the grants for guest orders, which
+have no owner to match. The two proofs remain separate.
 
 ## Projection
 
@@ -116,7 +122,7 @@ chance to leak something.
 | Addresses | **Real behaviour, provisional storage.** In-process, like orders |
 | Saved items | **Real behaviour, provisional storage.** Nothing seeded |
 | Designs | **Not available.** Needs Phase 16 file storage |
-| Identity | **Development only.** Needs Phase 17 |
+| Identity | **Real.** Supabase Auth → `customers` mapping (Stage 17); development identity only without Supabase, never in production |
 | Profile editing | **Not available.** The identity provider owns the record |
 | Notifications | **Do not exist.** Not a toggle, not a store, not a stub |
 

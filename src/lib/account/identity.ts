@@ -1,15 +1,21 @@
+import { readSupabaseAuthConfig } from "@/lib/auth/config";
+import { supabaseCredentials, supabaseCustomerAuth } from "@/lib/auth/server";
+import { EVENTS, log } from "@/lib/observability";
+
+import type {
+  CustomerAuthAdapter,
+  CustomerCredentialsAdapter,
+  CustomerSession,
+} from "./auth-types";
 import {
   DEVELOPMENT_CUSTOMER_EMAIL,
   DEVELOPMENT_CUSTOMER_ID,
   DEVELOPMENT_CUSTOMER_NAME,
   developmentIdentityEnabled,
 } from "./development";
-import type {
-  AuthenticatedCustomerContext,
-  CustomerContext,
-  CustomerIdentity,
-  CustomerProfile,
-} from "./types";
+import type { AuthenticatedCustomerContext, CustomerContext } from "./types";
+
+export type { CustomerAuthAdapter, CustomerCredentialsAdapter, CustomerSession };
 
 /**
  * The authorization boundary.
@@ -18,13 +24,13 @@ import type {
  * question "who is asking" has exactly one answer and exactly one place that
  * produces it. This is that place.
  *
- *   ACCOUNT UI
- *        ↓        pages call requireCustomerContext()
- *   CUSTOMER DOMAIN SEAMS
- *        ↓        services take an identity, never an id from a request
- *   AUTH ADAPTER
+ *   BROWSER
+ *        ↓        HttpOnly session cookies, written only by the server
+ *   SUPABASE AUTH  validates the session (lib/auth)
  *        ↓
- *   REAL SUPABASE AUTH — PHASE 17
+ *   AUTH ADAPTER   → customer id, via the customers table
+ *        ↓        pages and routes call requireCustomerContext()
+ *   CUSTOMER DOMAIN SERVICES — ownership decided here, not by the provider
  *
  * The rule the whole portal rests on: **an identity is produced here and
  * nowhere else**. No account service accepts a customer id that came from a
@@ -32,30 +38,9 @@ import type {
  * therefore no request a browser can compose that names a different customer,
  * because naming a customer is not something a request can do.
  *
- * Today the production adapter returns null. That is not a placeholder to be
- * filled with something weaker — it is the truth: without Supabase Auth there
- * is no trusted identity, and claiming one would be the fake authentication
- * this phase must not build.
+ * Supabase Auth says who someone is. Whether they may read an order is still
+ * the order service's decision, exactly as it was before there was a provider.
  */
-
-/** A resolved sign-in. Produced only by an adapter. */
-export interface CustomerSession {
-  identity: CustomerIdentity;
-  profile: CustomerProfile;
-}
-
-export interface CustomerAuthAdapter {
-  /** Surfaced in diagnostics and in the development notice. */
-  readonly name: string;
-  /**
-   * The customer for this request, or null when there is none.
-   *
-   * Server-side only. An implementation may read an HttpOnly session cookie or
-   * a bearer token it verifies itself; it must never take a customer id from
-   * anything the browser can choose.
-   */
-  currentCustomer(): Promise<CustomerSession | null>;
-}
 
 /* ------------------------------------------------------------------ *
  * Adapters
@@ -64,8 +49,8 @@ export interface CustomerAuthAdapter {
 /**
  * No authentication.
  *
- * The production adapter until Phase 17. It answers the only honest answer
- * available: nobody is signed in.
+ * What a deployment without Supabase Auth configured answers: nobody is signed
+ * in. It is not a placeholder for something weaker.
  */
 export const noCustomerAuth: CustomerAuthAdapter = {
   name: "none",
@@ -75,11 +60,13 @@ export const noCustomerAuth: CustomerAuthAdapter = {
 };
 
 /**
- * A fixed local identity so the portal can be built and reviewed.
+ * A fixed local identity so the portal can be built and reviewed without a
+ * Supabase project.
  *
- * See `development.ts` for why this exists and the four properties that keep it
- * from being an authentication mechanism. In short: it is a constant, it is
- * unreachable in a production build, and nothing a browser sends affects it.
+ * See `development.ts` for the properties that keep it from being an
+ * authentication mechanism: unreachable in a production build, switched off
+ * the moment Supabase variables are present, and unaffected by anything a
+ * browser sends.
  */
 export const developmentCustomerAuth: CustomerAuthAdapter = {
   name: "development",
@@ -97,9 +84,41 @@ export const developmentCustomerAuth: CustomerAuthAdapter = {
   },
 };
 
-/** The adapter this process uses. Phase 17 points this at Supabase Auth. */
+let reportedMisconfiguration = false;
+
+/**
+ * Supabase when it is configured; otherwise nobody (production) or the
+ * development identity (local, and only with no Supabase variables at all).
+ *
+ * A *misconfigured* Supabase — one variable missing, or a service-role key in
+ * the public variable — is not "absent": it signs nobody in, and says why in
+ * the server log, rather than quietly falling back to the development identity.
+ */
 export function resolveCustomerAuthAdapter(): CustomerAuthAdapter {
+  const config = readSupabaseAuthConfig();
+
+  if (config.status === "configured") return supabaseCustomerAuth;
+
+  if (config.status === "invalid") {
+    if (!reportedMisconfiguration) {
+      reportedMisconfiguration = true;
+      log.error(EVENTS.authNotConfigured, { problems: config.problems.join(" ") });
+    }
+    return noCustomerAuth;
+  }
+
   return developmentIdentityEnabled() ? developmentCustomerAuth : noCustomerAuth;
+}
+
+/**
+ * The adapter that can sign people in, or null where nothing can.
+ *
+ * The development identity has no credentials — it cannot sign in or out — so
+ * a deployment without Supabase has no credentials adapter, and the sign-in
+ * page says accounts are not available rather than showing a form.
+ */
+export function resolveCredentialsAdapter(): CustomerCredentialsAdapter | null {
+  return readSupabaseAuthConfig().status === "configured" ? supabaseCredentials : null;
 }
 
 /* ------------------------------------------------------------------ *
@@ -110,6 +129,7 @@ const SIGNED_OUT: CustomerContext = {
   identity: null,
   profile: null,
   development: false,
+  sessionExpired: false,
 };
 
 /**
@@ -122,12 +142,16 @@ export async function getCustomerContext(): Promise<CustomerContext> {
   const adapter = resolveCustomerAuthAdapter();
   const session = await adapter.currentCustomer();
 
-  if (!session) return SIGNED_OUT;
+  if (!session) {
+    const expired = adapter.sessionExpired ? await adapter.sessionExpired() : false;
+    return expired ? { ...SIGNED_OUT, sessionExpired: true } : SIGNED_OUT;
+  }
 
   return {
     identity: session.identity,
     profile: session.profile,
     development: adapter.name === "development",
+    sessionExpired: false,
   };
 }
 
@@ -140,19 +164,22 @@ export async function getCustomerContext(): Promise<CustomerContext> {
  */
 export type CustomerGate =
   | { authenticated: true; context: AuthenticatedCustomerContext }
-  | { authenticated: false };
+  | { authenticated: false; sessionExpired: boolean };
 
 /**
  * Requires a signed-in customer.
  *
- * Every account page calls this before it reads anything. The check lives in
- * the page rather than only in the layout, because a layout does not re-run on
- * every navigation and authorization that can be skipped is not authorization.
+ * Every account page, server action and customer API route calls this before
+ * it reads anything. The check lives in each of them rather than only in a
+ * layout or the proxy, because authorization that can be skipped is not
+ * authorization.
  */
 export async function requireCustomerContext(): Promise<CustomerGate> {
   const context = await getCustomerContext();
 
-  if (!context.identity || !context.profile) return { authenticated: false };
+  if (!context.identity || !context.profile) {
+    return { authenticated: false, sessionExpired: context.sessionExpired };
+  }
 
   return {
     authenticated: true,

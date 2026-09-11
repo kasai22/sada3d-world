@@ -7,6 +7,7 @@ import {
   ValidationError,
 } from "@/lib/errors";
 import { hasGrant } from "@/lib/orders/grants";
+import { parseOrderReference } from "@/lib/orders/reference";
 import { applyManufacturingEvent, getOrderTracking } from "@/lib/orders/service";
 import type { OrderTracking } from "@/lib/orders/service";
 
@@ -53,7 +54,8 @@ async function holdsGrant(reference: string): Promise<boolean> {
 
 /** Whoever is asking, and what that entitles them to. */
 export async function authorizeOrderRead(reference: string): Promise<OrderTracking> {
-  const normalised = reference.trim().toUpperCase();
+  // Text that is not a reference names no order; it is not looked up at all.
+  const normalised = parseOrderReference(reference);
 
   if (!normalised) throw new NotFoundError("That order could not be found.");
 

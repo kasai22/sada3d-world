@@ -1,6 +1,7 @@
 import { trackingItemDto } from "@/lib/api/dto";
 import { authorizeOrderRead } from "@/lib/api/orders";
 import { failure, ok } from "@/lib/api/respond";
+import { referenceFromSegment } from "@/lib/orders/reference";
 
 /**
  * GET /api/orders/[reference]/tracking — manufacturing progress.
@@ -18,7 +19,7 @@ export async function GET(
 ) {
   try {
     const { reference } = await params;
-    const tracking = await authorizeOrderRead(decodeURIComponent(reference));
+    const tracking = await authorizeOrderRead(referenceFromSegment(reference) ?? "");
 
     return ok(
       {

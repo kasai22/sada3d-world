@@ -58,6 +58,17 @@
   align-items: start;
 }
 
+.navColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  min-width: 0;
+}
+
+.signOut {
+  align-self: flex-start;
+}
+
 /* min-width: 0 so a wide table or a long reference scrolls inside the column
    rather than stretching the grid track. */
 .content {

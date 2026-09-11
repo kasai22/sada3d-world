@@ -1,12 +1,14 @@
+import { parseOrderReference } from "./reference";
 import { orderRepository } from "./repository";
 import type { Order } from "./types";
 
 /**
  * Order authorization.
  *
- * Reading an order requires proving you are the person who placed it. Until
- * Supabase Auth arrives in Phase 17 there is no account to check against, so
- * the proof is the pair a customer has and a stranger does not:
+ * Reading an order requires proving you are the person who placed it. For an
+ * order placed with an account, the account is the proof (`lib/account`). For a
+ * guest order there is no account to check against, so the proof is the pair a
+ * customer has and a stranger does not:
  *
  *   the order reference  +  the email the order was placed with
  *
@@ -23,6 +25,9 @@ import type { Order } from "./types";
 /** Failed attempts before lookups for a reference are refused for a while. */
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 10 * 60 * 1000;
+
+/** An email address is at most 254 characters; a longer claim is not one. */
+const MAX_EMAIL_LENGTH = 254;
 
 interface Attempts {
   count: number;
@@ -56,11 +61,39 @@ function throttled(reference: string): boolean {
   return record.count >= MAX_ATTEMPTS;
 }
 
+/**
+ * References tracked at once. An enumeration attempt walks through fresh
+ * references, and without a bound every one of them would stay in memory for
+ * the whole window. Only well-formed references are ever tracked.
+ */
+export const MAX_TRACKED_REFERENCES = 10_000;
+
+/**
+ * Where a sweep leaves the map. Sweeping to exactly the cap would scan every
+ * entry on every new reference once full — quadratic under the very
+ * enumeration this throttle exists for. See the same rule in `lib/api/rate-limit`.
+ */
+const LOW_WATER = Math.floor(MAX_TRACKED_REFERENCES * 0.9);
+
 function recordFailure(reference: string): void {
   const map = attempts();
   const record = map.get(reference);
 
   if (!record || Date.now() - record.firstAt > WINDOW_MS) {
+    if (record) map.delete(reference);
+
+    if (map.size >= MAX_TRACKED_REFERENCES) {
+      const now = Date.now();
+      // Expired first; then the oldest, in insertion order, down to the low-water mark.
+      for (const [key, entry] of map) {
+        if (now - entry.firstAt > WINDOW_MS) map.delete(key);
+      }
+      for (const key of map.keys()) {
+        if (map.size <= LOW_WATER) break;
+        map.delete(key);
+      }
+    }
+
     map.set(reference, { count: 1, firstAt: Date.now() });
     return;
   }
@@ -70,6 +103,11 @@ function recordFailure(reference: string): void {
 
 function clearFailures(reference: string): void {
   attempts().delete(reference);
+}
+
+/** For tests and diagnostics. */
+export function trackedLookupCount(): number {
+  return attempts().size;
 }
 
 /** Case and whitespace do not make two email addresses different. */
@@ -90,13 +128,19 @@ export type OrderAccess =
  * Finds an order for someone who can prove it is theirs.
  *
  * A wrong email and a nonexistent reference are the same answer, and a run of
- * wrong answers for one reference stops being answered at all.
+ * wrong answers for one reference stops being answered at all. Input that is
+ * not a reference, or not plausibly an email, gets that same answer without a
+ * lookup.
  */
 export async function authorizeOrderByEmail(
   reference: string,
   email: string,
 ): Promise<OrderAccess> {
-  const normalised = reference.trim().toUpperCase();
+  const normalised = parseOrderReference(reference);
+
+  if (!normalised || typeof email !== "string" || email.length > MAX_EMAIL_LENGTH) {
+    return { ok: false, reason: "not_found" };
+  }
 
   if (throttled(normalised)) return { ok: false, reason: "throttled" };
 
@@ -122,6 +166,7 @@ export async function authorizeOrderByEmail(
 export async function authorizeOrderByReceipt(
   reference: string | undefined,
 ): Promise<Order | undefined> {
-  if (!reference) return undefined;
-  return orderRepository.findOrder(reference.trim().toUpperCase());
+  const normalised = parseOrderReference(reference);
+  if (!normalised) return undefined;
+  return orderRepository.findOrder(normalised);
 }

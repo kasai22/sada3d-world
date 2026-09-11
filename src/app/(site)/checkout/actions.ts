@@ -1,10 +1,13 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
+import { RATE_LIMITS, enforceRateLimit, sourceSubject } from "@/lib/api/rate-limit";
 import { ORDER_COOKIE, ORDER_COOKIE_MAX_AGE } from "@/lib/checkout/cookies";
+import { parseCheckoutInput } from "@/lib/checkout/input";
 import { placeOrder } from "@/lib/checkout/service";
-import type { CheckoutInput, CheckoutResult } from "@/lib/checkout/types";
+import type { CheckoutResult } from "@/lib/checkout/types";
+import { RateLimitedError, ValidationError } from "@/lib/errors";
 
 /**
  * The checkout server boundary.
@@ -13,6 +16,11 @@ import type { CheckoutInput, CheckoutResult } from "@/lib/checkout/types";
  * total, a currency or a product — the server already has the cart, and every
  * figure is derived from it here. There is no field in this request that can
  * change what anything costs.
+ *
+ * The argument is read as `unknown` (`parseCheckoutInput`): a server action is a
+ * public endpoint, and the form's type describes the form, not the request.
+ * The per-source checkout limit applies here as it does to the JSON route —
+ * this is the path customers actually use.
  */
 
 /**
@@ -28,10 +36,30 @@ export type CheckoutActionResult =
   | Exclude<CheckoutResult, { status: "placed" }>
   | { status: "placed"; reference: string };
 
-export async function placeOrderAction(
-  input: CheckoutInput,
-): Promise<CheckoutActionResult> {
-  const result = await placeOrder(input);
+export async function placeOrderAction(input: unknown): Promise<CheckoutActionResult> {
+  try {
+    enforceRateLimit(RATE_LIMITS.checkoutSource, sourceSubject(await headers()));
+  } catch (error) {
+    if (error instanceof RateLimitedError) {
+      return { status: "error", message: "Too many attempts. Wait a few minutes and try again." };
+    }
+    throw error;
+  }
+
+  let parsed;
+  try {
+    parsed = parseCheckoutInput(input);
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return {
+        status: "invalid",
+        errors: error.issues.map(({ field, message }) => ({ field, message })),
+      };
+    }
+    throw error;
+  }
+
+  const result = await placeOrder(parsed);
 
   if (result.status !== "placed") return result;
 

@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { getDatabase, type AppDatabase } from "@/lib/db/client";
 import {
@@ -448,6 +448,125 @@ async function readJob(
   return toJob(row, eventRows);
 }
 
+/**
+ * Values per `IN (…)` list. PostgreSQL's protocol allows 65,535 parameters in
+ * one statement; a list is split well below that so no set of orders, however
+ * large, produces a statement the server refuses.
+ */
+const IN_LIST_CHUNK = 1_000;
+
+function chunked<T>(values: readonly T[]): T[][] {
+  const chunks: T[][] = [];
+  for (let start = 0; start < values.length; start += IN_LIST_CHUNK) {
+    chunks.push(values.slice(start, start + IN_LIST_CHUNK));
+  }
+  return chunks;
+}
+
+function groupBy<T>(rows: readonly T[], key: (row: T) => string): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const list = groups.get(key(row));
+    if (list) list.push(row);
+    else groups.set(key(row), [row]);
+  }
+  return groups;
+}
+
+/**
+ * Orders with their items, shipments and job links.
+ *
+ * A fixed number of queries for the whole set rather than three per order, and
+ * each keyed by the references in `rows` — so reading one customer's orders
+ * never reads another customer's items.
+ */
+async function readOrderSet(
+  db: AppDatabase | Transaction,
+  rows: readonly OrderRow[],
+): Promise<Order[]> {
+  if (rows.length === 0) return [];
+
+  const itemRows: ItemRow[] = [];
+  const shipmentRows: ShipmentRow[] = [];
+  const jobRows: { id: string; orderItemId: string }[] = [];
+
+  for (const references of chunked(rows.map((row) => row.reference))) {
+    const [items, parcels, jobs] = await Promise.all([
+      db
+        .select()
+        .from(orderItems)
+        .where(inArray(orderItems.orderReference, references))
+        .orderBy(asc(orderItems.position)),
+      db
+        .select()
+        .from(shipments)
+        .where(inArray(shipments.orderReference, references))
+        .orderBy(asc(shipments.id)),
+      db
+        .select({ id: manufacturingJobs.id, orderItemId: manufacturingJobs.orderItemId })
+        .from(manufacturingJobs)
+        .where(inArray(manufacturingJobs.orderReference, references)),
+    ]);
+    itemRows.push(...items);
+    shipmentRows.push(...parcels);
+    jobRows.push(...jobs);
+  }
+
+  const jobsByItem = new Map(jobRows.map((job) => [job.orderItemId, job.id]));
+  const itemsByOrder = groupBy(itemRows, (item) => item.orderReference);
+  const shipmentsByOrder = groupBy(shipmentRows, (shipment) => shipment.orderReference);
+
+  return rows.map((row) =>
+    toOrder(
+      row,
+      itemsByOrder.get(row.reference) ?? [],
+      shipmentsByOrder.get(row.reference) ?? [],
+      jobsByItem,
+    ),
+  );
+}
+
+/**
+ * The jobs of several orders and each job's events.
+ *
+ * Events are read by job id through `manufacturing_events_job_idx`. Before
+ * Stage 18 this read every event in the table and grouped them in memory, so
+ * one tracking page cost a full scan of all production history.
+ */
+async function readJobsForOrders(
+  db: AppDatabase | Transaction,
+  references: readonly string[],
+): Promise<ManufacturingJob[]> {
+  if (references.length === 0) return [];
+
+  const jobRows: JobRow[] = [];
+  for (const chunk of chunked(references)) {
+    jobRows.push(
+      ...(await db
+        .select()
+        .from(manufacturingJobs)
+        .where(inArray(manufacturingJobs.orderReference, chunk))),
+    );
+  }
+  if (jobRows.length === 0) return [];
+
+  jobRows.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+  const eventRows: EventRow[] = [];
+  for (const chunk of chunked(jobRows.map((row) => row.id))) {
+    eventRows.push(
+      ...(await db
+        .select()
+        .from(manufacturingEvents)
+        .where(inArray(manufacturingEvents.jobId, chunk))
+        .orderBy(asc(manufacturingEvents.jobId), asc(manufacturingEvents.sequence))),
+    );
+  }
+
+  const byJob = groupBy(eventRows, (event) => event.jobId);
+  return jobRows.map((row) => toJob(row, byJob.get(row.id) ?? []));
+}
+
 /* ------------------------------------------------------------------ *
  * The repository
  * ------------------------------------------------------------------ */
@@ -502,51 +621,32 @@ export function postgresOrderRepository(): OrderRepository {
       return readOrder(await connection(), reference);
     },
 
+    /**
+     * Every order. For operator tooling and fixtures only — nothing a customer
+     * reaches calls this, because it reads the whole table.
+     */
     async listOrders(): Promise<Order[]> {
       const db = await connection();
-
       const rows = await db.select().from(orders).orderBy(asc(orders.placedAt));
-      if (rows.length === 0) return [];
+      return readOrderSet(db, rows);
+    },
 
-      /*
-       * Three queries for the whole set rather than three per order. The
-       * account portal lists a customer's orders and would otherwise be N+1.
-       */
-      const [itemRows, shipmentRows, jobRows] = await Promise.all([
-        db.select().from(orderItems).orderBy(asc(orderItems.position)),
-        db.select().from(shipments).orderBy(asc(shipments.id)),
-        db
-          .select({
-            id: manufacturingJobs.id,
-            orderItemId: manufacturingJobs.orderItemId,
-          })
-          .from(manufacturingJobs),
-      ]);
-
-      const jobsByItem = new Map(jobRows.map((job) => [job.orderItemId, job.id]));
-
-      const itemsByOrder = new Map<string, ItemRow[]>();
-      for (const item of itemRows) {
-        const list = itemsByOrder.get(item.orderReference);
-        if (list) list.push(item);
-        else itemsByOrder.set(item.orderReference, [item]);
-      }
-
-      const shipmentsByOrder = new Map<string, ShipmentRow[]>();
-      for (const shipment of shipmentRows) {
-        const list = shipmentsByOrder.get(shipment.orderReference);
-        if (list) list.push(shipment);
-        else shipmentsByOrder.set(shipment.orderReference, [shipment]);
-      }
-
-      return rows.map((row) =>
-        toOrder(
-          row,
-          itemsByOrder.get(row.reference) ?? [],
-          shipmentsByOrder.get(row.reference) ?? [],
-          jobsByItem,
-        ),
-      );
+    /**
+     * One customer's orders, newest first.
+     *
+     * `orders_customer_placed_idx` is (customer_id, placed_at), so this is one
+     * index range scan, and the three follow-up reads are keyed by the
+     * references it returned — a customer's page never reads another
+     * customer's rows.
+     */
+    async listOrdersForCustomer(customerId: string): Promise<Order[]> {
+      const db = await connection();
+      const rows = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.customerId, customerId))
+        .orderBy(desc(orders.placedAt));
+      return readOrderSet(db, rows);
     },
 
     async createJob(job: ManufacturingJob): Promise<ManufacturingJob> {
@@ -566,29 +666,11 @@ export function postgresOrderRepository(): OrderRepository {
     },
 
     async findJobsForOrder(reference: string): Promise<ManufacturingJob[]> {
-      const db = await connection();
+      return readJobsForOrders(await connection(), [reference]);
+    },
 
-      const jobRows = await db
-        .select()
-        .from(manufacturingJobs)
-        .where(eq(manufacturingJobs.orderReference, reference))
-        .orderBy(asc(manufacturingJobs.id));
-
-      if (jobRows.length === 0) return [];
-
-      const eventRows = await db
-        .select()
-        .from(manufacturingEvents)
-        .orderBy(asc(manufacturingEvents.sequence));
-
-      const byJob = new Map<string, EventRow[]>();
-      for (const event of eventRows) {
-        const list = byJob.get(event.jobId);
-        if (list) list.push(event);
-        else byJob.set(event.jobId, [event]);
-      }
-
-      return jobRows.map((row) => toJob(row, byJob.get(row.id) ?? []));
+    async findJobsForOrders(references: readonly string[]): Promise<ManufacturingJob[]> {
+      return readJobsForOrders(await connection(), references);
     },
 
     /**

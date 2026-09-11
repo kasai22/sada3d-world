@@ -25,6 +25,8 @@ export default {
   // Payload's tables live in the same database. Restricting the generator to
   // the tables this file declares keeps it from proposing to drop them.
   tablesFilter: [
+    "customers",
+    "customer_carts",
     "customer_addresses",
     "saved_items",
     "customer_designs",

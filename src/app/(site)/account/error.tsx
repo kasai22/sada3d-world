@@ -2,7 +2,9 @@
 
 import { useEffect } from "react";
 
-import { AccountState } from "@/components/account";
+// Direct, not the barrel: the barrel includes server components that resolve
+// the session, and this is a client error boundary.
+import { AccountState } from "@/components/account/AccountState";
 import { Button } from "@/components/core";
 
 import styles from "./error.module.css";

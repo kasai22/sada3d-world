@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 
 import { Breadcrumbs, type Crumb } from "@/components/structure";
+import { resolveCredentialsAdapter } from "@/lib/account/identity";
 
 import { AccountNav } from "./AccountNav";
+import { SignOutButton } from "./SignOutButton";
 import styles from "./AccountShell.module.css";
 
 export interface AccountShellProps {
@@ -64,7 +66,12 @@ export function AccountShell({
         </div>
 
         <div className={styles.layout}>
-          <AccountNav className={styles.nav} />
+          <div className={styles.navColumn}>
+            <AccountNav className={styles.nav} />
+            {/* Only where there is a real session to end. The development
+                identity cannot sign out, so it is not offered the button. */}
+            {resolveCredentialsAdapter() && <SignOutButton className={styles.signOut} />}
+          </div>
           <div className={styles.content}>{children}</div>
         </div>
       </div>

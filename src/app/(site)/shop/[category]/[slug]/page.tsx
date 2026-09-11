@@ -19,6 +19,7 @@ import {
   productParams,
 } from "@/lib/catalog/query";
 import { categoryLabel } from "@/lib/catalog/taxonomy";
+import { serializeJsonForScript } from "@/lib/security/serialize";
 import { siteUrl } from "@/lib/site";
 import styles from "./page.module.css";
 
@@ -104,8 +105,10 @@ export default async function ProductPage({ params }: RouteParams) {
     <div className={`bg-commerce ${styles.page}`}>
       <script
         type="application/ld+json"
-        // Values come from the catalog, not from user input.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // Catalog values, authored in the CMS. Serialised with `<`, `>` and `&`
+        // escaped, so a product name containing `</script>` stays text inside
+        // this element instead of ending it. See lib/security/serialize.
+        dangerouslySetInnerHTML={{ __html: serializeJsonForScript(jsonLd) }}
       />
 
       <div className="u-container">

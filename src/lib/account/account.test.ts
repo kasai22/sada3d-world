@@ -89,7 +89,10 @@ async function storeOrder(
   customerId: string | undefined,
   items: OrderItem[] = [orderItem()],
 ): Promise<Order> {
-  const reference = `TEST-${String((sequence += 1)).padStart(4, "0")}`;
+  // The shape the system issues. A reference in any other shape names no order
+  // (`lib/orders/reference`); 900000+ keeps clear of references a test checkout
+  // draws from the counter.
+  const reference = `S3D-${900_000 + (sequence += 1)}`;
   const payment = { status: "paid" as const };
 
   const order: Order = {

@@ -133,6 +133,14 @@ export const postgresProvider: DatabaseProvider = {
       max: Number(process.env.DATABASE_POOL_MAX ?? 5),
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
+      /*
+       * A query that has not answered in fifteen seconds is abandoned by the
+       * client and fails as a 503. Client-side, deliberately: `statement_timeout`
+       * is a startup parameter that transaction-mode poolers refuse. Every query
+       * this application issues is an indexed read or a small write, measured
+       * in milliseconds.
+       */
+      query_timeout: 15_000,
     });
 
     const database = drizzle(pool, { schema: appSchema }) as unknown as AppDatabase;

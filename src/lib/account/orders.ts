@@ -5,6 +5,7 @@ import {
   type CustomerManufacturingStage,
   type CustomerManufacturingTracking,
 } from "@/lib/manufacturing";
+import { parseOrderReference } from "@/lib/orders/reference";
 import { orderRepository } from "@/lib/orders/repository";
 import { getOrderTracking, type OrderTracking } from "@/lib/orders/service";
 import type { Order, OrderItem } from "@/lib/orders/types";
@@ -37,6 +38,13 @@ import type {
  * The guest path is untouched. `/orders/[reference]` still runs on the Phase 12
  * receipt and lookup grants, and nothing in this module weakens, bypasses or
  * substitutes for that check.
+ *
+ * ── Cost ─────────────────────────────────────────────────────────────────
+ *
+ * Since Stage 18 a customer's orders are read by owner at the store, through
+ * the (customer_id, placed_at) index, and their manufacturing jobs are read
+ * for the whole list at once. Before it, every account page read every order
+ * in the system and filtered in memory, then read jobs once per order.
  */
 
 /* ------------------------------------------------------------------ *
@@ -56,6 +64,22 @@ export function ownsOrder(order: Order, identity: CustomerIdentity): boolean {
     order.customerId.length > 0 &&
     order.customerId === identity.id
   );
+}
+
+/**
+ * This customer's orders, newest first.
+ *
+ * Selected by owner in the store, then checked by `ownsOrder` again here: the
+ * query is the efficient path and the check is the guarantee, so a store that
+ * returned too much still could not hand a customer someone else's order.
+ */
+async function ownedOrders(identity: CustomerIdentity): Promise<Order[]> {
+  if (!identity.id) return [];
+
+  const orders = await orderRepository.listOrdersForCustomer(identity.id);
+  return orders
+    .filter((order) => ownsOrder(order, identity))
+    .sort((a, b) => Date.parse(b.placedAt) - Date.parse(a.placedAt));
 }
 
 /* ------------------------------------------------------------------ *
@@ -152,12 +176,24 @@ function toSummary(
   };
 }
 
-/** The customer projections for one order, keyed by job id. */
-async function trackingFor(
-  reference: string,
+/**
+ * The customer projections for a set of orders, keyed by job id.
+ *
+ * One read for the whole list. Job ids embed their order reference, so one map
+ * serves every order in it without collision.
+ */
+async function trackingForOrders(
+  references: readonly string[],
 ): Promise<Record<string, CustomerManufacturingTracking>> {
-  const jobs = await orderRepository.findJobsForOrder(reference);
+  if (references.length === 0) return {};
+
+  const jobs = await orderRepository.findJobsForOrders(references);
   return Object.fromEntries(jobs.map((job) => [job.id, toCustomerTracking(job)]));
+}
+
+/** Orders with at least one part that could have a live production stage. */
+function hasManufacturing(order: Order): boolean {
+  return order.items.some((item) => item.manufacturingJobId !== undefined);
 }
 
 /* ------------------------------------------------------------------ *
@@ -182,39 +218,41 @@ export async function listCustomerOrders(
 ): Promise<CustomerOrderSummary[]> {
   const filter = options.filter ?? "all";
 
-  const owned = (await orderRepository.listOrders())
-    .filter((order) => ownsOrder(order, identity))
-    .filter((order) => matchesOrderFilter(order.status, filter))
-    .sort((a, b) => Date.parse(b.placedAt) - Date.parse(a.placedAt));
+  const owned = (await ownedOrders(identity)).filter((order) =>
+    matchesOrderFilter(order.status, filter),
+  );
 
   const limited =
     options.limit === undefined ? owned : owned.slice(0, Math.max(options.limit, 0));
 
-  return Promise.all(
-    limited.map(async (order) => toSummary(order, await trackingFor(order.reference))),
+  const jobs = await trackingForOrders(
+    limited.filter(hasManufacturing).map((order) => order.reference),
   );
+
+  return limited.map((order) => toSummary(order, jobs));
 }
 
 /** How many orders this customer has, before any filter. */
 export async function countCustomerOrders(
   identity: CustomerIdentity,
 ): Promise<number> {
-  const orders = await orderRepository.listOrders();
-  return orders.filter((order) => ownsOrder(order, identity)).length;
+  return (await ownedOrders(identity)).length;
 }
 
 /**
  * One of this customer's orders, with its Phase 12 tracking.
  *
  * Ownership is checked before the tracking is assembled. A reference belonging
- * to someone else and a reference that does not exist return the same
- * `undefined`, so the URL cannot be used to discover which references are real.
+ * to someone else, a reference that does not exist and text that is not a
+ * reference at all return the same `undefined`, so the URL cannot be used to
+ * discover which references are real.
  */
 export async function getCustomerOrder(
   identity: CustomerIdentity,
   reference: string,
 ): Promise<OrderTracking | undefined> {
-  const normalised = reference.trim().toUpperCase();
+  const normalised = parseOrderReference(reference);
+  if (!normalised) return undefined;
 
   const order = await orderRepository.findOrder(normalised);
   if (!order || !ownsOrder(order, identity)) return undefined;
@@ -233,15 +271,18 @@ export async function listActiveManufacturing(
   identity: CustomerIdentity,
   limit?: number,
 ): Promise<CustomerManufacturingItem[]> {
-  const owned = (await orderRepository.listOrders()).filter((order) =>
-    ownsOrder(order, identity),
+  // Only orders with a part still in production can contribute, so only their
+  // jobs are read.
+  const owned = (await ownedOrders(identity)).filter((order) =>
+    order.items.some(
+      (item) => item.manufacturingJobId !== undefined && item.fulfillmentStatus === "in_progress",
+    ),
   );
 
+  const jobs = await trackingForOrders(owned.map((order) => order.reference));
   const active: CustomerManufacturingItem[] = [];
 
   for (const order of owned) {
-    const jobs = await trackingFor(order.reference);
-
     for (const item of order.items) {
       if (!item.manufacturingJobId) continue;
       if (item.fulfillmentStatus !== "in_progress") continue;

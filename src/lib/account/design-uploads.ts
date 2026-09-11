@@ -14,6 +14,7 @@ import {
   ConflictError,
   DomainError,
   InfrastructureError,
+  ModelTooComplexError,
   NotFoundError,
   RateLimitedError,
   UploadRejectedError,
@@ -476,6 +477,11 @@ async function verifyPendingObject(
 
     return { ok: true, analysis };
   } catch (error) {
+    if (error instanceof ModelTooComplexError) {
+      // A readable file past the analysis limits: a different fix for the
+      // customer (reduce the detail) than a damaged one, so a different code.
+      return reject("model_too_complex", error.message);
+    }
     if (
       error instanceof DomainError &&
       (error.kind === "model_parse" || error.kind === "model_analysis")

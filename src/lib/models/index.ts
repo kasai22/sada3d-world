@@ -9,6 +9,7 @@ import { extensionOf, type ModelInput, type ModelParser, type ParsedModel } from
 export type { ModelInput, ModelParser, ParsedMesh, ParsedModel, ParsedObject } from "./types";
 export { extensionOf } from "./types";
 export { modelIdentity, analysisIdentity, ANALYSIS_VERSION } from "./identity";
+export { MODEL_LIMITS, type ModelLimits } from "./limits";
 
 /**
  * The parser registry.

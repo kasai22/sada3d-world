@@ -46,6 +46,68 @@ import {
  */
 
 /* ------------------------------------------------------------------ *
+ * Customers
+ * ------------------------------------------------------------------ */
+
+/**
+ * The application's customers, one per authenticated subject.
+ *
+ * An identity mapping and nothing else: the Supabase Auth user id (the
+ * provider's subject) onto the customer id every ownership column holds. No
+ * email, no name, no password, no verification state — the provider owns
+ * those, and a copy here would be a second answer that drifts.
+ *
+ * The unique index on (provider, subject) is the provisioning guarantee: two
+ * concurrent first sign-ins for one user produce one row. See
+ * `lib/account/customers.ts`.
+ *
+ * Existing `customer_id` columns do not reference this table yet. They predate
+ * it, and development data is attributed to the fixed development identity,
+ * which has no subject; adding the foreign keys is a separate, deliberate
+ * migration once that data is gone.
+ */
+export const customers = pgTable(
+  "customers",
+  {
+    id: text("id").primaryKey(),
+    /** e.g. "supabase". Namespaces subjects so two providers cannot collide. */
+    authProvider: text("auth_provider").notNull(),
+    /** The provider's user id. For Supabase, `auth.users.id`. */
+    authSubject: text("auth_subject").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("customers_auth_subject_idx").on(table.authProvider, table.authSubject),
+  ],
+);
+
+/**
+ * A signed-in customer's cart.
+ *
+ * The guest cart stays in its HttpOnly cookie. Once someone signs in, their
+ * cart is this row — so it follows them between devices — and the guest cart
+ * they had is merged into it once (see `lib/cart/merge.ts`).
+ *
+ * `lines` holds exactly what the cookie holds: identity, configuration and
+ * quantity, never a price the system will honour. It is parsed through the
+ * same strict reader as the cookie on every load, because a JSON column is as
+ * much stored input as a cookie is.
+ *
+ * `merged_guest_cart_ids` is what makes the merge idempotent: a guest cart id
+ * already folded in is never folded in again, however many times sign-in runs.
+ */
+export const customerCarts = pgTable("customer_carts", {
+  customerId: text("customer_id").primaryKey(),
+  /** Rotated when the cart is cleared, so a new order never reuses a checkout key. */
+  cartId: text("cart_id").notNull(),
+  lines: jsonb("lines").notNull(),
+  mergedGuestCartIds: jsonb("merged_guest_cart_ids")
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/* ------------------------------------------------------------------ *
  * Addresses
  * ------------------------------------------------------------------ */
 
@@ -341,6 +403,8 @@ import {
 } from "./orders.schema";
 
 export const appSchema = {
+  customers,
+  customerCarts,
   customerAddresses,
   savedItems,
   customerDesigns,

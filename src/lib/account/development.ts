@@ -1,5 +1,10 @@
+import { readSupabaseAuthConfig } from "@/lib/auth/config";
+
 /**
  * The development identity.
+ *
+ * Since Stage 17 this exists only for local work without a Supabase project:
+ * the moment `NEXT_PUBLIC_SUPABASE_*` is set, real authentication replaces it.
  *
  * SADA 3D has no authentication. Phase 17 brings Supabase Auth, and until it
  * does there is no trusted way to know who is reading a page — so in a
@@ -49,5 +54,12 @@ export const DEVELOPMENT_CUSTOMER_EMAIL = "demo@sada3d.example";
  */
 export function developmentIdentityEnabled(): boolean {
   if (process.env.NODE_ENV === "production") return false;
+  /*
+   * Real authentication, or an attempt at it, takes over completely. With any
+   * Supabase variable present the development identity is off — including when
+   * the configuration is broken, so a typo cannot silently sign everyone in as
+   * the development customer.
+   */
+  if (readSupabaseAuthConfig().status !== "absent") return false;
   return process.env.SADA_DEV_ACCOUNT !== "0";
 }

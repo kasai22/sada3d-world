@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 
-import { AccountIdentity, AccountShell, AccountSignInRequired } from "@/components/account";
+import {
+  AccountIdentity,
+  AccountShell,
+  AccountSignInRequired,
+  SignOutButton,
+} from "@/components/account";
 import { Button, Icon } from "@/components/core";
 import { SectionHeading, SpecTable } from "@/components/structure";
-import { requireCustomerContext } from "@/lib/account/identity";
+import { requireCustomerContext, resolveCredentialsAdapter } from "@/lib/account/identity";
+import { RESET_PASSWORD_PATH } from "@/lib/account/routes";
 import { getCustomerSettings } from "@/lib/account/settings";
 
 import styles from "./page.module.css";
@@ -59,6 +65,14 @@ export default async function AccountSettingsPage() {
             rows={[
               { label: "Name", value: profile.name ?? "Not set" },
               { label: "Email", value: profile.email ?? "Not set" },
+              ...(profile.emailVerified === undefined
+                ? []
+                : [
+                    {
+                      label: "Email status",
+                      value: profile.emailVerified ? "Confirmed" : "Not confirmed",
+                    },
+                  ]),
               { label: "Phone", value: profile.phone ?? "Not set" },
             ]}
           />
@@ -85,12 +99,26 @@ export default async function AccountSettingsPage() {
           <SectionHeading as="h2" id="settings-security" size="sm">
             Sign-in and security
           </SectionHeading>
-          <p className={styles.body}>
-            Sign-in, password and session management will live here once
-            accounts are open. SADA 3D holds no password today and this page
-            does not offer one — there is no second way in, and building one
-            would be building a weaker one.
-          </p>
+          {resolveCredentialsAdapter() ? (
+            <>
+              <p className={styles.body}>
+                You sign in with your email and password. SADA 3D never stores
+                your password; the sign-in provider holds it. Signing out ends
+                the session on this device.
+              </p>
+              <p className={styles.action}>
+                <Button href={RESET_PASSWORD_PATH} variant="secondary">
+                  Change password
+                </Button>{" "}
+                <SignOutButton variant="secondary" size="md" />
+              </p>
+            </>
+          ) : (
+            <p className={styles.body}>
+              Customer sign-in is not configured in this environment, so there is
+              no password or session to manage here.
+            </p>
+          )}
         </section>
 
         <section aria-labelledby="settings-notifications">

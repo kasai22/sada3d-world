@@ -17,7 +17,29 @@ import { adminsOnly, canUseAdmin } from "../access";
  */
 export const Users: CollectionConfig = {
   slug: "users",
-  auth: true,
+  /*
+   * Stated rather than inherited, so a Payload upgrade that changes a default
+   * cannot quietly change how the admin is protected.
+   *
+   *   cookies           Secure in production; Lax, so the operator session is
+   *                     not sent on a cross-site POST
+   *   maxLoginAttempts  failed passwords before the account locks
+   *   lockTime          how long it stays locked
+   *   tokenExpiration   an operator session lasts two hours
+   *
+   * `maxLoginAttempts` and `lockTime` are Payload's own defaults (5 and ten
+   * minutes) made explicit; lockTime is raised to fifteen. Neither adds a column:
+   * the lockout fields already exist because the default was already on.
+   */
+  auth: {
+    cookies: {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax",
+    },
+    maxLoginAttempts: 5,
+    lockTime: 15 * 60 * 1000,
+    tokenExpiration: 2 * 60 * 60,
+  },
   admin: {
     useAsTitle: "email",
     group: "System",
@@ -28,6 +50,8 @@ export const Users: CollectionConfig = {
     create: adminsOnly,
     update: adminsOnly,
     delete: adminsOnly,
+    // Unlocking a locked-out operator is an administrator's decision.
+    unlock: adminsOnly,
     admin: canUseAdmin,
   },
   fields: [

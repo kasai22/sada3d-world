@@ -1,62 +1,101 @@
 import { Button } from "@/components/core";
 import { Breadcrumbs } from "@/components/structure";
+import { getCustomerContext, resolveCredentialsAdapter } from "@/lib/account/identity";
 import { signInHref } from "@/lib/account/routes";
 
 import { AccountState } from "./AccountState";
 import styles from "./AccountSignInRequired.module.css";
 
 export interface AccountSignInRequiredProps {
-  /** Where to come back to once accounts exist. Validated by signInHref. */
+  /** Where to come back to after signing in. Validated by signInHref. */
   returnTo?: string;
 }
 
 /**
  * The account, to someone who is not signed in.
  *
- * This is what every account route renders today, in production, because there
- * is no authentication: `lib/account/identity.ts` has no trusted identity to
- * offer and does not invent one.
+ * Every account page renders this when `requireCustomerContext` finds no
+ * session. It distinguishes the three reasons there can be no customer,
+ * because each needs a different sentence:
  *
- * It says two true things and no more — what an account is for, and that
- * signing in is not available yet. It does not offer a form that cannot
- * authenticate anyone, and it does not imply that an account is waiting.
+ *   the session expired        "sign in again" — the provider refused a session
+ *                              this browser presented
+ *   nobody is signed in        sign in, or create an account
+ *   accounts are unavailable   this deployment has no Supabase Auth, and there
+ *                              is no form to offer
  *
- * The one thing a customer can do right now is track an order with its
- * reference and email, which is the Phase 12 guest route and genuinely works.
- * It is offered here rather than buried.
+ * The guest route — following an order with its reference and email — is
+ * offered in all three, because it works without an account.
  */
-export function AccountSignInRequired({ returnTo }: AccountSignInRequiredProps) {
+export async function AccountSignInRequired({ returnTo }: AccountSignInRequiredProps) {
+  const credentials = resolveCredentialsAdapter();
+  const { sessionExpired } = await getCustomerContext();
+
   return (
     <div className={`bg-engineering ${styles.page}`}>
       <div className="u-container">
         <Breadcrumbs className={styles.crumbs} items={[{ label: "Account" }]} />
 
         <div className={styles.layout}>
-          <AccountState
-            icon="user"
-            code="Sign in required"
-            title="Your account"
-            titleAs="h1"
-            actions={
-              <>
-                <Button href={signInHref(returnTo)} size="lg">
-                  Sign in
-                </Button>
-                <Button href="/orders" variant="secondary" size="lg">
+          {!credentials ? (
+            <AccountState
+              tone="unavailable"
+              icon="user"
+              code="Not available"
+              title="Your account"
+              titleAs="h1"
+              actions={
+                <Button href="/orders" size="lg">
                   Track an order
                 </Button>
-              </>
-            }
-          >
-            <p>
-              Sign in to see your orders, follow what is being made, and manage
-              your saved designs, saved parts and delivery addresses.
-            </p>
-            <p>
-              Accounts are not open yet. You can still follow an order with its
-              reference and the email it was placed with.
-            </p>
-          </AccountState>
+              }
+            >
+              <p>
+                Customer accounts are not available in this environment. You can
+                still follow an order with its reference and the email it was
+                placed with.
+              </p>
+            </AccountState>
+          ) : (
+            <AccountState
+              icon="user"
+              code={sessionExpired ? "Session expired" : "Sign in required"}
+              title="Your account"
+              titleAs="h1"
+              actions={
+                <>
+                  <Button
+                    href={signInHref(returnTo, sessionExpired ? { status: "expired" } : {})}
+                    size="lg"
+                  >
+                    Sign in
+                  </Button>
+                  {!sessionExpired && (
+                    <Button
+                      href={signInHref(returnTo, { mode: "signup" })}
+                      variant="secondary"
+                      size="lg"
+                    >
+                      Create an account
+                    </Button>
+                  )}
+                  <Button href="/orders" variant="secondary" size="lg">
+                    Track an order
+                  </Button>
+                </>
+              }
+            >
+              <p>
+                {sessionExpired
+                  ? "Your session has expired. Sign in again to continue where you left off."
+                  : "Sign in to see your orders, follow what is being made, and manage your saved designs, saved parts and delivery addresses."}
+              </p>
+              <p>
+                An order placed without an account can still be followed with its
+                reference and the email it was placed with.
+              </p>
+            </AccountState>
+          )}
         </div>
       </div>
     </div>

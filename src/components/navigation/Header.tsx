@@ -2,6 +2,9 @@ import Link from "next/link";
 import clsx from "clsx";
 
 import { Icon } from "@/components/core";
+import { developmentIdentityEnabled } from "@/lib/account/development";
+
+import { AccountLink } from "./AccountLink";
 import { CartLink } from "./CartLink";
 import { MobileNav, type NavItem } from "./MobileNav";
 import { NavLink } from "./NavLink";
@@ -55,16 +58,10 @@ export function Header({ items = PRIMARY_NAV, className }: HeaderProps) {
           </span>
         </Link>
 
-        <Link
-          href="/account"
-          className={clsx("u-plain", styles.utilityLink)}
-          aria-label="Account"
-          title="Account"
-        >
-          <span className={styles.utility}>
-            <Icon name="user" size={17} />
-          </span>
-        </Link>
+        {/* A client island like the cart: it reads a non-secret hint, so the
+            header can say "Sign in" or "Account" without any page becoming
+            dynamic. Reading the environment here is build-safe; no cookie is. */}
+        <AccountLink development={developmentIdentityEnabled()} />
 
         {/* The only client island in the header: it reads the count the cart
             service wrote, so no page has to become dynamic to show it. */}

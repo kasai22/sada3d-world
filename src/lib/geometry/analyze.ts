@@ -1,3 +1,4 @@
+import { ModelTooComplexError } from "@/lib/errors";
 import type { ParsedMesh, ParsedModel, ParsedObject } from "@/lib/models/types";
 
 import {
@@ -33,6 +34,19 @@ import {
  * with a hole in it has no inside, so it has no volume, and the result says
  * `unavailable` with the reason rather than a figure a customer might be
  * charged against.
+ *
+ * ── Memory (Stage 18) ────────────────────────────────────────────────────
+ *
+ * The topology check used to key a Map by strings — a vertex key per corner and
+ * an edge key per directed edge — and then built the whole map a second time for
+ * the aggregate. Measured, that was roughly a gigabyte per half-million
+ * triangles. It now interns each quantised vertex into an integer id in a typed
+ * hash table, records each directed edge as one number in a typed array, and
+ * reads topology by sorting that array once. The answers are identical — the
+ * vertex identity is still exact equality of quantised coordinates, and the
+ * edge rules are unchanged — and `analyze.test.ts` checks them against the
+ * previous algorithm. Aggregate totals are gathered in the same pass as the
+ * per-object ones, in the same order, so every sum is bit-for-bit what it was.
  */
 
 /* ------------------------------------------------------------------ *
@@ -88,29 +102,123 @@ function signedVolumeSix(
 }
 
 /* ------------------------------------------------------------------ *
- * Topology
+ * Vertex identity
  * ------------------------------------------------------------------ */
 
 /**
- * Quantised vertex key.
+ * Quantisation grid for matching vertices.
  *
  * Two triangles that share an edge frequently disagree in the last bits of a
  * float — the same corner written twice by an exporter. Comparing raw floats
  * would report every such edge as a boundary and call every real solid open.
- *
- * Quantising to a fixed grid is what makes edge matching work in practice. The
- * grid is fine enough that two genuinely distinct vertices are never merged at
- * any scale a printed part occupies, and coarse enough to absorb float noise.
+ * The grid is fine enough that two genuinely distinct vertices are never merged
+ * at any scale a printed part occupies, and coarse enough to absorb float noise.
  */
 const QUANTUM = 1e-6;
 
-function vertexKey(x: number, y: number, z: number): string {
-  // `| 0`-free rounding: Math.round keeps this correct for large coordinates.
-  const qx = Math.round(x / QUANTUM);
-  const qy = Math.round(y / QUANTUM);
-  const qz = Math.round(z / QUANTUM);
-  return `${qx},${qy},${qz}`;
+/**
+ * Directed edges are stored as `from × EDGE_BASE + to`. With both ids below
+ * 2^26 the key is an exact integer below 2^52, so a Float64Array holds it
+ * without loss and sorts it numerically.
+ */
+const EDGE_BASE = 67_108_864;
+
+/**
+ * Quantised vertex → integer id, by open addressing over typed arrays.
+ *
+ * Equality is exact comparison of the three quantised coordinates, which is the
+ * same identity the previous string key (`"qx,qy,qz"`) expressed: two doubles
+ * format to the same string exactly when they are equal. The hash only decides
+ * where to look, so a collision costs a probe and never merges two vertices.
+ */
+class VertexIndex {
+  private slots: Int32Array;
+  private mask: number;
+  private coords: Float64Array;
+  size = 0;
+
+  constructor(expected: number) {
+    let capacity = 1024;
+    while (capacity < expected * 2) capacity *= 2;
+    this.slots = new Int32Array(capacity);
+    this.mask = capacity - 1;
+    this.coords = new Float64Array(Math.max(expected, 256) * 3);
+  }
+
+  private static hash(x: number, y: number, z: number): number {
+    // Low and high 32 bits of each coordinate, so large coordinates still spread.
+    let h = Math.imul(x | 0, 0x9e3779b1);
+    h ^= Math.imul((x / 4294967296) | 0, 0x7feb352d);
+    h ^= Math.imul(y | 0, 0x85ebca6b);
+    h ^= Math.imul((y / 4294967296) | 0, 0x846ca68b);
+    h ^= Math.imul(z | 0, 0xc2b2ae35);
+    h ^= Math.imul((z / 4294967296) | 0, 0x27d4eb2f);
+    h ^= h >>> 16;
+    h = Math.imul(h, 0x45d9f3b);
+    h ^= h >>> 16;
+    return h;
+  }
+
+  intern(x: number, y: number, z: number): number {
+    const coords = this.coords;
+    const slots = this.slots;
+    let slot = VertexIndex.hash(x, y, z) & this.mask;
+
+    for (;;) {
+      const entry = slots[slot] ?? 0;
+      if (entry === 0) break;
+
+      const base = (entry - 1) * 3;
+      if (coords[base] === x && coords[base + 1] === y && coords[base + 2] === z) {
+        return entry - 1;
+      }
+      slot = (slot + 1) & this.mask;
+    }
+
+    const id = this.size;
+    if (id >= EDGE_BASE - 1) {
+      throw new ModelTooComplexError(
+        "This model has more distinct vertices than can be analysed.",
+      );
+    }
+
+    if ((id + 1) * 3 > coords.length) {
+      const grown = new Float64Array(coords.length * 2);
+      grown.set(coords);
+      this.coords = grown;
+    }
+
+    this.coords[id * 3] = x;
+    this.coords[id * 3 + 1] = y;
+    this.coords[id * 3 + 2] = z;
+    slots[slot] = id + 1;
+    this.size += 1;
+
+    if (this.size * 2 > slots.length) this.rehash();
+    return id;
+  }
+
+  private rehash(): void {
+    const capacity = this.slots.length * 2;
+    const slots = new Int32Array(capacity);
+    const mask = capacity - 1;
+
+    for (let id = 0; id < this.size; id += 1) {
+      const base = id * 3;
+      let slot =
+        VertexIndex.hash(this.coords[base] ?? 0, this.coords[base + 1] ?? 0, this.coords[base + 2] ?? 0) & mask;
+      while ((slots[slot] ?? 0) !== 0) slot = (slot + 1) & mask;
+      slots[slot] = id + 1;
+    }
+
+    this.slots = slots;
+    this.mask = mask;
+  }
 }
+
+/* ------------------------------------------------------------------ *
+ * Accumulation
+ * ------------------------------------------------------------------ */
 
 interface Accumulator {
   triangles: number;
@@ -120,8 +228,6 @@ interface Accumulator {
   signedVolumeSix: number;
   minX: number; minY: number; minZ: number;
   maxX: number; maxY: number; maxZ: number;
-  /** Directed edge → how many triangles traverse it in that direction. */
-  edges: Map<string, number>;
 }
 
 function newAccumulator(): Accumulator {
@@ -133,130 +239,188 @@ function newAccumulator(): Accumulator {
     signedVolumeSix: 0,
     minX: Infinity, minY: Infinity, minZ: Infinity,
     maxX: -Infinity, maxY: -Infinity, maxZ: -Infinity,
-    edges: new Map(),
   };
 }
 
-/** Records a directed edge. Winding is what makes orientation checkable. */
-function addEdge(edges: Map<string, number>, from: string, to: string): void {
-  const key = `${from}|${to}`;
-  edges.set(key, (edges.get(key) ?? 0) + 1);
+function trianglesIn(meshes: readonly ParsedMesh[]): number {
+  return meshes.reduce(
+    (sum, mesh) => sum + Math.floor(mesh.positions.length / FLOATS_PER_TRIANGLE),
+    0,
+  );
+}
+
+/** Adds one measurable triangle's area, volume term and extent. */
+function include(
+  into: Accumulator,
+  area: number,
+  volumeSix: number,
+  ax: number, ay: number, az: number,
+  bx: number, by: number, bz: number,
+  cx: number, cy: number, cz: number,
+): void {
+  into.area += area;
+  into.signedVolumeSix += volumeSix;
+
+  if (ax < into.minX) into.minX = ax;
+  if (ay < into.minY) into.minY = ay;
+  if (az < into.minZ) into.minZ = az;
+  if (bx < into.minX) into.minX = bx;
+  if (by < into.minY) into.minY = by;
+  if (bz < into.minZ) into.minZ = bz;
+  if (cx < into.minX) into.minX = cx;
+  if (cy < into.minY) into.minY = cy;
+  if (cz < into.minZ) into.minZ = cz;
+
+  if (ax > into.maxX) into.maxX = ax;
+  if (ay > into.maxY) into.maxY = ay;
+  if (az > into.maxZ) into.maxZ = az;
+  if (bx > into.maxX) into.maxX = bx;
+  if (by > into.maxY) into.maxY = by;
+  if (bz > into.maxZ) into.maxZ = bz;
+  if (cx > into.maxX) into.maxX = cx;
+  if (cy > into.maxY) into.maxY = cy;
+  if (cz > into.maxZ) into.maxZ = cz;
 }
 
 /**
- * Folds one mesh's triangles into the accumulator.
+ * Folds one object's triangles into its accumulator and the model's total, and
+ * records its directed edges.
  *
  * Coordinates are scaled to millimetres as they are read, so everything
- * downstream — bounds, area, volume — is already in the normalised unit and
- * nothing has to remember to convert later.
+ * downstream — bounds, area, volume — is already in the normalised unit.
+ *
+ * Returns the edge keys, unsorted, for exactly the triangles that count towards
+ * topology: finite and of non-zero area.
  */
-function accumulate(mesh: ParsedMesh, scale: number, into: Accumulator): void {
-  const positions = mesh.positions;
-  const count = Math.floor(positions.length / FLOATS_PER_TRIANGLE);
+function accumulateObject(
+  object: ParsedObject,
+  scale: number,
+  vertices: VertexIndex,
+  into: Accumulator,
+  total: Accumulator,
+): Float64Array {
+  const edges = new Float64Array(trianglesIn(object.meshes) * 3);
+  let edgeCount = 0;
 
-  for (let t = 0; t < count; t += 1) {
-    const o = t * FLOATS_PER_TRIANGLE;
+  for (const mesh of object.meshes) {
+    const positions = mesh.positions;
+    const count = Math.floor(positions.length / FLOATS_PER_TRIANGLE);
 
-    /*
-     * `?? NaN`, not `?? 0`. The loop is bounded by floor(length / 9) so a short
-     * read cannot happen — but if it ever could, NaN routes the triangle into
-     * the non-finite path below, where it is excluded and reported. Defaulting
-     * to zero would silently measure it as a point at the origin and quietly
-     * enlarge the bounding box of every model it happened to.
-     */
-    const ax = (positions[o] ?? NaN) * scale;
-    const ay = (positions[o + 1] ?? NaN) * scale;
-    const az = (positions[o + 2] ?? NaN) * scale;
-    const bx = (positions[o + 3] ?? NaN) * scale;
-    const by = (positions[o + 4] ?? NaN) * scale;
-    const bz = (positions[o + 5] ?? NaN) * scale;
-    const cx = (positions[o + 6] ?? NaN) * scale;
-    const cy = (positions[o + 7] ?? NaN) * scale;
-    const cz = (positions[o + 8] ?? NaN) * scale;
+    for (let t = 0; t < count; t += 1) {
+      const o = t * FLOATS_PER_TRIANGLE;
 
-    const finite =
-      Number.isFinite(ax) && Number.isFinite(ay) && Number.isFinite(az) &&
-      Number.isFinite(bx) && Number.isFinite(by) && Number.isFinite(bz) &&
-      Number.isFinite(cx) && Number.isFinite(cy) && Number.isFinite(cz);
-
-    if (!finite) {
       /*
-       * A NaN or Infinity anywhere would poison the bounds, the area and the
-       * volume for the whole model. The triangle is excluded and counted, and
-       * the count becomes a warning — silently dropping it would make the
-       * measurements quietly wrong instead of loudly incomplete.
+       * `?? NaN`, not `?? 0`. The loop is bounded by floor(length / 9) so a short
+       * read cannot happen — but if it ever could, NaN routes the triangle into
+       * the non-finite path below, where it is excluded and reported.
        */
-      into.nonFinite += 1;
-      continue;
+      const ax = (positions[o] ?? NaN) * scale;
+      const ay = (positions[o + 1] ?? NaN) * scale;
+      const az = (positions[o + 2] ?? NaN) * scale;
+      const bx = (positions[o + 3] ?? NaN) * scale;
+      const by = (positions[o + 4] ?? NaN) * scale;
+      const bz = (positions[o + 5] ?? NaN) * scale;
+      const cx = (positions[o + 6] ?? NaN) * scale;
+      const cy = (positions[o + 7] ?? NaN) * scale;
+      const cz = (positions[o + 8] ?? NaN) * scale;
+
+      const finite =
+        Number.isFinite(ax) && Number.isFinite(ay) && Number.isFinite(az) &&
+        Number.isFinite(bx) && Number.isFinite(by) && Number.isFinite(bz) &&
+        Number.isFinite(cx) && Number.isFinite(cy) && Number.isFinite(cz);
+
+      if (!finite) {
+        /*
+         * A NaN or Infinity anywhere would poison the bounds, the area and the
+         * volume for the whole model. The triangle is excluded and counted, and
+         * the count becomes a warning.
+         */
+        into.nonFinite += 1;
+        total.nonFinite += 1;
+        continue;
+      }
+
+      into.triangles += 1;
+      total.triangles += 1;
+
+      const area = triangleArea(ax, ay, az, bx, by, bz, cx, cy, cz);
+      if (area === 0) {
+        // Zero-area triangles contribute nothing to area or volume and would add
+        // spurious edges to the topology check, so they are excluded from both.
+        into.degenerate += 1;
+        total.degenerate += 1;
+        continue;
+      }
+
+      const volumeSix = signedVolumeSix(ax, ay, az, bx, by, bz, cx, cy, cz);
+      include(into, area, volumeSix, ax, ay, az, bx, by, bz, cx, cy, cz);
+      include(total, area, volumeSix, ax, ay, az, bx, by, bz, cx, cy, cz);
+
+      const a = vertices.intern(Math.round(ax / QUANTUM), Math.round(ay / QUANTUM), Math.round(az / QUANTUM));
+      const b = vertices.intern(Math.round(bx / QUANTUM), Math.round(by / QUANTUM), Math.round(bz / QUANTUM));
+      const c = vertices.intern(Math.round(cx / QUANTUM), Math.round(cy / QUANTUM), Math.round(cz / QUANTUM));
+
+      edges[edgeCount] = a * EDGE_BASE + b;
+      edges[edgeCount + 1] = b * EDGE_BASE + c;
+      edges[edgeCount + 2] = c * EDGE_BASE + a;
+      edgeCount += 3;
     }
-
-    into.triangles += 1;
-
-    const area = triangleArea(ax, ay, az, bx, by, bz, cx, cy, cz);
-    if (area === 0) {
-      // Zero-area triangles contribute nothing to area or volume and would add
-      // spurious edges to the topology check, so they are excluded from both.
-      into.degenerate += 1;
-      continue;
-    }
-
-    into.area += area;
-    into.signedVolumeSix += signedVolumeSix(ax, ay, az, bx, by, bz, cx, cy, cz);
-
-    if (ax < into.minX) into.minX = ax;
-    if (ay < into.minY) into.minY = ay;
-    if (az < into.minZ) into.minZ = az;
-    if (bx < into.minX) into.minX = bx;
-    if (by < into.minY) into.minY = by;
-    if (bz < into.minZ) into.minZ = bz;
-    if (cx < into.minX) into.minX = cx;
-    if (cy < into.minY) into.minY = cy;
-    if (cz < into.minZ) into.minZ = cz;
-
-    if (ax > into.maxX) into.maxX = ax;
-    if (ay > into.maxY) into.maxY = ay;
-    if (az > into.maxZ) into.maxZ = az;
-    if (bx > into.maxX) into.maxX = bx;
-    if (by > into.maxY) into.maxY = by;
-    if (bz > into.maxZ) into.maxZ = bz;
-    if (cx > into.maxX) into.maxX = cx;
-    if (cy > into.maxY) into.maxY = cy;
-    if (cz > into.maxZ) into.maxZ = cz;
-
-    const ka = vertexKey(ax, ay, az);
-    const kb = vertexKey(bx, by, bz);
-    const kc = vertexKey(cx, cy, cz);
-
-    addEdge(into.edges, ka, kb);
-    addEdge(into.edges, kb, kc);
-    addEdge(into.edges, kc, ka);
   }
+
+  return edges.subarray(0, edgeCount);
+}
+
+/* ------------------------------------------------------------------ *
+ * Topology
+ * ------------------------------------------------------------------ */
+
+/** How many times `key` occurs in a sorted array. */
+function occurrences(sorted: Float64Array, key: number): number {
+  let low = 0;
+  let high = sorted.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if ((sorted[middle] ?? 0) < key) low = middle + 1;
+    else high = middle;
+  }
+
+  let end = low;
+  while (end < sorted.length && sorted[end] === key) end += 1;
+  return end - low;
 }
 
 /**
- * Reads the edge map as a topology verdict.
+ * Reads directed edges as a topology verdict. Sorts `edges` in place.
  *
  * For a closed, consistently-oriented surface every directed edge A→B appears
  * exactly once and its reverse B→A appears exactly once. Anything else says
  * what kind of "else" it is.
  */
-function readTopology(accumulator: Accumulator): TopologyReport {
+function readTopology(triangles: number, degenerate: number, edges: Float64Array): TopologyReport {
+  edges.sort();
+
   let boundaryEdges = 0;
   let nonManifoldEdges = 0;
 
-  for (const [key, forward] of accumulator.edges) {
-    const separator = key.indexOf("|");
-    const from = key.slice(0, separator);
-    const to = key.slice(separator + 1);
-    const backward = accumulator.edges.get(`${to}|${from}`) ?? 0;
+  for (let index = 0; index < edges.length; ) {
+    const key = edges[index] ?? 0;
+    let next = index + 1;
+    while (next < edges.length && edges[next] === key) next += 1;
+
+    const forward = next - index;
+    const from = Math.floor(key / EDGE_BASE);
+    const to = key - from * EDGE_BASE;
+    const backward = occurrences(edges, to * EDGE_BASE + from);
 
     if (forward > 1) nonManifoldEdges += 1;
     else if (backward === 0) boundaryEdges += 1;
     else if (backward > 1) nonManifoldEdges += 1;
+
+    index = next;
   }
 
   const topology =
-    accumulator.triangles === 0
+    triangles === 0
       ? "unknown"
       : nonManifoldEdges > 0
         ? "non_manifold"
@@ -268,7 +432,7 @@ function readTopology(accumulator: Accumulator): TopologyReport {
     topology,
     boundaryEdges,
     nonManifoldEdges,
-    degenerateTriangles: accumulator.degenerate,
+    degenerateTriangles: degenerate,
   };
 }
 
@@ -340,22 +504,17 @@ function volumeOf(accumulator: Accumulator, topology: TopologyReport): Measureme
   /*
    * A closed surface wound inside-out gives a negative sum. The magnitude is
    * still the enclosed volume, so the sign is dropped rather than the result
-   * being refused — an inverted normal is a modelling detail, not a reason to
-   * withhold a measurement.
+   * being refused.
    */
   return measured(Math.abs(volume), "mm3", "mesh");
 }
 
-function analyseObject(
+function objectAnalysis(
   object: ParsedObject,
-  scale: number,
+  accumulator: Accumulator,
+  topology: TopologyReport,
   warnings: AnalysisWarning[],
 ): ObjectAnalysis {
-  const accumulator = newAccumulator();
-  for (const mesh of object.meshes) accumulate(mesh, scale, accumulator);
-
-  const topology = readTopology(accumulator);
-
   if (accumulator.triangles === 0) {
     warnings.push({
       code: "empty_object",
@@ -437,18 +596,45 @@ export function analyzeGeometry(model: ParsedModel): GeometryAnalysisResult {
 
   for (const note of model.warnings) warnings.push(note);
 
-  const objects = model.objects.map((object) =>
-    analyseObject(object, scale, warnings),
+  const totalTriangles = model.objects.reduce(
+    (sum, object) => sum + trianglesIn(object.meshes),
+    0,
   );
+
+  // Vertex ids are shared across objects so edges two parts share still match.
+  const vertices = new VertexIndex(Math.ceil(totalTriangles * 0.6));
+  const total = newAccumulator();
+  const edgeSets: Float64Array[] = [];
+
+  const objects = model.objects.map((object) => {
+    const accumulator = newAccumulator();
+    const edges = accumulateObject(object, scale, vertices, accumulator, total);
+    const topology = readTopology(accumulator.triangles, accumulator.degenerate, edges);
+    edgeSets.push(edges);
+    return objectAnalysis(object, accumulator, topology, warnings);
+  });
 
   /* ---- aggregate ---- */
 
-  const total = newAccumulator();
-  for (const object of model.objects) {
-    for (const mesh of object.meshes) accumulate(mesh, scale, total);
-  }
+  /*
+   * One object: the model's edge set is that object's, already read. Several:
+   * the union, so an edge shared by two parts is judged across both — exactly
+   * what running every triangle through one map used to decide.
+   */
+  let topology: TopologyReport;
+  const [onlyObject] = objects;
 
-  const topology = readTopology(total);
+  if (objects.length === 1 && onlyObject) {
+    topology = { ...onlyObject.topology };
+  } else {
+    const union = new Float64Array(edgeSets.reduce((sum, set) => sum + set.length, 0));
+    let offset = 0;
+    for (const set of edgeSets) {
+      union.set(set, offset);
+      offset += set.length;
+    }
+    topology = readTopology(total.triangles, total.degenerate, union);
+  }
 
   /*
    * The aggregate volume is the sum of the objects' volumes, and only when
@@ -469,11 +655,6 @@ export function analyzeGeometry(model: ParsedModel): GeometryAnalysisResult {
       : unmeasurable.length > 0
         ? unavailable(
             "mm3",
-            /*
-             * With one object, its own reason is the useful one — "this mesh is
-             * not closed, 20 open edges" tells the customer what to fix, where a
-             * summary would only tell them something is wrong.
-             */
             objects.length === 1 && firstReason !== undefined
               ? firstReason
               : unmeasurable.length === objects.length

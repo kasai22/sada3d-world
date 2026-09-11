@@ -1,5 +1,13 @@
+import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 
+import { getCustomerContext } from "@/lib/account/identity";
+import { getDatabase } from "@/lib/db/client";
+import { memoize, persistenceMode } from "@/lib/db/persistence";
+import { customerCarts } from "@/lib/db/schema";
+import { EVENTS, log } from "@/lib/observability";
+
+import { mergeGuestCart } from "./merge";
 import { unitCount } from "./totals";
 import { MAX_CART_LINES, type Cart, type CartLine } from "./types";
 
@@ -221,6 +229,19 @@ function newCart(): Cart {
   };
 }
 
+/** The header badge's copy of the unit count. Written beside every cart write. */
+async function writeCountCookie(count: number): Promise<void> {
+  const store = await cookies();
+  store.set(CART_COUNT_COOKIE, String(count), {
+    httpOnly: false,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: THIRTY_DAYS,
+  });
+}
+
+/** The guest cart: one browser, an HttpOnly cookie. */
 export const cookieCartRepository: CartRepository = {
   name: "cookie",
 
@@ -242,27 +263,250 @@ export const cookieCartRepository: CartRepository = {
     });
 
     // Written here so the badge can never drift from the cart.
-    store.set(CART_COUNT_COOKIE, String(unitCount(cart.lines)), {
-      httpOnly: false,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: THIRTY_DAYS,
-    });
+    await writeCountCookie(unitCount(cart.lines));
   },
 
   async clear(): Promise<void> {
     const store = await cookies();
     store.delete(CART_COOKIE);
-    store.set(CART_COUNT_COOKIE, "0", {
-      httpOnly: false,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: THIRTY_DAYS,
+    await writeCountCookie(0);
+  },
+};
+
+/* ------------------------------------------------------------------ *
+ * Account carts
+ * ------------------------------------------------------------------ */
+
+export interface AccountCartRecord {
+  cart: Cart;
+  /** Guest carts already folded into this one. See `merge.ts`. */
+  mergedGuestCartIds: readonly string[];
+}
+
+export interface AccountCartStore {
+  readonly name: string;
+  load(customerId: string): Promise<AccountCartRecord>;
+  save(customerId: string, record: AccountCartRecord): Promise<void>;
+}
+
+/** Enough to recognise a repeated merge; bounded so the row cannot grow forever. */
+const MAX_REMEMBERED_MERGES = 20;
+
+function readMergedIds(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string").slice(-MAX_REMEMBERED_MERGES)
+    : [];
+}
+
+/**
+ * The stored lines, through the same strict reader as the cookie.
+ *
+ * A JSON column is stored input exactly as a cookie is. A line that does not
+ * parse is dropped rather than repaired — the rule the cookie has always had.
+ */
+function readStoredCart(cartId: string, lines: unknown, updatedAt: Date): Cart {
+  return (
+    parseCart(JSON.stringify({ id: cartId, lines, updatedAt: updatedAt.toISOString() })) ?? {
+      ...newCart(),
+      id: cartId,
+    }
+  );
+}
+
+export const postgresAccountCartStore: AccountCartStore = {
+  name: "postgres",
+
+  async load(customerId: string): Promise<AccountCartRecord> {
+    const db = await getDatabase();
+
+    const rows = await db
+      .select()
+      .from(customerCarts)
+      .where(eq(customerCarts.customerId, customerId))
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) return { cart: newCart(), mergedGuestCartIds: [] };
+
+    return {
+      cart: readStoredCart(row.cartId, row.lines, row.updatedAt),
+      mergedGuestCartIds: readMergedIds(row.mergedGuestCartIds),
+    };
+  },
+
+  async save(customerId: string, record: AccountCartRecord): Promise<void> {
+    const db = await getDatabase();
+    const values = {
+      customerId,
+      cartId: record.cart.id,
+      lines: record.cart.lines.slice(0, MAX_CART_LINES),
+      mergedGuestCartIds: record.mergedGuestCartIds.slice(-MAX_REMEMBERED_MERGES),
+      updatedAt: new Date(),
+    };
+
+    await db
+      .insert(customerCarts)
+      .values(values)
+      .onConflictDoUpdate({
+        target: customerCarts.customerId,
+        set: {
+          cartId: values.cartId,
+          lines: values.lines,
+          mergedGuestCartIds: values.mergedGuestCartIds,
+          updatedAt: values.updatedAt,
+        },
+      });
+  },
+};
+
+const MEMORY_KEY = "__sada3d_account_carts__";
+
+/** Development without a database. Same shape, this process only. */
+export const memoryAccountCartStore: AccountCartStore = {
+  name: "memory",
+
+  async load(customerId: string): Promise<AccountCartRecord> {
+    const globals = globalThis as unknown as Record<string, Map<string, AccountCartRecord> | undefined>;
+    const found = globals[MEMORY_KEY]?.get(customerId);
+    return found
+      ? { cart: { ...found.cart, lines: [...found.cart.lines] }, mergedGuestCartIds: [...found.mergedGuestCartIds] }
+      : { cart: newCart(), mergedGuestCartIds: [] };
+  },
+
+  async save(customerId: string, record: AccountCartRecord): Promise<void> {
+    const globals = globalThis as unknown as Record<string, Map<string, AccountCartRecord> | undefined>;
+    const map = globals[MEMORY_KEY] ?? new Map<string, AccountCartRecord>();
+    globals[MEMORY_KEY] = map;
+    map.set(customerId, {
+      cart: { ...record.cart, lines: [...record.cart.lines] },
+      mergedGuestCartIds: [...record.mergedGuestCartIds],
     });
   },
 };
 
-/** The repository the application uses. */
-export const cartRepository: CartRepository = cookieCartRepository;
+const postgresStore = memoize(() => postgresAccountCartStore);
+
+export function accountCartStore(): AccountCartStore {
+  return persistenceMode() === "postgres" ? postgresStore() : memoryAccountCartStore;
+}
+
+/* ------------------------------------------------------------------ *
+ * The repository the application uses
+ * ------------------------------------------------------------------ */
+
+async function signedInCustomerId(): Promise<string | null> {
+  const { identity } = await getCustomerContext();
+  return identity?.id ?? null;
+}
+
+/**
+ * The cart for whoever this request is.
+ *
+ * Signed in: the customer's cart, from the database, the same on every device.
+ * Signed out: this browser's guest cart, from its cookie. The identity comes
+ * from the auth adapter — nothing in a request chooses whose cart this is.
+ *
+ * The cart service, validation and checkout above this are unchanged by which
+ * one answers.
+ */
+export const cartRepository: CartRepository = {
+  name: "session",
+
+  async load(): Promise<Cart> {
+    const customerId = await signedInCustomerId();
+    if (!customerId) return cookieCartRepository.load();
+    return (await accountCartStore().load(customerId)).cart;
+  },
+
+  async save(cart: Cart): Promise<void> {
+    const customerId = await signedInCustomerId();
+    if (!customerId) return cookieCartRepository.save(cart);
+
+    if (cart.lines.length > MAX_CART_LINES) {
+      throw new CartStorageError("This cart is full. Remove an item and try again.");
+    }
+
+    const store = accountCartStore();
+    const current = await store.load(customerId);
+    await store.save(customerId, { cart, mergedGuestCartIds: current.mergedGuestCartIds });
+    await writeCountCookie(unitCount(cart.lines));
+  },
+
+  async clear(): Promise<void> {
+    const customerId = await signedInCustomerId();
+    if (!customerId) return cookieCartRepository.clear();
+
+    const store = accountCartStore();
+    const current = await store.load(customerId);
+
+    // A new cart id, so the next checkout is a new idempotency key rather than
+    // a repeat of the order just placed.
+    await store.save(customerId, {
+      cart: newCart(),
+      mergedGuestCartIds: current.mergedGuestCartIds,
+    });
+    await writeCountCookie(0);
+  },
+};
+
+export interface GuestCartMergeReport {
+  merged: number;
+  leftover: number;
+  alreadyMerged: boolean;
+}
+
+/**
+ * Folds this browser's guest cart into the customer's cart.
+ *
+ * Called where a session has just been established — sign-in, sign-up with an
+ * immediate session, and a confirmation or recovery link — all of which run as
+ * server actions or route handlers, where cookies can be written.
+ *
+ * Order of writes: the account cart is saved first, recording the guest cart id
+ * as merged; the guest cookie is cleared second. If the second write fails, the
+ * next attempt finds the id already merged and changes nothing, so a failure
+ * between the two can repeat the clear but never the merge.
+ */
+export async function mergeGuestCartIntoAccount(
+  customerId: string,
+): Promise<GuestCartMergeReport> {
+  const guest = await cookieCartRepository.load();
+  if (guest.lines.length === 0) return { merged: 0, leftover: 0, alreadyMerged: false };
+
+  const store = accountCartStore();
+  const record = await store.load(customerId);
+  const result = mergeGuestCart(record.cart, guest, record.mergedGuestCartIds);
+
+  if (!result.alreadyMerged) {
+    await store.save(customerId, {
+      cart: { ...result.cart, updatedAt: new Date().toISOString() },
+      mergedGuestCartIds: [...record.mergedGuestCartIds, guest.id],
+    });
+  }
+
+  if (result.leftover.length > 0) {
+    // A fresh id: these lines have not been merged, and must be able to be.
+    await cookieCartRepository.save({
+      id: crypto.randomUUID(),
+      lines: result.leftover,
+      updatedAt: new Date().toISOString(),
+    });
+  } else {
+    await cookieCartRepository.clear();
+  }
+
+  await writeCountCookie(unitCount(result.cart.lines));
+
+  log.info(EVENTS.cartMerged, {
+    customerId,
+    merged: result.merged,
+    leftover: result.leftover.length,
+    alreadyMerged: result.alreadyMerged,
+  });
+
+  return {
+    merged: result.merged,
+    leftover: result.leftover.length,
+    alreadyMerged: result.alreadyMerged,
+  };
+}

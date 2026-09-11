@@ -132,4 +132,33 @@ export const EVENTS = {
   storageUnavailable: "storage.unavailable",
   storageNotConfigured: "storage.not_configured",
   requestRateLimited: "api.rate_limited",
+  requestCrossOriginRefused: "api.cross_origin_refused",
+  /*
+   * Stage 18 — request hardening. `requestFailed` is the one line an unexpected
+   * or dependency failure produces: error name, code and classification, never
+   * the error's message or its SQL.
+   */
+  requestFailed: "api.request.failed",
+  requestTooLarge: "api.request.too_large",
+  rateLimiterSaturated: "api.rate_limiter.saturated",
+  readinessFailed: "app.readiness.failed",
+  analysisCacheRejected: "model.analysis.cache_rejected",
+  checkoutFailed: "checkout.failed",
+
+  /*
+   * Stage 17 — authentication. Customer ids and provider error codes only:
+   * never an email, a password, a token, a code or a provider message.
+   */
+  authSignedIn: "auth.signed_in",
+  authSignInRefused: "auth.sign_in.refused",
+  authSignedUp: "auth.signed_up",
+  authSignedOut: "auth.signed_out",
+  authPasswordResetRequested: "auth.password_reset.requested",
+  authPasswordUpdated: "auth.password.updated",
+  authLinkConfirmed: "auth.link.confirmed",
+  authLinkRejected: "auth.link.rejected",
+  authSessionExpired: "auth.session.expired",
+  authProviderUnavailable: "auth.provider.unavailable",
+  authNotConfigured: "auth.not_configured",
+  cartMerged: "cart.merged",
 } as const;

@@ -80,12 +80,26 @@ export interface OrderRepository {
   createOrder(order: Order): Promise<Order>;
   saveOrder(order: Order): Promise<Order>;
   findOrder(reference: string): Promise<Order | undefined>;
+
+  /**
+   * Every order. Reads the whole table: operator tooling and fixtures only,
+   * never a customer-facing request.
+   */
   listOrders(): Promise<Order[]>;
+
+  /**
+   * One customer's orders, newest first. Reads only that customer's rows, by
+   * index — the account portal's path.
+   */
+  listOrdersForCustomer(customerId: string): Promise<Order[]>;
 
   createJob(job: ManufacturingJob): Promise<ManufacturingJob>;
   saveJob(job: ManufacturingJob): Promise<ManufacturingJob>;
   findJob(id: string): Promise<ManufacturingJob | undefined>;
   findJobsForOrder(reference: string): Promise<ManufacturingJob[]>;
+
+  /** The jobs of several orders at once, so a list of orders is not N+1. */
+  findJobsForOrders(references: readonly string[]): Promise<ManufacturingJob[]>;
 
   /**
    * Runs a job update with nothing else touching that job.
@@ -158,6 +172,13 @@ export const memoryOrderRepository: OrderRepository = {
     return [...store().orders.values()].map(cloneOrder);
   },
 
+  async listOrdersForCustomer(customerId: string): Promise<Order[]> {
+    return [...store().orders.values()]
+      .filter((order) => order.customerId !== undefined && order.customerId === customerId)
+      .sort((a, b) => Date.parse(b.placedAt) - Date.parse(a.placedAt))
+      .map(cloneOrder);
+  },
+
   async createJob(job: ManufacturingJob): Promise<ManufacturingJob> {
     store().jobs.set(job.id, cloneJob(job));
     return job;
@@ -176,6 +197,13 @@ export const memoryOrderRepository: OrderRepository = {
   async findJobsForOrder(reference: string): Promise<ManufacturingJob[]> {
     return [...store().jobs.values()]
       .filter((job) => job.orderReference === reference)
+      .map(cloneJob);
+  },
+
+  async findJobsForOrders(references: readonly string[]): Promise<ManufacturingJob[]> {
+    const wanted = new Set(references);
+    return [...store().jobs.values()]
+      .filter((job) => wanted.has(job.orderReference))
       .map(cloneJob);
   },
 
@@ -242,10 +270,12 @@ export const orderRepository: OrderRepository = {
   saveOrder: (order) => repository().saveOrder(order),
   findOrder: (reference) => repository().findOrder(reference),
   listOrders: () => repository().listOrders(),
+  listOrdersForCustomer: (customerId) => repository().listOrdersForCustomer(customerId),
   createJob: (job) => repository().createJob(job),
   saveJob: (job) => repository().saveJob(job),
   findJob: (id) => repository().findJob(id),
   findJobsForOrder: (reference) => repository().findJobsForOrder(reference),
+  findJobsForOrders: (references) => repository().findJobsForOrders(references),
   applyExclusively: (jobId, work) => repository().applyExclusively(jobId, work),
   hasSeeded: () => repository().hasSeeded(),
   markSeeded: () => repository().markSeeded(),

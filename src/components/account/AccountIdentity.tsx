@@ -26,8 +26,9 @@ export function AccountIdentity({ profile, development }: AccountIdentityProps) 
         <p className={styles.development} role="note">
           <Icon name="info" size={15} />
           <span>
-            Development identity. There is no authentication yet, so this is a
-            fixed local customer that exists outside production only.
+            Development identity. Supabase Auth is not configured in this build,
+            so this is a fixed local customer that exists outside production
+            only.
           </span>
         </p>
       )}
@@ -45,6 +46,11 @@ export function AccountIdentity({ profile, development }: AccountIdentityProps) 
           )}
 
           {profile.email && <p className={styles.contact}>{profile.email}</p>}
+          {profile.emailVerified !== undefined && (
+            <p className={styles.contact}>
+              {profile.emailVerified ? "Email confirmed" : "Email not confirmed"}
+            </p>
+          )}
           {profile.phone && <p className={styles.contact}>{profile.phone}</p>}
         </div>
       </div>

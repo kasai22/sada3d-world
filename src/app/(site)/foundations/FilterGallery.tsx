@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-import { FilterTree, type FilterGroup } from "@/components/navigation";
+// Direct, not through the navigation barrel, which also exports server components.
+import { FilterTree, type FilterGroup } from "@/components/navigation/FilterTree";
 import { Tag } from "@/components/core";
 
 import styles from "./page.module.css";

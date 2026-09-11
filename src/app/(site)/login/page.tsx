@@ -1,43 +1,49 @@
 import type { Metadata } from "next";
 
-import { AccountState } from "@/components/account";
+import { AccountState, AuthForms, SignOutButton } from "@/components/account";
 import { Button } from "@/components/core";
 import { Breadcrumbs } from "@/components/structure";
-import { safeReturnPath } from "@/lib/account/routes";
+import { getCustomerContext, resolveCredentialsAdapter } from "@/lib/account/identity";
+import { parseLoginMode, parseLoginStatus, safeReturnPath } from "@/lib/account/routes";
 
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
   title: "Sign in",
   robots: { index: false, follow: false },
+  referrer: "no-referrer",
 };
 
 /**
- * The sign-in seam.
+ * Sign in, create an account, recover a password.
  *
- * Phase 17 replaces this page with Supabase Auth. Until then it exists so that
- * every "Sign in" in the portal has somewhere honest to lead, and so that the
- * address Phase 17 needs to own is already the address everything points at.
+ * Three states, each true:
  *
- * There is no form here. A sign-in form that authenticates nobody is worse than
- * none: it collects an email and a password, does nothing with either, and
- * teaches customers to type a password into a page that has no business
- * receiving one.
+ *   signed in        a session already exists — the page says so and offers the
+ *                    account or sign-out, rather than a form to sign in again
+ *   not configured   this deployment has no Supabase Auth; accounts are not
+ *                    available and there is no form that authenticates nobody
+ *   the forms        sign in, create account, forgot password
  *
- * The `next` parameter is read and validated, so the return path Phase 17 needs
- * already survives the round trip — and is already refused when it points
- * anywhere but the account. Nothing is echoed back into the page.
+ * The query string can choose a tab (`mode`), a notice (`status`) and a return
+ * path (`next`). Each is parsed against a closed list or the redirect allowlist
+ * on the way in; none of their text is rendered.
  */
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string | string[]; mode?: string | string[]; status?: string | string[] }>;
 }) {
-  const { next } = await searchParams;
+  const params = await searchParams;
+  const single = (value: string | string[] | undefined) =>
+    typeof value === "string" ? value : undefined;
 
-  // Validated on the way in, so an unsafe value never reaches a link. The value
-  // itself is never rendered — it is a destination, not content.
-  const returnTo = safeReturnPath(next);
+  const next = safeReturnPath(single(params.next));
+  const mode = parseLoginMode(single(params.mode));
+  const status = parseLoginStatus(single(params.status));
+
+  const credentials = resolveCredentialsAdapter();
+  const context = await getCustomerContext();
 
   return (
     <div className={`bg-engineering ${styles.page}`}>
@@ -45,37 +51,64 @@ export default async function LoginPage({
         <Breadcrumbs className={styles.crumbs} items={[{ label: "Sign in" }]} />
 
         <div className={styles.layout}>
-          <AccountState
-            tone="unavailable"
-            icon="user"
-            code="Not open yet"
-            title="Accounts are not open yet"
-            titleAs="h1"
-            actions={
-              <>
-                <Button href="/orders" size="lg">
-                  Track an order
-                </Button>
-                <Button
-                  href={returnTo ?? "/shop"}
-                  variant="secondary"
-                  size="lg"
-                >
-                  {returnTo ? "Back to your account" : "Browse the marketplace"}
-                </Button>
-              </>
-            }
-          >
-            <p>
-              SADA 3D does not offer customer sign-in yet. When it does, this is
-              where you will sign in and your orders, designs, saved parts and
-              addresses will be waiting.
-            </p>
-            <p>
-              In the meantime you can follow any order with its reference and
-              the email it was placed with.
-            </p>
-          </AccountState>
+          {context.identity && !context.development ? (
+            <AccountState
+              icon="check-circle"
+              code="Signed in"
+              title="You are signed in"
+              titleAs="h1"
+              actions={
+                <>
+                  <Button href={next ?? "/account"} size="lg" iconRight="arrow-right">
+                    {next ? "Continue" : "Go to your account"}
+                  </Button>
+                  <SignOutButton variant="secondary" size="lg" />
+                </>
+              }
+            >
+              <p>
+                {context.profile?.email
+                  ? `Signed in as ${context.profile.email}.`
+                  : "This browser has an active session."}
+              </p>
+            </AccountState>
+          ) : !credentials ? (
+            <AccountState
+              tone="unavailable"
+              icon="user"
+              code="Not available"
+              title="Accounts are not available here"
+              titleAs="h1"
+              actions={
+                <>
+                  <Button href="/orders" size="lg">
+                    Track an order
+                  </Button>
+                  <Button href={next ?? "/shop"} variant="secondary" size="lg">
+                    {next ? "Back" : "Browse the marketplace"}
+                  </Button>
+                </>
+              }
+            >
+              <p>
+                Customer sign-in is not configured in this environment, so there
+                is no form here — a form that signs nobody in would only collect
+                passwords.
+              </p>
+              {context.development && (
+                <p>
+                  This local build is using the development identity for the
+                  account portal. Set the Supabase variables to use real accounts.
+                </p>
+              )}
+              <p>You can still follow any order with its reference and email.</p>
+            </AccountState>
+          ) : (
+            <>
+              <h1 className="u-visually-hidden">Sign in to SADA 3D</h1>
+              <AuthForms initialMode={mode} next={next} status={status} />
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -61,6 +61,16 @@ export const MODEL_FORMAT_LABELS: Readonly<Record<AcceptedExtension, string>> = 
 export const MAX_MODEL_BYTES = 200 * 1024 * 1024;
 
 /**
+ * 4 MB. The largest file measured without being stored.
+ *
+ * Such a file travels in the body of one request to a server function, and a
+ * hosting platform caps that body (Vercel: 4.5 MB). A larger file is uploaded
+ * straight to storage and measured from there — it is never pushed through a
+ * function. `MODEL_LIMITS.maxInlineAnalysisBytes` is this value.
+ */
+export const MAX_INLINE_ANALYSIS_BYTES = 4 * 1024 * 1024;
+
+/**
  * Facts read from the file itself.
  *
  * Every field here is derived from the bytes on disk. Nothing is estimated.

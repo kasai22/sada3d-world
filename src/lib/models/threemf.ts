@@ -2,6 +2,7 @@ import { ModelParseError } from "@/lib/errors";
 import { UNIT_TO_MM, type AnalysisWarning, type ModelUnit, type UnitResolution } from "@/lib/geometry/types";
 
 import { modelIdentity } from "./identity";
+import { MODEL_LIMITS, tooComplex, type ModelLimits } from "./limits";
 import { numberAttribute, scanXml, type XmlElement } from "./xml";
 import { openZip } from "./zip";
 import {
@@ -61,9 +62,6 @@ const UNITS: Readonly<Record<string, ModelUnit>> = {
   foot: "foot",
   meter: "meter",
 };
-
-/** Components may nest. This bounds both recursion and a reference cycle. */
-const MAX_COMPONENT_DEPTH = 16;
 
 /* ------------------------------------------------------------------ *
  * Transforms
@@ -162,7 +160,17 @@ interface ModelDocument {
   warnings: AnalysisWarning[];
 }
 
-function readModelDocument(xml: string): ModelDocument {
+/**
+ * Reads the model part, refusing a document past the limits as it goes.
+ *
+ * Counted while scanning, so an oversized document is refused before its
+ * vertex and index arrays have grown to the size that would do the harm.
+ */
+function readModelDocument(xml: string, limits: ModelLimits): ModelDocument {
+  let vertexCount = 0;
+  let triangleCount = 0;
+  let componentCount = 0;
+
   const objects = new Map<string, RawObject>();
   const build: { objectId: string; transform: Matrix }[] = [];
   const metadata: Record<string, string> = {};
@@ -220,6 +228,8 @@ function readModelDocument(xml: string): ModelDocument {
           const id = element.attributes.id;
           if (!id) return;
 
+          if (objects.size >= limits.maxObjects) throw tooComplex("objects", limits.maxObjects);
+
           current = {
             id,
             ...(element.attributes.name ? { name: element.attributes.name } : {}),
@@ -234,6 +244,8 @@ function readModelDocument(xml: string): ModelDocument {
 
         case "vertex": {
           if (!current) return;
+          vertexCount += 1;
+          if (vertexCount > limits.maxVertices) throw tooComplex("vertices", limits.maxVertices);
           const x = numberAttribute(element.attributes, "x");
           const y = numberAttribute(element.attributes, "y");
           const z = numberAttribute(element.attributes, "z");
@@ -245,6 +257,8 @@ function readModelDocument(xml: string): ModelDocument {
 
         case "triangle": {
           if (!current) return;
+          triangleCount += 1;
+          if (triangleCount > limits.maxTriangles) throw tooComplex("triangles", limits.maxTriangles);
           const v1 = numberAttribute(element.attributes, "v1");
           const v2 = numberAttribute(element.attributes, "v2");
           const v3 = numberAttribute(element.attributes, "v3");
@@ -257,6 +271,10 @@ function readModelDocument(xml: string): ModelDocument {
           if (!current) return;
           const objectId = element.attributes.objectid;
           if (!objectId) return;
+          componentCount += 1;
+          if (componentCount > limits.maxPlacements) {
+            throw tooComplex("component references", limits.maxPlacements);
+          }
           current.components.push({
             objectId,
             transform: parseMatrix(element.attributes.transform),
@@ -267,6 +285,9 @@ function readModelDocument(xml: string): ModelDocument {
         case "item": {
           const objectId = element.attributes.objectid;
           if (!objectId) return;
+          if (build.length >= limits.maxBuildItems) {
+            throw tooComplex("build items", limits.maxBuildItems);
+          }
           build.push({
             objectId,
             transform: parseMatrix(element.attributes.transform),
@@ -373,11 +394,28 @@ function meshOf(
 }
 
 /**
+ * How much expansion one model has used.
+ *
+ * The cycle check stops a component graph that refers back to itself. It does
+ * not stop one that fans out — sixteen levels of an object placing its child
+ * twice is 65,536 copies of the child, each copied into its own triangle array
+ * — nor a build list placing one large object thousands of times. Every
+ * placement and every triangle it would copy is counted here, before the copy
+ * is made.
+ */
+interface ExpansionBudget {
+  limits: ModelLimits;
+  placements: number;
+  triangles: number;
+}
+
+/**
  * Collects every mesh an object resolves to, following components.
  *
- * Depth-bounded and cycle-aware: a component graph that refers back to an
- * ancestor would otherwise recurse forever, and a malicious package is exactly
- * where that would be arranged deliberately.
+ * Depth-bounded, cycle-aware and budgeted: a component graph that refers back
+ * to an ancestor would otherwise recurse forever, one that fans out would
+ * multiply its triangles without limit, and a malicious package is exactly
+ * where either would be arranged deliberately.
  */
 function collectMeshes(
   document: ModelDocument,
@@ -387,8 +425,9 @@ function collectMeshes(
   visiting: Set<string>,
   warnings: AnalysisWarning[],
   into: ParsedMesh[],
+  budget: ExpansionBudget,
 ): void {
-  if (depth > MAX_COMPONENT_DEPTH) {
+  if (depth > budget.limits.maxComponentDepth) {
     warnings.push({
       code: "truncated_analysis",
       message: "This model nests components more deeply than can be read.",
@@ -416,6 +455,16 @@ function collectMeshes(
     return;
   }
 
+  budget.placements += 1;
+  if (budget.placements > budget.limits.maxPlacements) {
+    throw tooComplex("placed parts", budget.limits.maxPlacements);
+  }
+
+  budget.triangles += Math.floor(object.indices.length / 3);
+  if (budget.triangles > budget.limits.maxTriangles) {
+    throw tooComplex("triangles once its parts are placed", budget.limits.maxTriangles);
+  }
+
   visiting.add(objectId);
 
   const mesh = meshOf(object, transform, warnings);
@@ -430,6 +479,7 @@ function collectMeshes(
       visiting,
       warnings,
       into,
+      budget,
     );
   }
 
@@ -510,7 +560,8 @@ export const threeMfParser: ModelParser = {
     const modelBytes = findModelPart(zip);
     const xml = new TextDecoder("utf-8", { fatal: false }).decode(modelBytes);
 
-    const document = readModelDocument(xml);
+    const limits = input.limits ?? MODEL_LIMITS;
+    const document = readModelDocument(xml, limits);
     const warnings: AnalysisWarning[] = [...document.warnings];
 
     if (document.unsupportedNamespaces.length > 0) {
@@ -546,6 +597,7 @@ export const threeMfParser: ModelParser = {
     }
 
     const objects: ParsedObject[] = [];
+    const budget: ExpansionBudget = { limits, placements: 0, triangles: 0 };
 
     for (const [index, placement] of placements.entries()) {
       const meshes: ParsedMesh[] = [];
@@ -557,6 +609,7 @@ export const threeMfParser: ModelParser = {
         new Set(),
         warnings,
         meshes,
+        budget,
       );
 
       const source = document.objects.get(placement.objectId);
