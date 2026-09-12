@@ -1,0 +1,18 @@
+.count {
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+}
+
+.quiet {
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+}
+
+.clear,
+.clear:hover {
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font: var(--type-ui);
+}

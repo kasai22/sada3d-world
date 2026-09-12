@@ -1,0 +1,182 @@
+.figure {
+  position: relative;
+  margin: 0;
+}
+
+.plot {
+  position: relative;
+  height: 160px;
+  margin-left: 28px;
+}
+
+.axis {
+  position: absolute;
+  inset: 0;
+}
+
+.gridLine {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.tick {
+  position: absolute;
+  top: -7px;
+  left: -28px;
+  width: 22px;
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.bars {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.slot {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+
+/* Columns: capped width, 4px rounded data end, square at the baseline. */
+.bar {
+  width: min(24px, 70%);
+  min-height: 2px;
+  background: var(--steel);
+  border-radius: 4px 4px 0 0;
+  transition: filter var(--motion-fast) var(--ease-standard);
+}
+
+.today {
+  background: var(--orange-500);
+}
+
+.zero {
+  height: 2px;
+  background: var(--titanium);
+}
+
+.slot:hover .bar,
+.bar:focus-visible {
+  filter: brightness(1.25);
+}
+
+.bar:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--elevation-2);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* The tooltip sits over the top of the column's slot. */
+.slot .tooltip {
+  bottom: auto;
+  top: 0;
+  transform: translate(-50%, -110%);
+}
+
+.tooltipValue {
+  color: var(--text-primary);
+  font: var(--fw-medium) 14px/1.1 var(--font-technical);
+}
+
+.tooltipLabel {
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+}
+
+.xAxis {
+  display: flex;
+  gap: 2px;
+  margin: 6px 0 0 28px;
+}
+
+.xLabel {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: visible;
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.xLabel:first-child {
+  text-align: left;
+}
+
+.xLabel:last-child {
+  text-align: right;
+}
+
+.details {
+  margin-top: var(--spacing-3);
+}
+
+.summary {
+  width: fit-content;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.summary:hover {
+  color: var(--text-primary);
+}
+
+.table {
+  width: 100%;
+  margin-top: var(--spacing-2);
+  border-collapse: collapse;
+  font: var(--type-body-sm);
+}
+
+.table th,
+.table td {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.table th {
+  color: var(--text-muted);
+  font: var(--fw-medium) 11px/1.2 var(--font-interface);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.table td:last-child,
+.table th:last-child {
+  text-align: right;
+  font-family: var(--font-technical);
+}

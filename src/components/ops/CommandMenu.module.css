@@ -1,0 +1,167 @@
+.dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-width: none;
+  max-height: min(560px, calc(100dvh - 96px));
+  margin: 12vh auto auto;
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-overlay);
+  color: var(--text-primary);
+}
+
+.dialog::backdrop {
+  background: var(--surface-overlay);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+}
+
+.inputRow {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+/* The field is the dialog's only input; the orange rule marks it as active. */
+.inputRow:focus-within {
+  box-shadow: inset 0 -2px 0 var(--orange-500);
+}
+
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--text-primary);
+  font: var(--type-body);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:focus-visible {
+  box-shadow: none;
+}
+
+.kbd {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+}
+
+.list {
+  flex: 1 1 auto;
+  padding: 6px;
+  overflow-y: auto;
+}
+
+.groupLabel {
+  padding: 10px 10px 6px;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.option[aria-selected="true"] {
+  background: var(--interactive-selected-surface);
+}
+
+.optionIcon {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.option[aria-selected="true"] .optionIcon {
+  color: var(--text-accent);
+}
+
+.optionText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.optionLabel,
+.optionDetail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionLabel {
+  font: var(--type-ui);
+  color: var(--text-primary);
+}
+
+.optionDetail {
+  font: var(--type-technical-sm);
+  color: var(--text-muted);
+}
+
+.external {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.status {
+  margin: 0;
+  padding: 0 14px;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.status:not(:empty) {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.footer {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 16px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+}
+
+@media (max-width: 767px) {
+  .dialog {
+    margin-top: 16px;
+  }
+
+  .footer {
+    display: none;
+  }
+}

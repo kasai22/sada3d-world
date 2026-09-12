@@ -161,4 +161,12 @@ export const EVENTS = {
   authProviderUnavailable: "auth.provider.unavailable",
   authNotConfigured: "auth.not_configured",
   cartMerged: "cart.merged",
+
+  /*
+   * Operations console. The operator's Payload user id, the action and the
+   * record identifiers — never a customer's name, email or address, and never
+   * the operator's free-text note.
+   */
+  opsActionApplied: "ops.action.applied",
+  opsActionRefused: "ops.action.refused",
 } as const;

@@ -1,0 +1,15 @@
+/* Denser than the storefront tag: tables carry several per row. */
+.badge {
+  gap: 6px;
+  height: 22px;
+  padding: 0 7px;
+  white-space: nowrap;
+}
+
+.dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+}

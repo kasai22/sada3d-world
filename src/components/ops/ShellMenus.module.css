@@ -1,0 +1,224 @@
+.root {
+  position: relative;
+}
+
+.trigger {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  background: var(--interactive-hover-surface);
+  color: var(--text-primary);
+}
+
+.badge {
+  position: absolute;
+  top: 3px;
+  right: 1px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  font: var(--fw-medium) 10px/1 var(--font-technical);
+}
+
+.badgeHigh {
+  background: var(--signal-red);
+  border-color: var(--signal-red);
+  color: #1a0000;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  font: var(--fw-semibold) 12px/1 var(--font-interface);
+  letter-spacing: 0.02em;
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: var(--z-overlay);
+  width: min(360px, calc(100vw - 32px));
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elevation-overlay);
+}
+
+.narrow {
+  width: min(260px, calc(100vw - 32px));
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.panelMeta {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-muted);
+}
+
+.issues {
+  max-height: 320px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.issue,
+.issue:hover {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 0;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.issue:hover {
+  background: var(--interactive-hover-surface);
+}
+
+.severity {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: var(--radius-pill);
+}
+
+.high {
+  background: var(--status-danger);
+}
+
+.medium {
+  background: var(--status-warning);
+}
+
+.low {
+  background: var(--status-idle);
+}
+
+.issueText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.issueTitle {
+  font: var(--type-ui);
+  line-height: 1.35;
+}
+
+.issueSubject {
+  font: var(--type-technical-sm);
+  color: var(--text-muted);
+}
+
+.empty {
+  margin: 0;
+  padding: 20px 14px;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.footer,
+.footer:hover {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 0;
+  color: var(--text-secondary);
+  font: var(--type-ui);
+}
+
+.footer:hover {
+  background: var(--interactive-hover-surface);
+  color: var(--text-primary);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.identityName {
+  font: var(--type-ui);
+  color: var(--text-primary);
+}
+
+.identityEmail {
+  font: var(--type-technical-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.menu {
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+}
+
+.menuItem,
+.menuItem:hover {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 0;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font: var(--type-ui);
+}
+
+.menuItem:hover {
+  background: var(--interactive-hover-surface);
+  color: var(--text-primary);
+}
+
+.separator {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border-subtle);
+}

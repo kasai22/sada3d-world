@@ -8,6 +8,10 @@ export interface PanelProps extends HTMLAttributes<HTMLElement> {
   title?: string;
   /** Right-hand technical note in the header, e.g. "PART_00492". */
   meta?: string;
+  /** Header controls beside the meta, e.g. a "View all" link. */
+  actions?: ReactNode;
+  /** Heading level for the title. Defaults to h3; pass what fits the outline. */
+  titleAs?: "h2" | "h3" | "h4";
   /** Square corners plus machined corner ticks. */
   technical?: boolean;
   /** Set false when the panel holds a table or list that supplies its own insets. */
@@ -25,6 +29,8 @@ export function Panel({
   children,
   title,
   meta,
+  actions,
+  titleAs: Title = "h3",
   technical = false,
   padded = true,
   elevated = false,
@@ -43,8 +49,13 @@ export function Panel({
     >
       {title && (
         <header className={styles.header}>
-          <h3 className={styles.title}>{title}</h3>
-          {meta && <span className={styles.meta}>{meta}</span>}
+          <Title className={styles.title}>{title}</Title>
+          {(meta || actions) && (
+            <span className={styles.aside}>
+              {meta && <span className={styles.meta}>{meta}</span>}
+              {actions}
+            </span>
+          )}
         </header>
       )}
 

@@ -46,6 +46,8 @@ const FORBIDDEN_LOCAL: readonly string[] = [
   "lib/storage/r2.ts",
   "lib/storage/index.ts",
   "payload.config.ts",
+  // The operations console's operator gate and its cross-customer reads.
+  "lib/ops/operator.ts",
 ];
 
 /** An environment read that is neither public nor the build mode. */

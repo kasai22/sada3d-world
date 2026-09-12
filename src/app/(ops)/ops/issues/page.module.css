@@ -1,0 +1,27 @@
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-5);
+}
+
+.note {
+  max-width: 80ch;
+  margin: var(--spacing-4) 0 0;
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+  line-height: 1.5;
+}
+
+.clear,
+.clear:hover {
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font: var(--type-ui);
+}
+
+@media (max-width: 767px) {
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

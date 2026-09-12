@@ -1,0 +1,32 @@
+.count {
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+}
+
+.quiet {
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+}
+
+.guestLink,
+.guestLink:hover {
+  border-bottom: 1px solid transparent;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.guestLink:hover {
+  border-bottom-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.clear,
+.clear:hover {
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font: var(--type-ui);
+}

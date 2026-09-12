@@ -1,0 +1,65 @@
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+}
+
+.fields {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-3);
+  min-width: 0;
+}
+
+/* Field widths: search grows, selects and dates stay compact. */
+.fields > * {
+  flex: 0 1 170px;
+  min-width: 140px;
+}
+
+.fields > :first-child {
+  flex: 1 1 240px;
+}
+
+.buttons {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.check {
+  display: inline-flex;
+  flex: 0 0 auto !important;
+  align-items: center;
+  gap: 8px;
+  min-width: 0 !important;
+  height: var(--control-height-sm);
+  color: var(--text-secondary);
+  font: var(--type-ui);
+  cursor: pointer;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--orange-500);
+}
+
+@media (max-width: 767px) {
+  .fields > *,
+  .fields > :first-child {
+    flex: 1 1 100%;
+  }
+
+  .buttons {
+    width: 100%;
+  }
+}

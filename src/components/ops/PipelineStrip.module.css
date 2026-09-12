@@ -1,0 +1,79 @@
+.strip {
+  display: grid;
+  grid-auto-columns: minmax(104px, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.stage {
+  position: relative;
+  min-width: 0;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.stage:last-child {
+  border-right: 0;
+}
+
+.terminal {
+  background: rgba(244, 246, 248, 0.015);
+}
+
+.link,
+.link:hover {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: var(--spacing-4);
+  border-bottom: 0;
+  color: var(--text-primary);
+  transition: var(--transition-control);
+}
+
+.link:hover {
+  background: var(--interactive-hover-surface);
+}
+
+/* A stage with work in it carries the orange rule along its top edge. */
+.stage:not(.empty):not(.terminal) .link::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: var(--spacing-4);
+  left: var(--spacing-4);
+  height: 2px;
+  background: var(--gradient-orange-line);
+}
+
+.label {
+  overflow: hidden;
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  font: var(--type-metric);
+  color: var(--text-primary);
+}
+
+.empty .count {
+  color: var(--text-disabled);
+}
+
+.held {
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+  white-space: nowrap;
+}
+
+.heldActive {
+  color: var(--status-warning);
+}

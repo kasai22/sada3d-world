@@ -1,0 +1,41 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--spacing-5);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-4);
+}
+
+.note {
+  max-width: 72ch;
+  margin: var(--spacing-3) 0 0;
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+  line-height: 1.5;
+}
+
+.problems {
+  margin: var(--spacing-3) 0 0;
+  padding-left: var(--spacing-4);
+  color: var(--status-warning);
+  font: var(--type-body-sm);
+  line-height: 1.5;
+}
+
+.problem {
+  margin: var(--spacing-3) 0 0;
+  color: var(--status-danger);
+  font: var(--type-body-sm);
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

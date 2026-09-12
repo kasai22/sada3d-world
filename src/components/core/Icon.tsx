@@ -1,11 +1,13 @@
 import {
-  ArrowLeft, ArrowRight, Box, Boxes, Check, ChevronDown, ChevronLeft, ChevronRight,
-  ChevronUp, CircleAlert, CircleCheck, Cpu, CreditCard, Crosshair, Download,
-  ExternalLink, Eye, FileUp, Gauge, Heart, Info, Layers, LoaderCircle, LogOut,
-  MapPin, Maximize, Maximize2, Menu, Minus, Move3d, Package, Palette, Pause, Play,
-  Plus, RotateCcw, Rotate3d, Ruler, Scan, ScanLine, Search, Settings2,
-  ShoppingCart, SlidersHorizontal, Sun, Thermometer, Timer, Trash2, TriangleAlert,
-  Truck, Upload, User, Weight, Wrench, X,
+  Activity, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Ban, Bell, Box,
+  Boxes, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, CircleAlert,
+  CircleCheck, ClipboardList, Clock, Command, Copy, Cpu, CreditCard, Crosshair,
+  Download, ExternalLink, Eye, Factory, FileBox, FileUp, Gauge, Heart, Inbox, Info,
+  LayoutDashboard, Layers, Library, LoaderCircle, LogOut, MapPin, Maximize,
+  Maximize2, Menu, Minus, Move3d, Package, Palette, PanelLeftClose, PanelLeftOpen,
+  Pause, Play, Plus, RotateCcw, Rotate3d, Ruler, Scan, ScanLine, Search, Settings,
+  Settings2, ShoppingCart, SlidersHorizontal, Sun, Thermometer, Timer, Trash2,
+  TriangleAlert, Truck, Upload, User, Users, Wallet, Weight, Wrench, X,
 } from "lucide-react";
 
 /**
@@ -75,6 +77,28 @@ const REGISTRY = {
   "weight": Weight,
   "wrench": Wrench,
   "x": X,
+
+  /* Operations console. */
+  "activity": Activity,
+  "arrow-down": ArrowDown,
+  "arrow-up": ArrowUp,
+  "ban": Ban,
+  "bell": Bell,
+  "clipboard": ClipboardList,
+  "clock": Clock,
+  "command": Command,
+  "copy": Copy,
+  "dashboard": LayoutDashboard,
+  "factory": Factory,
+  "file-box": FileBox,
+  "inbox": Inbox,
+  "library": Library,
+  "panel-left-close": PanelLeftClose,
+  "panel-left-open": PanelLeftOpen,
+  "settings": Settings,
+  "sort": ArrowUpDown,
+  "users": Users,
+  "wallet": Wallet,
 } as const;
 
 export type IconName = keyof typeof REGISTRY;

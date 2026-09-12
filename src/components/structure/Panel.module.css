@@ -39,6 +39,14 @@
   flex: 0 0 auto;
 }
 
+/* Meta and header actions, kept together on the right. */
+.aside {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex: 0 0 auto;
+}
+
 .body {
   padding: var(--space-inset-panel);
 }

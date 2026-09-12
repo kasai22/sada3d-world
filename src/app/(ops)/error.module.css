@@ -1,0 +1,14 @@
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--spacing-6) var(--gutter-mobile);
+  background: var(--surface-page);
+}
+
+.panel {
+  width: min(520px, 100%);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+}

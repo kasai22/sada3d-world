@@ -195,6 +195,12 @@ export const orders = pgTable(
     index("orders_status_idx").on(table.status),
     // The Phase 12 lookup proves reference + email together.
     index("orders_contact_email_idx").on(table.contactEmail),
+    /*
+     * The operations console's question: "every order, newest first", one page
+     * at a time. The customer index above leads with customer_id, so it cannot
+     * serve a read across all customers.
+     */
+    index("orders_placed_idx").on(table.placedAt),
   ],
 );
 

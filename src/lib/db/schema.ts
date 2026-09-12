@@ -286,6 +286,8 @@ export const customerDesigns = pgTable(
   },
   (table) => [
     index("customer_designs_customer_idx").on(table.customerId),
+    // The operations console lists designs across customers, newest first.
+    index("customer_designs_created_idx").on(table.createdAt),
     uniqueIndex("customer_designs_storage_key_idx").on(table.storageKey),
     uniqueIndex("customer_designs_customer_sha256_active_idx")
       .on(table.customerId, table.sha256)

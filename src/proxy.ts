@@ -10,6 +10,7 @@ import {
   readSupabaseAuthConfig,
 } from "@/lib/auth/config";
 import { isSessionError } from "@/lib/auth/supabase";
+import { OPS_PATH_HEADER, opsPathOf } from "@/lib/ops/routes";
 import { hasMalformedEncoding } from "@/lib/security/url";
 
 /**
@@ -57,6 +58,25 @@ export async function proxy(request: NextRequest) {
       { error: { code: "validation", message: "This address is not valid." } },
       { status: 400, headers: { "Cache-Control": "no-store" } },
     );
+  }
+
+  /*
+   * The operations console.
+   *
+   * Its layout cannot see which page was asked for, and needs it so that
+   * signing in returns an operator to the page they wanted rather than to the
+   * dashboard. The path travels as a request header, validated by
+   * `opsPathOf` here and again by Payload when it honours the redirect — it is
+   * a hint about *where to go back to*, never about who anyone is.
+   *
+   * Returning here also skips the customer-session work below, which a console
+   * request has no use for.
+   */
+  const consolePath = opsPathOf(request.nextUrl.pathname, request.nextUrl.search);
+  if (consolePath) {
+    const headers = new Headers(request.headers);
+    headers.set(OPS_PATH_HEADER, consolePath);
+    return NextResponse.next({ request: { headers } });
   }
 
   const result = readSupabaseAuthConfig();
