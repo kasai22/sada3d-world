@@ -1,0 +1,94 @@
+.nav {
+  margin-bottom: var(--spacing-9);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* auto-fit rather than a fixed column count: the row reflows at every width
+     without a second set of breakpoints to keep in step with the first. */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.link {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--spacing-1);
+  /* Comfortably past the 44px touch-target minimum at every width. */
+  min-height: var(--target-min);
+  padding: var(--spacing-4);
+  color: var(--text-primary);
+  /* base.css gives every anchor a prose underline. This is navigation. */
+  border-bottom: 0;
+  border-left: 1px solid var(--border-subtle);
+  transition: var(--transition-control);
+}
+
+.list > li:first-child .link {
+  border-left: none;
+}
+
+.link:hover {
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border-bottom: 0;
+}
+
+.label {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.meta {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The Titanium Orange Line, drawn on hover along the bottom of the entry.
+   Duration comes from the motion tokens, which are zeroed under
+   prefers-reduced-motion — so this needs no media query of its own. */
+.rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.link:hover .rule,
+.link:focus-visible .rule {
+  transform: scaleX(1);
+}
+
+@media (max-width: 767px) {
+  .nav {
+    margin-bottom: var(--spacing-7);
+  }
+
+  .list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Two per row: every odd entry starts a row, and every row after the first
+     needs its own top hairline. */
+  .list > li:nth-child(odd) .link {
+    border-left: none;
+  }
+
+  .list > li:not(:nth-child(-n + 2)) .link {
+    border-top: 1px solid var(--border-subtle);
+  }
+}

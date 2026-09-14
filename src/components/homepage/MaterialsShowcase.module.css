@@ -118,15 +118,6 @@
     linear-gradient(160deg, #1F2329 0%, #0D0F12 100%);
 }
 
-.multiplier {
-  position: absolute;
-  top: var(--spacing-3);
-  right: var(--spacing-3);
-  font: var(--type-technical-sm);
-  letter-spacing: var(--ls-technical);
-  color: var(--text-muted);
-}
-
 .body {
   display: flex;
   flex-direction: column;
@@ -231,4 +222,48 @@
     margin-inline: calc(var(--gutter-mobile) * -1);
     padding-inline: var(--gutter-mobile);
   }
+}
+
+/* ---- Stage 19.9: roadmap materials — named, never shown as specimens ---- */
+
+.roadmap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-3) var(--spacing-4);
+  margin: var(--spacing-6) 0;
+  padding: var(--spacing-4) var(--spacing-5);
+  border: 1px dashed var(--border-subtle);
+}
+
+.roadmapLabel {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.roadmapList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.roadmapItem {
+  padding: 2px var(--spacing-3);
+  border: 1px solid var(--border-subtle);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.roadmapNote {
+  flex-basis: 100%;
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
 }

@@ -1,4 +1,9 @@
-export { calculateQuote, validateQuoteRequest, roundRupees } from "./calculateQuote";
+export {
+  calculateCatalogQuote,
+  calculateQuote,
+  validateQuoteRequest,
+  roundRupees,
+} from "./calculateQuote";
 export { PRICING_RULES, EXCLUDED_FROM_ESTIMATE } from "./rules";
 export type { PricingRules } from "./rules";
 export { quoteService, localQuoteService } from "./service";

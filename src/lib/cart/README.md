@@ -4,10 +4,10 @@ Five domain concepts, kept separate on purpose:
 
 | Concept | Means | Lives in |
 | --- | --- | --- |
-| **Product** | Something SADA 3D sells | `lib/catalog` |
+| **Product** | Something Reality 3D sells | `lib/catalog` |
 | **Quote** | A price for a customer's own geometry | `lib/pricing` |
 | **Cart** | What a customer intends to buy | `lib/cart` |
-| **Order** | What SADA 3D has accepted to fulfil | `lib/checkout` |
+| **Order** | What Reality 3D has accepted to fulfil | `lib/checkout` |
 | **Manufacturing job** | What a machine will make | Phase 12 |
 
 Collapsing any two of them would make the system lie somewhere. A cart line is

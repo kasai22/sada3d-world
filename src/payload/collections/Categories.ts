@@ -71,6 +71,14 @@ export const Categories: CollectionConfig = {
                   "Stable identifier used in URLs and by products. Lowercase, hyphenated. Changing it breaks existing links.",
               },
             },
+            {
+              name: "description",
+              type: "textarea",
+              admin: {
+                description:
+                  "One technical line describing what is filed here. Shown on the homepage category index.",
+              },
+            },
           ],
         },
         {

@@ -1,4 +1,4 @@
-/* SADA 3D — shadow.* glow.* grid textures. Restraint: depth comes from value, not blur. */
+/* Reality 3D — shadow.* glow.* grid textures. Restraint: depth comes from value, not blur. */
 :root{
   --shadow-none:none;
   --shadow-1:0 1px 2px rgba(0,0,0,.6);

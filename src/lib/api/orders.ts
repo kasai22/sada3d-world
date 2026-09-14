@@ -171,7 +171,7 @@ export async function applyCustomerCommand(
 
     if (jobs.length === 0) {
       throw new InvalidStateTransitionError(
-        "This order cannot be cancelled here. Contact SADA 3D and quote the order reference.",
+        "This order cannot be cancelled here. Contact Reality 3D and quote the order reference.",
       );
     }
 

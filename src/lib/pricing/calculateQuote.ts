@@ -1,3 +1,6 @@
+import { processOf, unavailableReason } from "@/content/catalog/capabilities";
+import { finishOption, materialOption, qualityOptionsFor } from "@/lib/custom-print/options";
+
 import { EXCLUDED_FROM_ESTIMATE, PRICING_RULES, type PricingRules } from "./rules";
 import type {
   ManufacturingQuote,
@@ -59,14 +62,48 @@ export function validateQuoteRequest(
     errors.push({ field: "material", message: "Select a material." });
   } else if (rules.materialFactor[request.material] === undefined) {
     errors.push({ field: "material", message: "Select a supported material." });
+  } else if (!materialOption(request.material)) {
+    // Stage 19.8: a pricing factor is not an approval. Only materials with an
+    // approved manufacturing decision are quoted, whatever a client sends.
+    // Stage 19.9: a Coming Soon material is named as such, and still refused.
+    errors.push({
+      field: "material",
+      message: unavailableReason("material", request.material) ?? "That material is not currently offered.",
+    });
+  } else if (unavailableReason("technology", processOf(request.material))) {
+    errors.push({ field: "material", message: unavailableReason("technology", processOf(request.material))! });
+  }
+
+  if (request.technology !== undefined) {
+    const reason = unavailableReason("technology", request.technology);
+    if (reason) {
+      errors.push({ field: "technology", message: reason });
+    } else if (processOf(request.material) && processOf(request.material) !== request.technology) {
+      errors.push({ field: "technology", message: "That material is not printed with this manufacturing process." });
+    }
   }
 
   if (request.quality !== undefined && rules.qualityFactor[request.quality] === undefined) {
     errors.push({ field: "quality", message: "Select a supported print quality." });
+  } else if (
+    request.quality !== undefined &&
+    materialOption(request.material) &&
+    !qualityOptionsFor(request.material).some((option) => option.value === request.quality)
+  ) {
+    // Stage 19.7: a quality belongs to a process. FDM layer heights cannot be
+    // ordered for SLA resin, whatever a client sends.
+    errors.push({ field: "quality", message: "That print quality is not offered for this material." });
   }
 
   if (request.finish !== undefined && rules.finishFee[request.finish] === undefined) {
     errors.push({ field: "finish", message: "Select a supported finish." });
+  } else if (request.finish !== undefined && !finishOption(request.finish)) {
+    // Stage 19.8: post-processing finishes are not approved and are not offered.
+    // Stage 19.9: Smoothed and Matte are Coming Soon — named, and still refused.
+    errors.push({
+      field: "finish",
+      message: unavailableReason("finish", request.finish) ?? "That finish is not currently offered.",
+    });
   }
 
   const quantity = request.quantity;
@@ -101,6 +138,34 @@ export function calculateQuote(
   const errors = validateQuoteRequest(request, rules);
   if (errors.length > 0) return { status: "invalid", errors };
 
+  return { status: "available", quote: priceSelections(request, rules) };
+}
+
+/**
+ * Prices a catalog configuration — the same selections, with no upload.
+ *
+ * A catalog product has no customer file, so the upload checks (a file is
+ * present, its extension is one a customer may upload) do not apply; its model
+ * may be a GLB, which is a display format nobody uploads. Every other check is
+ * identical, and the arithmetic is the same function `calculateQuote` uses, so a
+ * catalog price and a custom-print quote for the same selections cannot differ.
+ */
+export function calculateCatalogQuote(
+  selections: Omit<QuoteRequest, "model" | "geometry">,
+  rules: PricingRules = PRICING_RULES,
+): QuoteResponse {
+  const request: QuoteRequest = {
+    ...selections,
+    model: { name: "catalog", extension: ".stl", sizeBytes: 1 },
+  };
+
+  const errors = validateQuoteRequest(request, rules).filter((error) => error.field !== "model");
+  if (errors.length > 0) return { status: "invalid", errors };
+
+  return { status: "available", quote: priceSelections(request, rules) };
+}
+
+function priceSelections(request: QuoteRequest, rules: PricingRules): ManufacturingQuote {
   const quantity = request.quantity;
   const materialFactor = rules.materialFactor[request.material] ?? 1;
   const qualityFactor =
@@ -190,5 +255,5 @@ export function calculateQuote(
     provisional: rules.provisional,
   };
 
-  return { status: "available", quote };
+  return quote;
 }

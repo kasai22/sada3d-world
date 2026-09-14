@@ -1,4 +1,4 @@
-/* SADA 3D — minimal global base. Consumers may override. */
+/* Reality 3D — minimal global base. Consumers may override. */
 html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body{margin:0;background:var(--surface-page);color:var(--text-primary);font:var(--type-body);letter-spacing:var(--ls-body)}
 *,*::before,*::after{box-sizing:border-box}

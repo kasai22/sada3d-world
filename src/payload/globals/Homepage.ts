@@ -97,7 +97,7 @@ export const Homepage: GlobalConfig = {
               ],
               admin: {
                 description:
-                  "Figures SADA 3D can stand behind. An invented number here is a claim made to every visitor.",
+                  "Figures Reality 3D can stand behind. An invented number here is a claim made to every visitor.",
               },
             },
           ],

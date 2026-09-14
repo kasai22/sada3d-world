@@ -5,7 +5,7 @@ import { adminsOnly, canUseAdmin } from "../access";
 /**
  * Payload users — content operators, and nobody else.
  *
- * **Not customers.** A SADA 3D customer has no row here and never will: their
+ * **Not customers.** A Reality 3D customer has no row here and never will: their
  * identity arrives with Supabase Auth in Phase 17 and their records live in the
  * application's own tables. Two identity systems that both call themselves
  * "users" would eventually be joined by mistake, so the distinction is stated

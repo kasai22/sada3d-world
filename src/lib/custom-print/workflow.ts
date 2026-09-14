@@ -1,3 +1,5 @@
+import { comingSoonMessage, isComingSoon } from "@/content/catalog/capabilities";
+import { finishOption, materialOption } from "@/lib/custom-print/options";
 import {
   EMPTY_CONFIGURATION,
   STEPS,
@@ -31,11 +33,22 @@ export function blockedReason(
         ? null
         : "Upload a supported 3D model to continue.";
     case "material":
-      return configuration.material ? null : "Select a material to continue.";
+      if (!configuration.material) return "Select a material to continue.";
+      // Stage 19.9: a Coming Soon material restored from storage cannot be carried forward.
+      return materialOption(configuration.material)
+        ? null
+        : isComingSoon("material", configuration.material)
+          ? comingSoonMessage("material", configuration.material)
+          : "That material is not currently offered. Select another.";
     case "quality":
       return configuration.quality ? null : "Select a print quality to continue.";
     case "finish":
-      return configuration.finish ? null : "Select a finish to continue.";
+      if (!configuration.finish) return "Select a finish to continue.";
+      return finishOption(configuration.finish)
+        ? null
+        : isComingSoon("finish", configuration.finish)
+          ? comingSoonMessage("finish", configuration.finish)
+          : "That finish is not currently offered. Select another.";
     case "review":
       return null;
   }

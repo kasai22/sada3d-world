@@ -1,6 +1,7 @@
 import { Button, Tag } from "@/components/core";
 import { Panel, SpecTable } from "@/components/structure";
 import { WORKFLOW } from "@/content/home";
+import { ROUTES } from "@/lib/routes";
 import styles from "./CustomManufacturing.module.css";
 
 /**
@@ -37,10 +38,10 @@ export function CustomManufacturing() {
           </p>
 
           <div className={styles.actions}>
-            <Button href="/custom-print" size="lg" iconLeft="upload">
+            <Button href={ROUTES.customPrint} size="lg" iconLeft="upload">
               Upload design
             </Button>
-            <Button href="/how-it-works" size="lg" variant="secondary">
+            <Button href={ROUTES.howItWorks} size="lg" variant="secondary">
               How it works
             </Button>
           </div>

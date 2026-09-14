@@ -5,7 +5,7 @@ import type { QuoteBasis } from "@/lib/pricing/types";
  *
  * Two things a customer can intend to buy, and they are not the same thing:
  *
- *   catalog — a part SADA 3D already sells, priced by the catalog
+ *   catalog — a part Reality 3D already sells, priced by the catalog
  *   custom  — a part the customer supplied, priced by a manufacturing quote
  *
  * They share a cart and nothing else. The discriminant is explicit so no code
@@ -135,7 +135,13 @@ export type CartIssueCode =
    * an order. Durable storage arrives with R2 in Phase 16.
    */
   | "model_file_pending"
-  | "quantity_invalid";
+  | "quantity_invalid"
+  /** Stage 19.6: not approved for sale in this catalog mode. */
+  | "product_not_approved"
+  /** Stage 19.6: the price is provisional and this mode charges approved prices only. */
+  | "price_not_approved"
+  /** Stage 19.6: review mode — the price is provisional; said, not blocking. */
+  | "price_provisional";
 
 /**
  * `blocking` stops checkout. `notice` is worth saying and does not.

@@ -7,6 +7,7 @@ import { buildConfig } from "payload";
 import { Categories } from "./payload/collections/Categories";
 import { Materials } from "./payload/collections/Materials";
 import { Media } from "./payload/collections/Media";
+import { PriceApprovals } from "./payload/collections/PriceApprovals";
 import { Products } from "./payload/collections/Products";
 import { Users } from "./payload/collections/Users";
 import { Homepage } from "./payload/globals/Homepage";
@@ -85,19 +86,19 @@ export default buildConfig({
       /*
        * Empty, deliberately.
        *
-       * The root layout sets a metadata template of `%s — SADA 3D`, and it
+       * The root layout sets a metadata template of `%s — Reality 3D`, and it
        * applies to every route including this one — the (payload) route group
        * escapes the storefront's chrome, not the document's metadata. Setting a
-       * suffix here too produced "Dashboard — SADA 3D — SADA 3D", and removing
+       * suffix here too produced "Dashboard — Reality 3D — Reality 3D", and removing
        * the key entirely fell back to Payload's own " - Payload".
        *
        * Empty means Payload adds nothing and the root template adds the one
-       * suffix: "Dashboard — SADA 3D".
+       * suffix: "Dashboard — Reality 3D".
        */
       titleSuffix: "",
     },
   },
-  collections: [Products, Categories, Materials, Media, Users],
+  collections: [Products, PriceApprovals, Categories, Materials, Media, Users],
   globals: [Homepage],
   /*
    * No rich-text editor is configured because no field is rich text. Every

@@ -19,7 +19,7 @@ import type { Order, OrderItem } from "./types";
 /**
  * Development fixtures.
  *
- * SADA 3D has no manufacturing backend yet, so nothing reports real production
+ * Reality 3D has no manufacturing backend yet, so nothing reports real production
  * events. These seven scenarios exist so the tracking experience can be built,
  * reviewed and tested against states that actually occur.
  *
@@ -33,7 +33,7 @@ import type { Order, OrderItem } from "./types";
  *   · every fixture is marked `demo: true` and referenced `DEMO-…`, never
  *     `S3D-…`. Generated order references cannot collide with these, the
  *     interface says plainly that a demo order is a demo order, and nothing
- *     here is presented as a real SADA 3D production record.
+ *     here is presented as a real Reality 3D production record.
  *
  * They are seeded outside production, and in a production build only when
  * SADA_DEMO_ORDERS is explicitly set — so a preview or staging deployment can

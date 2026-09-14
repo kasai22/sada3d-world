@@ -4,7 +4,7 @@
  * The boundary this file draws matters more than any field on it:
  *
  *   a cart line is what the customer intends to buy
- *   an order  is what SADA 3D has accepted to fulfil
+ *   an order  is what Reality 3D has accepted to fulfil
  *
  * They are separate types with separate lifetimes. An order snapshots what was
  * agreed — names, configuration and figures as they stood when it was placed —
@@ -46,7 +46,7 @@ export const EMPTY_ADDRESS: ShippingAddress = {
 };
 
 /**
- * Where SADA 3D can currently ship.
+ * Where Reality 3D can currently ship.
  *
  * India only, because that is the market the business operates in. This list is
  * the whole rule — no other destination is offered, and one that is asked for

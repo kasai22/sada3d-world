@@ -1,13 +1,16 @@
 import Link from "next/link";
 import clsx from "clsx";
 
-import { BROWSE_CATEGORIES, categoryLabel } from "@/lib/catalog/taxonomy";
+import { categoryLabel } from "@/lib/catalog/taxonomy";
+import { categoryHref } from "@/lib/routes";
 import type { FacetCounts } from "@/lib/catalog/types";
 import styles from "./CategoryRail.module.css";
 
 export interface CategoryRailProps {
   /** Category currently being browsed, when on a category route. */
   active?: string;
+  /** Browse categories of the served catalog, from getBrowseCategories(). */
+  categories: readonly string[];
   /** Counts for the unfiltered catalog, so the rail reads the same everywhere. */
   counts: FacetCounts;
 }
@@ -18,11 +21,11 @@ export interface CategoryRailProps {
  * A horizontal rail of real links to /shop/[category], not a grid of tiles —
  * it stays a navigation aid rather than competing with the results below it.
  */
-export function CategoryRail({ active, counts }: CategoryRailProps) {
+export function CategoryRail({ active, categories, counts }: CategoryRailProps) {
   return (
     <nav aria-label="Product categories">
       <ul className={styles.rail}>
-        {BROWSE_CATEGORIES.map((value, index) => {
+        {categories.map((value, index) => {
           const isActive = value === active;
           const count = counts[value] ?? 0;
 
@@ -32,7 +35,7 @@ export function CategoryRail({ active, counts }: CategoryRailProps) {
               className={clsx(styles.item, isActive && styles.active)}
             >
               <Link
-                href={`/shop/${value}`}
+                href={categoryHref(value)}
                 className={clsx("u-plain", styles.link)}
                 aria-current={isActive ? "page" : undefined}
               >

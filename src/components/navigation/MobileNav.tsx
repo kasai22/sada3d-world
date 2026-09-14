@@ -6,12 +6,9 @@ import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 
 import { Button, IconButton } from "@/components/core";
+import type { NavItem } from "@/lib/navigation";
+import { ROUTES } from "@/lib/routes";
 import styles from "./MobileNav.module.css";
-
-export interface NavItem {
-  href: string;
-  label: string;
-}
 
 export interface MobileNavProps {
   items: readonly NavItem[];
@@ -59,7 +56,7 @@ export function MobileNav({ items, className }: MobileNavProps) {
         <div className={styles.inner}>
           <div className={styles.top}>
             <span className={styles.wordmark}>
-              <span className={styles.wordmarkSada}>SADA</span>
+              <span className={styles.wordmarkName}>Reality</span>
               <span className={styles.wordmarkAccent}>3D</span>
             </span>
             <IconButton
@@ -96,7 +93,7 @@ export function MobileNav({ items, className }: MobileNavProps) {
 
           <div className={styles.footer}>
             <Button
-              href="/custom-print"
+              href={ROUTES.customPrint}
               size="lg"
               fullWidth
               iconRight="arrow-right"

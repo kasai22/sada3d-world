@@ -3,6 +3,10 @@ import clsx from "clsx";
 import { Button, Tag } from "@/components/core";
 import { PropertyScale } from "@/components/commerce";
 import { MATERIALS, type MaterialSurface } from "@/content/home";
+import { comingSoonMaterials } from "@/content/materials";
+import { published } from "@/content/pages";
+import { colorSwatch } from "@/content/materials";
+import { ROUTES } from "@/lib/routes";
 import styles from "./MaterialsShowcase.module.css";
 
 const SURFACE: Record<MaterialSurface, string | undefined> = {
@@ -21,31 +25,38 @@ const SURFACE: Record<MaterialSurface, string | undefined> = {
  * MaterialCard is the configurator's selection control and would be the wrong
  * semantics for a showcase.
  */
+/** Stage 19.8: only materials with an APPROVED decision are shown (PLA, PETG, TPU). */
+const OFFERED = published(MATERIALS);
+const COUNT_WORDS = ["No", "One", "Two", "Three", "Four", "Five"];
+
 export function MaterialsShowcase() {
   return (
     <section className={styles.section} aria-labelledby="materials-title">
       <div className="u-container">
         <div className={styles.head}>
           <h2 id="materials-title" className={styles.headline}>
-            Five materials.
+            {COUNT_WORDS[OFFERED.length] ?? OFFERED.length} {OFFERED.length === 1 ? "material" : "materials"}.
             <br />
             One process.
           </h2>
           <p className={styles.headNote}>
             Material sets strength, finish and price. Choose it at configuration
-            time, on any part.
+            time, on any part — your quote is calculated from the material and
+            the geometry together.
           </p>
         </div>
 
         <ul className={styles.strip}>
-          {MATERIALS.map((material) => (
+          {OFFERED.map((material) => (
             <li key={material.name} className={styles.specimen}>
+              {/* The specimen used to carry a "×1.2" price multiplier here.
+                  It was a second copy of PRICING_RULES.materialFactor, which is
+                  provisional, and it read as settled price policy. See the note
+                  in content/home.ts. */}
               <div
                 className={clsx(styles.surface, SURFACE[material.surface])}
                 aria-hidden="true"
-              >
-                <span className={styles.multiplier}>×{material.multiplier}</span>
-              </div>
+              />
 
               <div className={styles.body}>
                 <div>
@@ -72,15 +83,24 @@ export function MaterialsShowcase() {
                   ))}
                 </div>
 
+                {/* Swatches are drawn from the catalog's colour taxonomy, so
+                    each one has a name the shop also filters by. The strip is
+                    decorative and the count carries the meaning, which is why
+                    the swatches are hidden and the count is not. */}
                 <div className={styles.colors}>
-                  {material.colors.map((color) => (
-                    <span
-                      key={color}
-                      className={styles.swatch}
-                      style={{ background: color }}
-                      aria-hidden="true"
-                    />
-                  ))}
+                  {material.colors.map((value) => {
+                    const swatch = colorSwatch(value);
+                    if (!swatch) return null;
+
+                    return (
+                      <span
+                        key={value}
+                        className={styles.swatch}
+                        style={{ background: swatch.hex }}
+                        aria-hidden="true"
+                      />
+                    );
+                  })}
                   <span className={styles.colorCount}>
                     {material.colors.length} colours
                   </span>
@@ -91,7 +111,21 @@ export function MaterialsShowcase() {
         </ul>
 
         <div className={styles.footer}>
-          <Button href="/materials" variant="secondary" iconRight="arrow-right">
+          {comingSoonMaterials().length > 0 && (
+          <div className={styles.roadmap}>
+            <span className={styles.roadmapLabel}>Coming soon</span>
+            <ul className={styles.roadmapList}>
+              {comingSoonMaterials().map((material) => (
+                <li key={material.value} className={styles.roadmapItem}>
+                  {material.name}
+                </li>
+              ))}
+            </ul>
+            <p className={styles.roadmapNote}>Not available to order yet.</p>
+          </div>
+        )}
+
+        <Button href={ROUTES.materials} variant="secondary" iconRight="arrow-right">
             Compare materials
           </Button>
         </div>

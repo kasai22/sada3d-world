@@ -8,7 +8,7 @@ import { Icon } from "@/components/core";
 // Direct, not through the navigation barrel: that barrel also exports the
 // server-rendered Header and Footer, which have no place in a client bundle.
 import { FilterTree, type FilterGroup } from "@/components/navigation/FilterTree";
-import { COLORS } from "@/lib/catalog/taxonomy";
+import { OFFERED_COLORS } from "@/lib/catalog/taxonomy";
 import {
   activeFilterCount,
   buildHref,
@@ -95,7 +95,7 @@ export function FilterPanel({
       <fieldset className={styles.colorGroup}>
         <legend className={styles.colorLegend}>Colour</legend>
         <div className={styles.swatches}>
-          {COLORS.map((color) => {
+          {OFFERED_COLORS.map((color) => {
             const count = facets.color[color.value] ?? 0;
             const checked = query.color.includes(color.value);
 

@@ -79,7 +79,7 @@ const RULES: Record<ManufacturingEventType, Rule> = {
 /**
  * Where a job may still be cancelled.
  *
- * PROVISIONAL. SADA 3D has no published cancellation policy, so this encodes
+ * PROVISIONAL. Reality 3D has no published cancellation policy, so this encodes
  * the only defensible default — cancel before the part is on a machine — and is
  * exported so the real policy replaces a constant rather than a scattering of
  * conditionals. It is not a statement of commercial terms.

@@ -41,3 +41,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# content backups written by `npm run content:reset` (local recovery copies,
+# never committed — they are database exports)
+/backups/

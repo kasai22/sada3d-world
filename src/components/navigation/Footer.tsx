@@ -1,47 +1,15 @@
 import Link from "next/link";
 
-import { StatusDot } from "@/components/core";
+import { footerColumns } from "@/lib/navigation";
 import { SITE } from "@/lib/site";
 import styles from "./Footer.module.css";
 
-interface FooterColumn {
-  title: string;
-  links: readonly { href: string; label: string }[];
+export interface FooterProps {
+  /** Browse categories of the served catalog, from getBrowseCategories(). */
+  browseCategories: readonly string[];
 }
 
-const COLUMNS: readonly FooterColumn[] = [
-  {
-    title: "Manufacture",
-    links: [
-      { href: "/custom-print", label: "Custom print" },
-      { href: "/materials", label: "Materials" },
-      { href: "/how-it-works", label: "How it works" },
-      { href: "/solutions", label: "Solutions" },
-    ],
-  },
-  {
-    title: "Shop",
-    links: [
-      { href: "/shop", label: "All parts" },
-      { href: "/shop/functional", label: "Functional" },
-      { href: "/shop/automotive", label: "Automotive" },
-      { href: "/shop/lifestyle", label: "Lifestyle" },
-    ],
-  },
-  {
-    title: "Account",
-    links: [
-      { href: "/account", label: "Your account" },
-      { href: "/account/orders", label: "Orders" },
-      { href: "/account/designs", label: "Saved designs" },
-      // The guest route. Someone who ordered without an account has no account
-      // orders to look at, and this is the page that actually helps them.
-      { href: "/orders", label: "Track an order" },
-    ],
-  },
-];
-
-export function Footer() {
+export function Footer({ browseCategories }: FooterProps) {
   const year = new Date().getFullYear();
 
   return (
@@ -50,14 +18,14 @@ export function Footer() {
         <div className={styles.top}>
           <div className={styles.brand}>
             <span className={styles.wordmark}>
-              <span className={styles.wordmarkSada}>SADA</span>
+              <span className={styles.wordmarkName}>Reality</span>
               <span className={styles.wordmarkAccent}>3D</span>
             </span>
             <p className={styles.tagline}>{SITE.tagline}</p>
             <p className={styles.blurb}>{SITE.description}</p>
           </div>
 
-          {COLUMNS.map((column) => (
+          {footerColumns(browseCategories).map((column) => (
             <nav key={column.title} className={styles.column} aria-label={column.title}>
               <h2 className={styles.columnTitle}>{column.title}</h2>
               <ul className={styles.list}>
@@ -77,8 +45,15 @@ export function Footer() {
           <p className={styles.legal}>
             © {year} {SITE.legalName}
           </p>
-          {/* Placeholder until the machine fleet reports real state. */}
-          <StatusDot status="printing" label="Fleet online" className={styles.status} />
+          {/*
+            A live "Fleet online" indicator used to sit here, lit green on every
+            page load. Nothing reports machine state to this application, so the
+            dot was always on and meant nothing — an availability claim dressed
+            as telemetry, in the one place a customer would read it as fact.
+            The tagline says something true instead, and the indicator comes
+            back when a fleet actually reports to it.
+          */}
+          <p className={styles.status}>{SITE.tagline}</p>
         </div>
       </div>
     </footer>

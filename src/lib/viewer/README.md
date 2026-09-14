@@ -167,5 +167,5 @@ nothing is downloaded, and the assets are reproducible:
 node scripts/generate-models.mjs public/models product
 ```
 
-`planetary-carrier.glb` is the multi-component fixture: a carrier plate, a sun
+`planetary-gear-set.glb` is the multi-component fixture: a carrier plate, a sun
 gear, three pinions and a retaining cap, one named object each.

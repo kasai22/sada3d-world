@@ -10,9 +10,13 @@ import { ProgressBar } from "@/components/manufacturing";
 import { Stepper } from "@/components/structure";
 import { ModelFileError, formatBytes } from "@/lib/custom-print/inspect";
 import {
+  COMING_SOON_FINISHES,
+  COMING_SOON_MATERIALS,
   FINISH_OPTIONS,
   MATERIAL_OPTIONS,
-  QUALITY_OPTIONS,
+  TECHNOLOGY_OPTIONS,
+  comingSoonMessage,
+  qualityOptionsFor,
   finishOption,
   materialOption,
   qualityOption,
@@ -140,6 +144,8 @@ export function CustomPrintWorkflow() {
   /* The selected File, kept for a retry. Gone after a reload, as it should be. */
   const selectedFile = useRef<File | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
+  // Stage 19.9: why a Coming Soon option was not selected. Never a selection, never a quote.
+  const [roadmapNotice, setRoadmapNotice] = useState<string | null>(null);
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [quoting, setQuoting] = useState(false);
   /*
@@ -216,6 +222,7 @@ export function CustomPrintWorkflow() {
   function goTo(next: StepId) {
     setStep(next);
     setBlocked(null);
+    setRoadmapNotice(null);
     // Leaving the upload step abandons a replacement in progress.
     if (next !== "upload") setReplacing(false);
     // Move focus to the new step's heading so the change is announced and
@@ -487,7 +494,7 @@ export function CustomPrintWorkflow() {
   const canAddToCart = quotedTotal !== null && !uploadBusy && upload.status !== "failed";
 
   const material = materialOption(configuration.material);
-  const quality = qualityOption(configuration.quality);
+  const quality = qualityOption(configuration.quality, configuration.material);
   const finish = finishOption(configuration.finish);
 
   return (
@@ -598,6 +605,21 @@ export function CustomPrintWorkflow() {
 
             {step === "material" && (
               <>
+                <div className={styles.processes} aria-label="Manufacturing processes">
+                  <span className={styles.processesLabel}>Process</span>
+                  {TECHNOLOGY_OPTIONS.map((technology) => (
+                    <span
+                      key={technology.value}
+                      className={technology.status === "AVAILABLE" ? styles.process : `${styles.process} ${styles.processSoon}`}
+                    >
+                      <span className={styles.processCode}>{technology.label}</span>
+                      <span className={styles.processStatus}>
+                        {technology.status === "AVAILABLE" ? "Available" : "Coming soon"}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+
                 <div className={styles.materials}>
                   {MATERIAL_OPTIONS.map((option) => (
                     <MaterialCard
@@ -610,19 +632,50 @@ export function CustomPrintWorkflow() {
                       selected={configuration.material === option.value}
                       onSelect={() => {
                         setBlocked(null);
+                        setRoadmapNotice(null);
                         setConfiguration((current) => ({
                           ...current,
                           material: option.value,
+                          // A quality belongs to a process; clear one this
+                          // material does not offer rather than carry it over.
+                          quality: qualityOptionsFor(option.value).some(
+                            (entry) => entry.value === current.quality,
+                          )
+                            ? current.quality
+                            : "",
                         }));
                       }}
                     />
                   ))}
                 </div>
+                {COMING_SOON_MATERIALS.length > 0 && (
+                  <>
+                    <h3 className={styles.roadmapHeading}>Coming soon</h3>
+                    <div className={styles.materials}>
+                      {COMING_SOON_MATERIALS.map((option) => (
+                        <MaterialCard
+                          key={option.value}
+                          name={option.name}
+                          code={option.code}
+                          description={option.description}
+                          comingSoon
+                          onSelect={() => setRoadmapNotice(comingSoonMessage("material", option.value))}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                <p className={styles.roadmapNotice} role="status" aria-live="polite">
+                  {roadmapNotice}
+                </p>
+
                 <p className={styles.notice}>
                   <span className={styles.noticeGlyph}>
                     <Icon name="info" size={16} />
                   </span>
-                  These are the configuration options offered. Compatibility
+                  These are the configuration options offered. Coming soon options
+                  are shown for reference and cannot be ordered yet. Compatibility
                   with your specific geometry is confirmed during manufacturing
                   review.
                 </p>
@@ -632,7 +685,7 @@ export function CustomPrintWorkflow() {
             {step === "quality" && (
               <ChoiceList
                 legend="Print quality"
-                choices={QUALITY_OPTIONS.map((option) => ({
+                choices={qualityOptionsFor(configuration.material).map((option) => ({
                   value: option.value,
                   label: option.label,
                   detail: option.layerHeight,
@@ -652,19 +705,33 @@ export function CustomPrintWorkflow() {
               <>
                 <ChoiceList
                   legend="Finish"
-                  choices={FINISH_OPTIONS.map((option) => ({
-                    value: option.value,
-                    label: option.label,
-                    description: option.description,
-                  }))}
+                  choices={[
+                    ...FINISH_OPTIONS.map((option) => ({
+                      value: option.value,
+                      label: option.label,
+                      description: option.description,
+                    })),
+                    ...COMING_SOON_FINISHES.map((option) => ({
+                      value: option.value,
+                      label: option.label,
+                      description: option.description,
+                      comingSoon: true,
+                    })),
+                  ]}
                   value={configuration.finish}
+                  onUnavailable={(choice) => setRoadmapNotice(comingSoonMessage("finish", choice.value))}
                   onChange={(value) => {
                     setBlocked(null);
+                    setRoadmapNotice(null);
                     setConfiguration((current) => ({ ...current, finish: value }));
                   }}
                   describedBy={blocked ? messageId : undefined}
                   invalid={Boolean(blocked)}
                 />
+
+                <p className={styles.roadmapNotice} role="status" aria-live="polite">
+                  {roadmapNotice}
+                </p>
 
                 <div className={styles.quantityField}>
                   <span className={styles.quantityLabel}>Quantity</span>

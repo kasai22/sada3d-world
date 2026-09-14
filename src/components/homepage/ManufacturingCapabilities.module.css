@@ -139,3 +139,27 @@
   .detail { white-space: normal; }
   .metricValue { font-size: var(--fs-h3); }
 }
+
+/* ---- Stage 19.9: a roadmap process, muted ---- */
+
+.technologySoon .code,
+.technologySoon .name,
+.technologySoon .summary {
+  color: var(--text-muted);
+}
+
+.soonBadge {
+  padding: 2px var(--spacing-2);
+  border: 1px dashed var(--border-strong);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.roadmapNote {
+  margin: var(--spacing-5) 0 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}

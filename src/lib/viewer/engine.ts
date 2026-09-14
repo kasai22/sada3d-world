@@ -48,7 +48,7 @@ import type {
 } from "./types";
 
 /**
- * The SADA 3D viewer engine.
+ * The Reality 3D viewer engine.
  *
  * Plain three.js behind an imperative class rather than a React reconciler.
  * The reason is teardown: a viewer that is mounted and unmounted repeatedly as

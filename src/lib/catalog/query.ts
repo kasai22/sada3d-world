@@ -1,6 +1,8 @@
 import { PAGE_SIZE } from "./engine";
+import { selectFeatured, type FeaturedSelection } from "./featured";
 import { formatPrice, isQuoteOnly, partId, productHref } from "./format";
 import { resolveCatalogSource } from "./source";
+import { browseCategoriesFor } from "./taxonomy";
 import type { CatalogQuery, CatalogResult, Product } from "./types";
 
 /**
@@ -35,6 +37,18 @@ export { PAGE_SIZE, formatPrice, isQuoteOnly, partId, productHref };
 
 export async function queryCatalog(query: CatalogQuery): Promise<CatalogResult> {
   return resolveCatalogSource().query(query);
+}
+
+/**
+ * Every published product.
+ *
+ * For pages that describe the catalog rather than browse it — the materials and
+ * solutions pages count parts and read which technologies are actually in use.
+ * `queryCatalog` is the wrong tool for that: its `items` are one page of
+ * twelve, so counting them would have quietly under-reported every total.
+ */
+export async function allCatalogProducts(): Promise<readonly Product[]> {
+  return resolveCatalogSource().all();
 }
 
 /** Total catalog size, for the shop landing copy. */
@@ -78,9 +92,35 @@ export async function getRelatedProducts(
 }
 
 /**
- * Every valid category/slug pair, for generateStaticParams. With
- * dynamicParams disabled this doubles as the allowlist that makes unknown
- * products a routing-level 404.
+ * The homepage's featured parts, resolved against the live catalog.
+ *
+ * The homepage names products by id and nothing else. Name, price, material and
+ * — the part that used to be wrong — the URL all come from the catalog, so a
+ * featured card cannot describe a product that does not exist or link to an
+ * address that does not resolve. See `featured.ts` for what is refused.
+ */
+export async function getFeaturedProducts(): Promise<FeaturedSelection> {
+  // Stage 19.6: products flagged `featured` that are launchable — no id list.
+  const products = await resolveCatalogSource().all();
+  return selectFeatured(products, undefined, browseCategoriesFor(products));
+}
+
+/**
+ * Browse categories of the catalog actually served — seed and
+ * administrator-managed products alike, in this catalog mode. The category
+ * route, rail, footer, homepage index and sitemap all read this, so a category
+ * an administrator fills appears everywhere at once, and one that empties
+ * disappears everywhere at once.
+ */
+export async function getBrowseCategories(): Promise<string[]> {
+  return browseCategoriesFor(await resolveCatalogSource().all());
+}
+
+/**
+ * Every category/slug pair known at build time, for generateStaticParams.
+ * Stage 19.8: not an allowlist any more — a product an administrator publishes
+ * after the build is rendered on first request, and an unknown one 404s in the
+ * page (there is no loading boundary above it, so the status is still 404).
  */
 export async function productParams(): Promise<
   { category: string; slug: string }[]

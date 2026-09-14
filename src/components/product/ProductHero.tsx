@@ -1,8 +1,14 @@
 import Link from "next/link";
 
 import { StatusDot, type ManufacturingStatus } from "@/components/core";
-import { formatPrice, isQuoteOnly } from "@/lib/catalog/format";
+import {
+  formatPrice,
+  isQuoteOnly,
+  priceQualifier,
+  PROVISIONAL_PRICE_EXPLANATION,
+} from "@/lib/catalog/format";
 import { categoryLabel } from "@/lib/catalog/taxonomy";
+import { categoryHref } from "@/lib/routes";
 import type { Product } from "@/lib/catalog/types";
 
 import { ProductGallery } from "./ProductGallery";
@@ -46,7 +52,7 @@ export function ProductHero({ product }: ProductHeroProps) {
         <p className={styles.eyebrow}>
           <span className={styles.eyebrowRule} aria-hidden="true" />
           <Link
-            href={`/shop/${product.browseCategory}`}
+            href={categoryHref(product.browseCategory)}
             className={styles.categoryLink}
           >
             {categoryLabel(product.browseCategory)}
@@ -70,6 +76,15 @@ export function ProductHero({ product }: ProductHeroProps) {
 
         {!quoteOnly && (
           <p className={styles.priceNote}>Per unit, excluding GST</p>
+        )}
+
+        {/* Stage 19.6: a price that is not approved says so, next to the figure,
+            and the notice disappears on its own once the price is approved. */}
+        {priceQualifier(product) && (
+          <div className={styles.provisional} role="note">
+            <span className={styles.provisionalLabel}>{priceQualifier(product)}</span>
+            <p className={styles.provisionalText}>{PROVISIONAL_PRICE_EXPLANATION}</p>
+          </div>
         )}
 
         <ProductPurchase product={product} />

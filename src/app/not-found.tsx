@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Button } from "@/components/core";
 import { Footer, Header } from "@/components/navigation";
+import { getBrowseCategories } from "@/lib/catalog/query";
 import { SectionHeading } from "@/components/structure";
 import styles from "./not-found.module.css";
 
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
  * route-group not-found only handles notFound() raised inside that group, so
  * this one carries the shell itself.
  */
-export default function NotFound() {
+export default async function NotFound() {
   return (
     <div className={styles.shell}>
       <a href="#main" className="u-skip-link">
@@ -51,7 +52,7 @@ export default function NotFound() {
         </div>
       </main>
 
-      <Footer />
+      <Footer browseCategories={await getBrowseCategories()} />
     </div>
   );
 }

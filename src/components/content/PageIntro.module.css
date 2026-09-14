@@ -1,0 +1,66 @@
+.intro {
+  margin-bottom: var(--spacing-9);
+}
+
+.crumbs {
+  margin-bottom: var(--spacing-7);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin: 0 0 var(--spacing-4);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.eyebrowRule {
+  width: 32px;
+  height: 2px;
+  background: var(--gradient-orange-line);
+  box-shadow: var(--glow-line);
+  flex: none;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.62fr);
+  align-items: end;
+  gap: var(--spacing-9);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  /* clamp, so the heading cannot outgrow a 375px viewport. */
+  font-size: clamp(32px, 4.4vw, 64px);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+  color: var(--text-primary);
+  max-width: 14em;
+  /* A long unbroken word in a title would otherwise push the page sideways. */
+  overflow-wrap: break-word;
+}
+
+.lead {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+  max-width: 52ch;
+}
+
+@media (max-width: 1023px) {
+  .intro { margin-bottom: var(--spacing-7); }
+  .crumbs { margin-bottom: var(--spacing-5); }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-4);
+    align-items: start;
+  }
+}

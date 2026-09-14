@@ -26,7 +26,7 @@ export interface SectionHeadingProps {
 }
 
 /**
- * The Titanium Orange Line — the SADA 3D signature. An uppercase label above a
+ * The Titanium Orange Line — the Reality 3D signature. An uppercase label above a
  * 2px orange rule. Opens every section, panel and technical block.
  */
 export function SectionHeading({

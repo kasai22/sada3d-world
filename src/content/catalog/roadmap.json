@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "description": "Reality 3D capability roadmap. PRESENTATION ONLY: an entry makes a capability visible to customers as COMING SOON. It never approves, offers, quotes, prices or sells anything, and it carries no approver and no date by design. Availability comes only from an APPROVED record in decisions/business-decisions.json. Entries may not state timelines or specifications.",
+  "entries": [
+    {
+      "kind": "material",
+      "value": "abs",
+      "reference": "Stage 19.9 brief, §3 (supplied 2026-09-14)"
+    },
+    {
+      "kind": "material",
+      "value": "resin",
+      "reference": "Stage 19.9 brief, §4 (supplied 2026-09-14)"
+    },
+    {
+      "kind": "technology",
+      "value": "sla",
+      "reference": "Stage 19.9 brief, §5 (supplied 2026-09-14)"
+    },
+    {
+      "kind": "finish",
+      "value": "smooth",
+      "reference": "Stage 19.9 brief, §6 (supplied 2026-09-14)"
+    },
+    {
+      "kind": "finish",
+      "value": "matte",
+      "reference": "Stage 19.9 brief, §6 (supplied 2026-09-14)"
+    }
+  ]
+}

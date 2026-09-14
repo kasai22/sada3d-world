@@ -5,13 +5,17 @@ import type {
   Product as PayloadProduct,
 } from "@/payload-types";
 
-import type {
-  AvailabilityValue,
-  MaterialValue,
-  Product,
-  ProductImage,
-  QualityOption,
-  TechnologyValue,
+import { effectivePriceApproval, type PriceApprovalRecord } from "./commerce";
+import {
+  APPROVAL_STATUSES,
+  type ApprovalStatus,
+  type AvailabilityValue,
+  type MaterialValue,
+  type PriceStatus,
+  type Product,
+  type ProductImage,
+  type QualityOption,
+  type TechnologyValue,
 } from "./types";
 
 /**
@@ -55,6 +59,7 @@ function values(
 
 const TECHNOLOGIES: readonly TechnologyValue[] = ["fdm", "sla", "sls"];
 const AVAILABILITIES: readonly AvailabilityValue[] = ["in-stock", "made-to-order"];
+const PRICE_STATUSES: readonly PriceStatus[] = ["approved", "provisional", "quote-only"];
 const MATERIALS: readonly MaterialValue[] = ["pla", "petg", "abs", "tpu", "resin"];
 
 /**
@@ -87,7 +92,32 @@ function image(media: number | PayloadMedia | null | undefined): ProductImage | 
   const doc = related<PayloadMedia>(media);
   if (!doc?.url) return undefined;
 
-  return { src: doc.url, alt: doc.alt };
+  return { src: doc.url, alt: doc.alt, ...(doc.kind ? { kind: doc.kind } : {}) };
+}
+
+/**
+ * The product's primary image: a Media upload when one is attached, otherwise
+ * the repository-hosted visual. Media has no storage adapter yet, which is why
+ * the second path exists.
+ */
+function primaryImage(doc: PayloadProduct): ProductImage | undefined {
+  const uploaded = image(doc.image);
+  if (uploaded) return uploaded;
+
+  const visual = doc.visual;
+  if (!visual?.src || !visual.alt) return undefined;
+
+  // Stage 19.8: the media approval travels with the image; a partial record approves nothing.
+  const approval = visual.approval;
+  const approvedOn = approval?.approvedOn ? String(approval.approvedOn).slice(0, 10) : "";
+  const complete = approval?.reference?.trim() && approval.approvedBy?.trim() && /^\d{4}-\d{2}-\d{2}$/.test(approvedOn);
+
+  return {
+    src: visual.src,
+    alt: visual.alt,
+    ...(visual.kind ? { kind: visual.kind } : {}),
+    ...(complete ? { approval: { reference: approval!.reference!.trim(), approvedBy: approval!.approvedBy!.trim(), approvedOn } } : {}),
+  };
 }
 
 function gallery(
@@ -202,8 +232,15 @@ export function toDomainProduct(doc: PayloadProduct): MappingResult {
     color: doc.color,
     price: doc.price,
     currency: "INR",
+    ...(PRICE_STATUSES.includes(doc.priceStatus as PriceStatus)
+      ? { priceStatus: doc.priceStatus as PriceStatus }
+      : {}),
+    ...(APPROVAL_STATUSES.includes(doc.approvalStatus as ApprovalStatus)
+      ? { approvalStatus: doc.approvalStatus as ApprovalStatus }
+      : {}),
+    ...(doc.featured ? { featured: true } : {}),
     availability,
-    ...(image(doc.image) ? { image: image(doc.image) } : {}),
+    ...(primaryImage(doc) ? { image: primaryImage(doc) } : {}),
     ...(gallery(doc.gallery) ? { gallery: gallery(doc.gallery) } : {}),
     ...(doc.model?.url && doc.model.format
       ? { model: { url: doc.model.url, format: doc.model.format } }
@@ -231,6 +268,40 @@ export function toDomainProduct(doc: PayloadProduct): MappingResult {
   };
 
   return { ok: true, product };
+}
+
+/**
+ * Re-checks every "approved" price against the approval records, on the server.
+ *
+ * The CMS refuses to save an approved price without a matching approval, but a
+ * record's effective date can pass, a later approval can supersede it, and a row
+ * can be written around the admin. So the storefront does not take the status
+ * on trust: an approved price with no matching approval in effect is served as
+ * provisional — labelled, and not chargeable in launch mode — and reported.
+ */
+export function applyPriceApprovals(
+  products: readonly Product[],
+  approvals: ReadonlyMap<string, readonly PriceApprovalRecord[]>,
+  now: Date = new Date(),
+): { products: Product[]; failures: MappingFailure[] } {
+  const failures: MappingFailure[] = [];
+
+  const checked = products.map((product) => {
+    if (product.priceStatus !== "approved") return product;
+
+    const effective = effectivePriceApproval(approvals.get(product.id) ?? [], now);
+    if (effective && effective.amount === product.price) return product;
+
+    failures.push({
+      productId: product.id,
+      reason: effective
+        ? `Approved price ₹${product.price} does not match the approval in effect (₹${effective.amount}); served as provisional.`
+        : "Price marked approved with no price approval in effect; served as provisional.",
+    });
+    return { ...product, priceStatus: "provisional" as const };
+  });
+
+  return { products: checked, failures };
 }
 
 export interface MappedCatalog {

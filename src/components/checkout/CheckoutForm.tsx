@@ -281,7 +281,7 @@ export function CheckoutForm({ cart, developmentPayment }: CheckoutFormProps) {
               }))}
               value={address.country}
               error={field("address.country")}
-              hint="SADA 3D ships within India."
+              hint="Reality 3D ships within India."
               onChange={(event) =>
                 setAddress({ ...address, country: event.target.value })
               }

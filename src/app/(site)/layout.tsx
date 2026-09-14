@@ -1,4 +1,5 @@
 import { Footer, Header } from "@/components/navigation";
+import { getBrowseCategories } from "@/lib/catalog/query";
 import styles from "./layout.module.css";
 
 /**
@@ -7,7 +8,7 @@ import styles from "./layout.module.css";
  * Everything customer-facing lives in this route group. The Payload admin and
  * the API sit outside it so they never inherit this chrome.
  */
-export default function SiteLayout({
+export default async function SiteLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -22,7 +23,7 @@ export default function SiteLayout({
         {children}
       </main>
 
-      <Footer />
+      <Footer browseCategories={await getBrowseCategories()} />
     </div>
   );
 }

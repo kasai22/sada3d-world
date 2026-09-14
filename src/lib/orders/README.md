@@ -116,7 +116,7 @@ result yet, and that is a real and distinct condition.
 
 ### Cancellation and failure
 
-`CANCELLABLE_STATES` is **provisional**. SADA 3D has no published cancellation
+`CANCELLABLE_STATES` is **provisional**. Reality 3D has no published cancellation
 policy, so it encodes the only defensible default — cancel before the part is on
 a machine — and is a constant so the real policy replaces one value rather than
 a scattering of conditionals. It is not a statement of commercial terms.

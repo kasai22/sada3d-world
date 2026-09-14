@@ -140,7 +140,7 @@ test("shipping and tax report that they are not configured", () => {
 test("the same request derives the same key", () => {
   const input = {
     cartId: "cart_1",
-    fingerprint: "catalog:p-001:pla:black:precisionx2",
+    fingerprint: "catalog:p-101:pla:black:standardx2",
     email: "a@b.co",
     postalCode: "500032",
   };

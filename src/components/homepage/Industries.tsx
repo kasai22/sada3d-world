@@ -1,10 +1,12 @@
 import clsx from "clsx";
 
+import { Button } from "@/components/core";
 import { INDUSTRIES } from "@/content/home";
+import { ROUTES } from "@/lib/routes";
 import styles from "./Industries.module.css";
 
 /**
- * 07 — Industries.
+ * 04 — Industries.
  *
  * Editorial panels rather than cards: mixed column spans and a shared hairline
  * grid, so the section reads as a page spread and makes clear the platform
@@ -23,6 +25,12 @@ export function Industries() {
             <br />
             you&rsquo;re building.
           </h2>
+
+          {/* The section describes who this is for; /solutions describes what
+              they have made. Until Stage 19 there was no page to send them to. */}
+          <Button href={ROUTES.solutions} variant="secondary" iconRight="arrow-right">
+            See what people make
+          </Button>
         </div>
 
         <ul className={styles.grid}>

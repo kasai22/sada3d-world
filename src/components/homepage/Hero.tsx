@@ -1,4 +1,6 @@
 import { Button } from "@/components/core";
+import { TECHNOLOGIES } from "@/lib/catalog/taxonomy";
+import { ROUTES } from "@/lib/routes";
 import { HeroObject } from "./HeroObject";
 import styles from "./Hero.module.css";
 
@@ -24,10 +26,10 @@ export function Hero() {
           </p>
 
           <div className={styles.actions}>
-            <Button href="/custom-print" size="lg" iconRight="arrow-right">
+            <Button href={ROUTES.customPrint} size="lg" iconRight="arrow-right">
               Start printing
             </Button>
-            <Button href="/shop" size="lg" variant="secondary">
+            <Button href={ROUTES.shop} size="lg" variant="secondary">
               Explore designs
             </Button>
           </div>
@@ -41,7 +43,8 @@ export function Hero() {
       <div className={`u-container ${styles.readout}`}>
         <span>Digital fabrication / 01</span>
         <span className={`${styles.readoutGroup} ${styles.readoutSecondary}`}>
-          <span>FDM · SLA · SLS</span>
+          {/* Approved processes only (Stage 19.8): SLA is not approved for launch. */}
+          <span>{TECHNOLOGIES.map((technology) => technology.label).join(" · ")}</span>
           <span>Made to order</span>
         </span>
       </div>

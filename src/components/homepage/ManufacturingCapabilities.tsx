@@ -1,5 +1,5 @@
 import { SectionHeading } from "@/components/structure";
-import { CAPABILITY_METRICS, TECHNOLOGIES } from "@/content/home";
+import { CAPABILITY_METRICS, COMING_SOON_TECHNOLOGIES, ROADMAP_NOTE, TECHNOLOGIES } from "@/content/home";
 import styles from "./ManufacturingCapabilities.module.css";
 
 /**
@@ -49,7 +49,23 @@ export function ManufacturingCapabilities() {
               <span className={styles.detail}>{technology.detail}</span>
             </li>
           ))}
+          {COMING_SOON_TECHNOLOGIES.map((technology) => (
+            <li key={technology.code} className={`${styles.technology} ${styles.technologySoon}`}>
+              <span className={styles.code}>{technology.code}</span>
+
+              <div className={styles.technologyBody}>
+                <h3 className={styles.name}>{technology.name}</h3>
+                <p className={styles.summary}>{technology.summary}</p>
+              </div>
+
+              <span className={styles.soonBadge}>
+                Coming soon<span className="u-visually-hidden"> — not available to order yet</span>
+              </span>
+            </li>
+          ))}
         </ul>
+
+        {COMING_SOON_TECHNOLOGIES.length > 0 && <p className={styles.roadmapNote}>{ROADMAP_NOTE}</p>}
 
         <p className={styles.note}>
           Indicative figures. Tolerance and lead time are confirmed per part at

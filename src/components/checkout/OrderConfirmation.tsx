@@ -110,7 +110,7 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
           What happens next
         </h2>
         <p className={styles.note}>
-          The order is with SADA 3D for review. Follow its progress on the
+          The order is with Reality 3D for review. Follow its progress on the
           tracking page.
         </p>
         {hasCustom && (

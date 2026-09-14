@@ -1,0 +1,278 @@
+.page {
+  padding-top: var(--spacing-8);
+  padding-bottom: var(--spacing-10);
+}
+
+/* ------------------------------------------------------------------ *
+ * Legend
+ * ------------------------------------------------------------------ */
+
+.legend {
+  margin-bottom: var(--spacing-9);
+  padding: var(--spacing-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+}
+
+.legendTitle {
+  margin: 0 0 var(--spacing-4);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.legendList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-5);
+}
+
+.legendList > li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------ *
+ * The stages
+ * ------------------------------------------------------------------ */
+
+.stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+}
+
+.stage {
+  position: relative;
+  padding-left: var(--spacing-7);
+  scroll-margin-top: var(--spacing-9);
+}
+
+/* The spine: one hairline down the whole list, drawn per stage so the last
+   stage's line stops at its own node. */
+.stage::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 12px;
+  bottom: calc(var(--spacing-8) * -1);
+  width: 1px;
+  background: var(--border-subtle);
+}
+
+.stages > .stage:last-child::before {
+  display: none;
+}
+
+.node {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 11px;
+  height: 11px;
+  background: var(--surface-page);
+  border: 2px solid var(--border-accent);
+}
+
+.stageHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  flex-wrap: wrap;
+}
+
+.actor {
+  flex: none;
+}
+
+.stageBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  margin-top: var(--spacing-4);
+  max-width: 76ch;
+}
+
+.summary {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+}
+
+.detail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.detail > li {
+  position: relative;
+  padding-left: var(--spacing-4);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.detail > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 8px;
+  height: 1px;
+  background: var(--border-accent);
+}
+
+.caveat {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: var(--spacing-4);
+  background: var(--surface-raised);
+  border-left: 2px solid var(--border-accent);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.caveatIcon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--text-accent);
+}
+
+/* ------------------------------------------------------------------ *
+ * The manufacturing stages an order actually reports
+ * ------------------------------------------------------------------ */
+
+.tracking {
+  padding: var(--spacing-4);
+  border: 1px solid var(--border-subtle);
+}
+
+.subhead {
+  margin: 0 0 var(--spacing-3);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.trackingList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2) var(--spacing-4);
+  counter-reset: stage;
+}
+
+.trackingList > li {
+  counter-increment: stage;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.trackingList > li::before {
+  content: counter(stage, decimal-leading-zero) " ";
+  color: var(--text-accent);
+}
+
+.trackingNote {
+  margin: var(--spacing-3) 0 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.stageAction {
+  display: flex;
+}
+
+/* ------------------------------------------------------------------ *
+ * Closing CTA
+ * ------------------------------------------------------------------ */
+
+.cta {
+  margin-top: var(--spacing-10);
+  padding-top: var(--spacing-7);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ctaText {
+  margin: var(--spacing-5) 0 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  max-width: 64ch;
+}
+
+.ctaActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-6);
+}
+
+/* ------------------------------------------------------------------ *
+ * Responsive
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .page {
+    padding-top: var(--spacing-6);
+  }
+
+  .legendList {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-4);
+  }
+
+  .legendList > li {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-3);
+  }
+}
+
+@media (max-width: 767px) {
+  .stages {
+    gap: var(--spacing-7);
+  }
+
+  .stage {
+    padding-left: var(--spacing-5);
+  }
+
+  .stage::before {
+    bottom: calc(var(--spacing-7) * -1);
+  }
+
+  .legendList > li {
+    /* Chip above the sentence again: side by side, the sentence is squeezed to
+       a two-word column at 375px. */
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+  }
+
+  .ctaActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

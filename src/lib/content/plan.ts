@@ -1,25 +1,28 @@
-import { PRODUCTS } from "@/lib/catalog/products";
 import {
-  BROWSE_CATEGORIES,
-  CATEGORY_TREE,
-  MATERIALS as MATERIAL_FACETS,
-  type TaxonomyNode,
-} from "@/lib/catalog/taxonomy";
-import { MATERIALS as MATERIAL_CONTENT } from "@/content/home";
-import type { Product } from "@/lib/catalog/types";
+  CATALOG_CATEGORIES,
+  CATALOG_ENTRIES,
+  type CatalogEntry,
+  type CategoryDefinition,
+  factValue,
+  type Fact,
+} from "@/content/catalog";
+import { MATERIALS as MATERIAL_CONTENT, type Material } from "@/content/materials";
+import { COLORS } from "@/lib/catalog/taxonomy";
+import { validateCatalog } from "@/lib/catalog/validation";
 
 /**
  * What the import will write, worked out before anything is written.
  *
- * Pure: the local content in, a list of rows out. Nothing here touches Payload
- * or a database, which is what makes the hard part of the migration — the
- * flattening of a nested taxonomy, the joining of three separate material
- * definitions, the ordering that lets parents exist before children — testable
- * without either.
+ * Pure: the canonical catalog in, a list of rows out. Nothing here touches
+ * Payload or a database, which is what makes the plan — the flattening of the
+ * tree, the publication decision for every row, the ordering that lets parents
+ * exist before children — testable without either.
  *
- * The CLI in `cli/import.ts` takes these rows and writes them. It contains no
- * decisions of its own.
+ * `import.ts` takes these rows and writes them. It contains no decisions of its
+ * own about *what* is published; those are all made here, from validation.
  */
+
+export type RowStatus = "published" | "draft";
 
 /* ------------------------------------------------------------------ *
  * Categories
@@ -28,51 +31,66 @@ import type { Product } from "@/lib/catalog/types";
 export interface CategoryRow {
   value: string;
   name: string;
+  description: string;
   /** The parent's `value`, or null for a top-level category. */
   parent: string | null;
   /** 0 for a root. Derived, not stored in the CMS. */
   depth: number;
   isBrowse: boolean;
   browseOrder: number;
+  /**
+   * Published only when a publishable product sits beneath it. A category
+   * holding only drafts is written as a draft, so the public API never lists a
+   * category with nothing in it.
+   */
+  status: RowStatus;
 }
 
-/**
- * The category tree, flattened parents-first.
- *
- * Order matters and is not incidental: a child's parent must already exist
- * before the child can point at it, and a breadth-first walk is what guarantees
- * that without the importer needing a second pass or a retry.
- *
- * `isBrowse` and `browseOrder` come from `BROWSE_CATEGORIES`, which is an
- * ordered list mixing depths — "mechanical" is a second-level category and
- * "components" is a first-level one. That is real and is preserved rather than
- * tidied into something more regular.
- */
-export function planCategories(): CategoryRow[] {
+/** Parents first (breadth-first), so a child's parent already exists. */
+export function planCategories(
+  tree: readonly CategoryDefinition[] = CATALOG_CATEGORIES,
+  entries: readonly CatalogEntry[] = CATALOG_ENTRIES,
+): CategoryRow[] {
   const rows: CategoryRow[] = [];
+  const publishable = validateCatalog(entries, tree).publishable.map((entry) => entry.product);
 
-  const walk = (nodes: readonly TaxonomyNode[], parent: string | null, depth: number) => {
+  const contains = (node: CategoryDefinition, category: string): boolean =>
+    node.value === category || (node.children ?? []).some((child) => contains(child, category));
+
+  /*
+   * Browse roots in tree order: roots with a publishable product beneath them.
+   * Deliberately not `BROWSE_CATEGORIES`, which depends on the catalog mode of
+   * the running process — the CMS rows must be the same whichever mode plans
+   * them. The launch storefront hides unapproved products at serve time.
+   */
+  const browseRoots = tree
+    .filter((node) => publishable.some((product) => contains(node, product.category)))
+    .map((node) => node.value);
+
+  const walk = (nodes: readonly CategoryDefinition[], parent: string | null, depth: number) => {
     for (const node of nodes) {
-      const browseIndex = BROWSE_CATEGORIES.indexOf(node.value);
+      const browseIndex = browseRoots.indexOf(node.value);
 
       rows.push({
         value: node.value,
         name: node.label,
+        description: node.description,
         parent,
         depth,
-        isBrowse: browseIndex !== -1,
+        isBrowse: depth === 0 && browseIndex !== -1,
         browseOrder: browseIndex === -1 ? 0 : browseIndex,
+        status: publishable.some((product) => contains(node, product.category))
+          ? "published"
+          : "draft",
       });
     }
 
-    // Breadth-first: every node at this depth is recorded before any child of
-    // any of them, so a parent is never written after its child.
     for (const node of nodes) {
       if (node.children) walk(node.children, node.value, depth + 1);
     }
   };
 
-  walk(CATEGORY_TREE, null, 0);
+  walk(tree, null, 0);
   return rows;
 }
 
@@ -83,49 +101,45 @@ export function planCategories(): CategoryRow[] {
 export interface MaterialRow {
   value: string;
   name: string;
-  code?: string;
-  description?: string;
-  properties?: { strength: number; flexibility: number; heat: number };
+  code: string;
+  description: string;
+  properties: { strength: number; flexibility: number; heat: number };
+  technologies: string[];
   applications: string[];
-  surface?: string;
+  bestFor: string[];
+  avoidFor: string[];
+  surface: string;
+  /** Hex, looked up from the colour vocabulary — the collection stores swatches. */
   swatches: string[];
+  seo: { title: string; description: string };
+  status: RowStatus;
 }
 
 /**
- * Three definitions of the same five materials, joined into one.
+ * The canonical materials, one row each.
  *
- * `taxonomy.ts` has the facet value and the label; `content/home.ts` has the
- * description, the properties and the swatches. The join key is the facet
- * value, matched against the content entry's name case-insensitively — which is
- * exactly the fragile correspondence this collection exists to remove.
- *
- * The **price multiplier deliberately does not come across**. It lives in
- * `content/home.ts` as a display string beside the real one in
- * `lib/pricing`, and importing it would put a number a customer is charged by
- * behind an editorial field. The homepage derives the figure it shows from the
- * pricing rules instead.
+ * The **price multiplier deliberately does not come across**: it is the number
+ * a customer is charged by, and it stays in `lib/pricing` behind review and
+ * tests rather than behind an editorial field.
  */
-export function planMaterials(): MaterialRow[] {
-  return MATERIAL_FACETS.map((facet) => {
-    const content = MATERIAL_CONTENT.find(
-      (entry) => entry.name.toLowerCase() === facet.label.toLowerCase(),
-    );
-
-    return {
-      value: facet.value,
-      name: facet.label,
-      ...(content
-        ? {
-            code: content.code,
-            description: content.description,
-            properties: { ...content.properties },
-            applications: [...content.applications],
-            surface: content.surface,
-            swatches: [...content.colors],
-          }
-        : { applications: [], swatches: [] }),
-    };
-  });
+export function planMaterials(materials: readonly Material[] = MATERIAL_CONTENT): MaterialRow[] {
+  return materials.map((material) => ({
+    value: material.value,
+    name: material.name,
+    code: material.code,
+    description: material.description,
+    properties: { ...material.properties },
+    technologies: [...material.technologies],
+    applications: [...material.applications],
+    bestFor: [...material.bestFor],
+    avoidFor: [...material.avoidFor],
+    surface: material.surface,
+    swatches: material.colors
+      .map((value) => COLORS.find((color) => color.value === value)?.hex)
+      .filter((hex): hex is string => Boolean(hex)),
+    seo: { ...material.seo },
+    status: material.status,
+  }));
 }
 
 /* ------------------------------------------------------------------ *
@@ -140,6 +154,7 @@ export interface ProductRow {
   description?: string;
   applications: string[];
   price: number;
+  priceStatus: string;
   currency: "INR";
   availability: string;
   badge?: string;
@@ -156,9 +171,60 @@ export interface ProductRow {
   specifications: { label: string; value: string }[];
   materialNotes: string[];
   model?: { url: string; format: string };
+  seo: { title: string; description: string };
+  approvalStatus: string;
+  approval: { reference: string; approvedBy: string; approvedOn: string } | null;
+  featured: boolean;
+  /** A repository-hosted approved photo or render, when the product has one. */
+  visual: { src: string; alt: string; kind: string } | null;
+  priceApprovals: { amount: number; currency: "INR"; effectiveFrom: string; reference: string; approvedBy: string }[];
+  /**
+   * Stage 19.7. The queryable columns carry a value only when it is APPROVED, so
+   * the admin list never shows a proposal as a decision; the full stated facts
+   * travel in `commercialDefinition`.
+   */
+  sku: string | null;
+  productClass: string | null;
+  pricingModel: string | null;
+  /** Stage 19.8 structured commercial fields, as the admin edits them. */
+  customers: string[];
+  useCase: string | null;
+  visualRequirement: string | null;
+  renderSpecification: string | null;
+  weightGrams: number | null;
+  /** Set only when every required commercial fact is APPROVED under one record. */
+  commercialApproval: { reference: string; approvedBy: string; approvedOn: string } | null;
+  openQuestions: {
+    questionId: string;
+    question: string;
+    answer: "unanswered" | "yes" | "no";
+    reference: string | null;
+    approvedBy: string | null;
+    approvedOn: string | null;
+  }[];
+  visualApproval: { reference: string; approvedBy: string; approvedOn: string } | null;
+  /** Published only when intended for publication and valid. */
+  status: RowStatus;
 }
 
-function toProductRow(product: Product): ProductRow {
+/**
+ * The admin records one commercial approval per product. The canonical catalog
+ * records one per fact; they map to the admin's record only when every required
+ * fact is APPROVED under the same reference. Anything less maps to no approval —
+ * never to a partial one.
+ */
+function sharedApproval(entry: CatalogEntry): ProductRow["commercialApproval"] {
+  const c = entry.commercial;
+  const facts: Fact<unknown>[] = [c.sku, c.productClass, c.pricingModel, c.customer, c.useCase, c.copy, c.visual.required];
+  const approvals = facts.map((fact) => (fact.state === "APPROVED" ? fact.approval : undefined));
+  const first = approvals[0];
+  if (!first || approvals.some((a) => !a || a.reference !== first.reference)) return null;
+  return { reference: first.reference, approvedBy: first.approvedBy, approvedOn: first.approvedOn };
+}
+
+function toProductRow(entry: CatalogEntry, status: RowStatus): ProductRow {
+  const { product } = entry;
+
   return {
     productId: product.id,
     slug: product.slug,
@@ -167,14 +233,14 @@ function toProductRow(product: Product): ProductRow {
     ...(product.description ? { description: product.description } : {}),
     applications: [...(product.applications ?? [])],
     price: product.price,
+    priceStatus: product.priceStatus ?? "provisional",
     currency: product.currency,
     availability: product.availability,
     ...(product.badge ? { badge: product.badge } : {}),
     category: product.category,
     browseCategory: product.browseCategory,
     material: product.material,
-    // The default is always among the offered materials, even where the local
-    // record left the list off entirely.
+    // The default is always among the offered materials.
     materials: [...new Set([product.material, ...(product.materials ?? [])])],
     technology: product.technology,
     color: product.color,
@@ -183,11 +249,45 @@ function toProductRow(product: Product): ProductRow {
     specifications: (product.specifications ?? []).map((spec) => ({ ...spec })),
     materialNotes: [...(product.materialNotes ?? [])],
     ...(product.model ? { model: { ...product.model } } : {}),
+    seo: { title: product.name, description: product.description ?? product.summary },
+    approvalStatus: product.approvalStatus ?? "draft",
+    approval: entry.approval ? { ...entry.approval } : null,
+    featured: product.featured === true,
+    visual:
+      product.image && product.image.kind
+        ? { src: product.image.src, alt: product.image.alt, kind: product.image.kind }
+        : null,
+    priceApprovals: (entry.priceApprovals ?? []).map((record) => ({ ...record })),
+    sku: factValue(entry.commercial.sku) ?? null,
+    productClass: factValue(entry.commercial.productClass) ?? null,
+    pricingModel: factValue(entry.commercial.pricingModel) ?? null,
+    customers: [...(factValue(entry.commercial.customer) ?? [])],
+    useCase: factValue(entry.commercial.useCase) ?? null,
+    visualRequirement: factValue(entry.commercial.visual.required) ?? null,
+    renderSpecification: factValue(entry.commercial.visual.renderSpecification) ?? null,
+    weightGrams: factValue(entry.commercial.weightGrams) ?? null,
+    commercialApproval: sharedApproval(entry),
+    openQuestions: (entry.commercial.openQuestions ?? []).map((question) => ({
+      questionId: question.id,
+      question: question.question,
+      answer: question.answer.state === "APPROVED" ? (question.answer.value === "YES" ? "yes" : "no") : "unanswered",
+      reference: question.answer.state === "APPROVED" ? question.answer.approval.reference : null,
+      approvedBy: question.answer.state === "APPROVED" ? question.answer.approval.approvedBy : null,
+      approvedOn: question.answer.state === "APPROVED" ? question.answer.approval.approvedOn : null,
+    })),
+    visualApproval: product.image?.approval ? { ...product.image.approval } : null,
+    status,
   };
 }
 
-export function planProducts(): ProductRow[] {
-  return PRODUCTS.map(toProductRow);
+export function planProducts(entries: readonly CatalogEntry[] = CATALOG_ENTRIES): ProductRow[] {
+  const publishable = new Set(
+    validateCatalog(entries).publishable.map((entry) => entry.product.id),
+  );
+
+  return entries.map((entry) =>
+    toProductRow(entry, publishable.has(entry.product.id) ? "published" : "draft"),
+  );
 }
 
 /* ------------------------------------------------------------------ *
@@ -200,72 +300,31 @@ export interface PlanProblem {
 }
 
 /**
- * Checks the plan against itself before a single row is written.
+ * Everything that stops the import before a single row is written.
  *
- * Every relationship a product declares has to resolve to a category or
- * material the plan also contains. An import that wrote a product pointing at a
- * category it never created would leave the catalog with a document that maps
- * to nothing, and the storefront would silently drop it.
- *
- * Cheap, and it runs first, so a broken import fails before it has half-written
- * the catalog.
+ * `validateCatalog` is the rule set. An entry intended for publication that
+ * fails it stops the import rather than being quietly demoted to a draft:
+ * somebody decided to publish it, so somebody should hear that it cannot be.
  */
-export function validatePlan(): PlanProblem[] {
-  const problems: PlanProblem[] = [];
+export function validatePlan(entries: readonly CatalogEntry[] = CATALOG_ENTRIES): PlanProblem[] {
+  const problems: PlanProblem[] = validateCatalog(entries).issues.map((issue) => ({
+    subject: issue.subject,
+    reason: `[${issue.code}] ${issue.message}`,
+  }));
 
-  const categories = new Set(planCategories().map((row) => row.value));
-  const materials = new Set(planMaterials().map((row) => row.value));
-  const browse = new Set(
-    planCategories().filter((row) => row.isBrowse).map((row) => row.value),
-  );
-
-  const seenIds = new Set<string>();
-  const seenSlugs = new Set<string>();
-
-  for (const product of planProducts()) {
-    if (seenIds.has(product.productId)) {
-      problems.push({
-        subject: product.productId,
-        reason: "Two products share this identifier.",
-      });
-    }
-    seenIds.add(product.productId);
-
-    if (seenSlugs.has(product.slug)) {
-      problems.push({ subject: product.slug, reason: "Two products share this slug." });
-    }
-    seenSlugs.add(product.slug);
-
-    if (!categories.has(product.category)) {
-      problems.push({
-        subject: product.productId,
-        reason: `Category "${product.category}" is not in the taxonomy.`,
-      });
-    }
-
-    if (!browse.has(product.browseCategory)) {
-      problems.push({
-        subject: product.productId,
-        reason: `"${product.browseCategory}" is not a browse category.`,
-      });
-    }
-
-    for (const material of product.materials) {
-      if (!materials.has(material)) {
-        problems.push({
-          subject: product.productId,
-          reason: `Material "${material}" is not a known material.`,
-        });
-      }
+  const categories = new Set(planCategories(CATALOG_CATEGORIES, entries).map((row) => row.value));
+  for (const row of planCategories(CATALOG_CATEGORIES, entries)) {
+    if (row.parent && !categories.has(row.parent)) {
+      problems.push({ subject: row.value, reason: `Parent "${row.parent}" is not in the taxonomy.` });
     }
   }
 
-  for (const category of planCategories()) {
-    if (category.parent && !categories.has(category.parent)) {
-      problems.push({
-        subject: category.value,
-        reason: `Parent "${category.parent}" is not in the taxonomy.`,
-      });
+  const materials = new Set(planMaterials().map((row) => row.value));
+  for (const row of planProducts(entries)) {
+    for (const material of row.materials) {
+      if (!materials.has(material)) {
+        problems.push({ subject: row.productId, reason: `Material "${material}" is not a canonical material.` });
+      }
     }
   }
 

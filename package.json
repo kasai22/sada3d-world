@@ -18,7 +18,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/lib/db/cli/migrate.ts",
     "content:import": "tsx src/lib/content/cli/import.ts",
+    "content:reset": "tsx src/lib/content/cli/reset.ts",
     "content:verify": "tsx src/lib/content/cli/verify.ts",
+    "content:docs": "tsx src/lib/content/cli/docs.ts",
+    "content:decisions": "tsx src/lib/content/cli/decisions.ts",
     "storage:verify": "tsx src/lib/storage/cli/verify.ts",
     "storage:sweep": "tsx src/lib/storage/cli/sweep.ts",
     "auth:verify": "tsx src/lib/auth/cli/verify.ts"

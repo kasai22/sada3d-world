@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 /**
- * The SADA 3D glyph set.
+ * The Reality 3D glyph set.
  *
  * The design system specifies Lucide outline, loaded per-icon from a CDN and
  * painted with a CSS mask. That costs one network request per glyph and cannot

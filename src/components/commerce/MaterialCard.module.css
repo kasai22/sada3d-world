@@ -103,3 +103,37 @@
   height: 16px;
   border: 1px solid var(--border-strong);
 }
+
+
+/* ---- Stage 19.9: roadmap material — visible, muted, never a selection ---- */
+
+.comingSoon,
+.comingSoon:hover:not(:disabled) {
+  cursor: not-allowed;
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--border-subtle);
+}
+
+.comingSoon .name {
+  color: var(--text-muted);
+}
+
+.comingSoon .rule {
+  background: var(--border-subtle);
+}
+
+.comingSoon .description {
+  color: var(--text-muted);
+}
+
+.soonBadge {
+  flex: 0 0 auto;
+  padding: 2px var(--spacing-2);
+  border: 1px solid var(--border-strong);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}

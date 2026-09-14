@@ -124,3 +124,36 @@
   .detail { grid-column: 2; white-space: normal; }
   .description { grid-column: 2; }
 }
+
+/* ---- Stage 19.9: roadmap choice — visible, muted, never checked ---- */
+
+.soon {
+  cursor: not-allowed;
+}
+
+.soon .face,
+.soon:hover .face {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--border-subtle);
+}
+
+.soon .label,
+.soon .description {
+  color: var(--text-muted);
+}
+
+.soon .mark {
+  border-style: dashed;
+  border-color: var(--border-subtle);
+}
+
+.soonBadge {
+  padding: 2px var(--spacing-2);
+  border: 1px solid var(--border-strong);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}

@@ -1,3 +1,5 @@
+import { priceQualifier, purchaseBlockers } from "@/lib/catalog/commerce";
+import { serverCatalogMode } from "@/lib/catalog/commerce-server";
 import { getProductById, isQuoteOnly, productHref } from "@/lib/catalog/query";
 import { MATERIALS } from "@/lib/catalog/taxonomy";
 import { modelFileAvailability } from "@/lib/custom-print/availability";
@@ -59,7 +61,7 @@ function catalogSpec(line: CatalogCartLine, qualityLabel?: string): string {
 function customSpec(line: CustomCartLine): string {
   return [
     materialLabel(line.configuration.material),
-    qualityOption(line.configuration.quality)?.label.toUpperCase() ??
+    qualityOption(line.configuration.quality, line.configuration.material)?.label.toUpperCase() ??
       line.configuration.quality.toUpperCase(),
     finishOption(line.configuration.finish)?.label.toUpperCase() ??
       line.configuration.finish.toUpperCase(),
@@ -90,6 +92,27 @@ async function priceCatalogLine(line: CatalogCartLine): Promise<PricedCartLine> 
         },
       ],
     };
+  }
+
+  /*
+   * Stage 19.6: commercial approval, decided here on the server on every read —
+   * so the cart page and `placeOrder` reach the same verdict. In launch mode an
+   * unapproved product or an unapproved price blocks checkout; in review mode a
+   * provisional price is allowed through and the customer is told it is
+   * provisional. A client can influence neither: the product and its status are
+   * read from the catalog, never from the stored line.
+   */
+  const mode = serverCatalogMode();
+  for (const blocker of purchaseBlockers(product, mode)) {
+    issues.push({ code: blocker.code, severity: "blocking", lineId: line.id, message: blocker.message });
+  }
+  if (mode === "review" && priceQualifier(product)) {
+    issues.push({
+      code: "price_provisional",
+      severity: "notice",
+      lineId: line.id,
+      message: `Provisional price. ${product.name} is not yet at final commercial pricing.`,
+    });
   }
 
   if (isQuoteOnly(product)) {
@@ -192,7 +215,11 @@ async function priceCustomLine(line: CustomCartLine): Promise<PricedCartLine> {
       message:
         response.status === "unavailable"
           ? response.reason
-          : "This configuration can no longer be quoted. Review it before checkout.",
+          : // Stage 19.9: a Coming Soon capability says so; it still blocks checkout.
+            ((response.status === "invalid"
+              ? response.errors.find((error) => error.message.startsWith("Capability currently unavailable"))?.message
+              : undefined) ??
+            "This configuration can no longer be quoted. Review it before checkout."),
     });
   }
 

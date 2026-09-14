@@ -5,18 +5,18 @@ import { useState, type CSSProperties } from "react";
 import clsx from "clsx";
 
 import { Icon } from "@/components/core";
-import { CATEGORIES } from "@/content/home";
+import type { Category } from "@/content/home";
 import styles from "./CreateCategories.module.css";
 
 /**
  * 02 — What you can create.
  *
- * An index of what SADA 3D makes, not a tile grid. Pointing at a row changes
+ * An index of what Reality 3D makes, not a tile grid. Pointing at a row changes
  * the stage beside it; the stage is decorative and duplicates text that is
  * already in the list, so it carries aria-hidden and the list stays complete
  * on its own.
  */
-export function CreateCategories() {
+export function CreateCategories({ categories: CATEGORIES }: { categories: readonly Category[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const active = CATEGORIES[activeIndex] ?? CATEGORIES[0];
 
@@ -33,8 +33,8 @@ export function CreateCategories() {
             to object.
           </h2>
           <p className={styles.headNote}>
-            Eight categories, one process. Browse parts that are ready to make,
-            or bring geometry of your own.
+            One process. Browse parts that are ready to make, or bring geometry
+            of your own.
           </p>
         </div>
 
@@ -89,7 +89,9 @@ export function CreateCategories() {
 
             <div className={styles.stageMeta}>
               <span className={styles.stageName}>{active?.name}</span>
-              <span>{active?.index} / 08</span>
+              <span>
+                {active?.index} / {String(CATEGORIES.length).padStart(2, "0")}
+              </span>
             </div>
           </div>
         </div>

@@ -2,8 +2,10 @@ import { unstable_cache } from "next/cache";
 
 import { CONTENT_TAGS } from "@/lib/content/tags";
 
-import { toDomainCatalog } from "./payload-mapping";
-import type { Product } from "./types";
+import { entryFromPayloadDoc } from "./payload-entry";
+import { applyPriceApprovals, toDomainCatalog } from "./payload-mapping";
+import type { PriceApprovalRecord } from "./commerce";
+import { catalogOrder, type Product } from "./types";
 
 /**
  * The catalog, read from Payload.
@@ -52,10 +54,14 @@ async function readPublishedCatalog(): Promise<Product[]> {
   const result = await payload.find({
     collection: "products",
     /*
-     * The access rules decide what is visible, not this call. Payload's
-     * server-side default is to bypass them.
+     * Published documents only — the same constraint the public access rule
+     * applies — read with access overridden so the server sees the approval
+     * records a launch assessment needs. The storefront never receives those
+     * records; it receives the product and its computed launch summary.
      */
-    overrideAccess: false,
+    where: { _status: { equals: "published" } },
+    overrideAccess: true,
+    draft: false,
     /* Categories and materials are needed to map a product; one query with
        depth 1 rather than a lookup per product. */
     depth: 1,
@@ -70,7 +76,52 @@ async function readPublishedCatalog(): Promise<Product[]> {
     );
   }
 
-  const { products, failures } = toDomainCatalog(result.docs);
+  // Mapping failures are reported below; each mapped document is re-assessed per product.
+  const mapped = toDomainCatalog(result.docs);
+
+  /*
+   * Price approvals are operator-only records, read here on the server with
+   * access overridden. Nothing about them reaches a browser except the price
+   * status they justify.
+   */
+  const approvalDocs = await payload.find({
+    collection: "price-approvals",
+    depth: 1,
+    pagination: false,
+    overrideAccess: true,
+  });
+  const approvals = new Map<string, PriceApprovalRecord[]>();
+  for (const doc of approvalDocs.docs) {
+    const product = typeof doc.product === "object" && doc.product ? doc.product.productId : undefined;
+    if (!product) continue;
+    approvals.set(product, [
+      ...(approvals.get(product) ?? []),
+      {
+        amount: doc.amount,
+        currency: "INR",
+        effectiveFrom: String(doc.effectiveFrom).slice(0, 10),
+        reference: doc.reference,
+        approvedBy: doc.approvedBy,
+      },
+    ]);
+  }
+
+  const priced = applyPriceApprovals(mapped.products, approvals);
+  const failures = [...mapped.failures, ...priced.failures];
+
+  /*
+   * Stage 19.8: every product carries its launch summary, computed here on the
+   * server from its full record — commercial approval, media approval, price
+   * approvals, manufacturing capability. Featuring and launch-mode visibility
+   * honour it; nothing a client sends can set it.
+   */
+  const byId = new Map(result.docs.map((doc) => [doc.productId, doc]));
+  const products = priced.products.map((product) => {
+    const doc = byId.get(product.id);
+    if (!doc) return product;
+    const assessed = entryFromPayloadDoc(doc, approvals.get(product.id) ?? []);
+    return assessed.ok ? { ...product, launch: assessed.product.launch } : product;
+  });
 
   if (failures.length > 0) {
     /*
@@ -83,7 +134,8 @@ async function readPublishedCatalog(): Promise<Product[]> {
     );
   }
 
-  return products;
+  // Same order as the local source; see `catalogOrder`.
+  return products.sort(catalogOrder);
 }
 
 /**

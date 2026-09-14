@@ -1,6 +1,6 @@
 # The operations console
 
-`/ops` — where SADA 3D is run. Orders, production, designs, customers, payments
+`/ops` — where Reality 3D is run. Orders, production, designs, customers, payments
 and the exceptions that need someone.
 
 ```

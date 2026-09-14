@@ -44,7 +44,7 @@ export interface CustomerIdentity {
  * What is known about the person behind the identity.
  *
  * Every field but the id is optional, because the identity provider supplies
- * them and SADA 3D has no identity provider yet. A missing name is shown as
+ * them and Reality 3D has no identity provider yet. A missing name is shown as
  * missing; it is never substituted.
  */
 export interface CustomerProfile {

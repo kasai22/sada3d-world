@@ -1,4 +1,5 @@
 import { Button } from "@/components/core";
+import { ROUTES } from "@/lib/routes";
 import styles from "./FinalCTA.module.css";
 
 /** 09 — Final CTA. The brand line, delivered as the page's closing statement. */
@@ -17,16 +18,16 @@ export function FinalCTA() {
         <p className={styles.lead}>Turn your next idea into something real.</p>
 
         <div className={styles.actions}>
-          <Button href="/custom-print" size="lg" iconRight="arrow-right">
+          <Button href={ROUTES.customPrint} size="lg" iconRight="arrow-right">
             Start printing
           </Button>
-          <Button href="/shop" size="lg" variant="secondary">
+          <Button href={ROUTES.shop} size="lg" variant="secondary">
             Explore designs
           </Button>
         </div>
 
         <div className={styles.readout}>
-          <span>SADA 3D / Digital manufacturing</span>
+          <span>Reality 3D / Digital manufacturing</span>
           <span>Imagine. Design. Create.</span>
         </div>
       </div>

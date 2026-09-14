@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     products: Product;
+    'price-approvals': PriceApproval;
     categories: Category;
     materials: Material;
     media: Media;
@@ -80,6 +81,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     products: ProductsSelect<false> | ProductsSelect<true>;
+    'price-approvals': PriceApprovalsSelect<false> | PriceApprovalsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     materials: MaterialsSelect<false> | MaterialsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -128,16 +130,48 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Parts SADA 3D sells. Unpublish to withdraw; do not delete.
+ * Administrator-managed catalog (Stage 19.8). Create, edit, approve and feature products here. A product cannot launch until every gate on its Launch status tab passes. Unpublish to withdraw; do not delete.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
  */
 export interface Product {
   id: number;
+  /**
+   * Seed products are kept in sync with src/content/catalog by content:import. Saving a product in the admin makes it administrator-managed, and the import never overwrites it again.
+   */
+  source?: ('admin' | 'seed') | null;
+  /**
+   * READY only when every line below passes. Computed by the same assessment as `npm run content:verify -- --require-launch`.
+   */
+  launchStatus?: string | null;
+  /**
+   * PASS or BLOCKING: record validity, approval evidence, unsupported combinations.
+   */
+  technicalStatus?: string | null;
+  /**
+   * APPROVED requires a price approval in effect whose amount equals the price.
+   */
+  priceStatusLabel?: string | null;
+  /**
+   * APPROVED requires a product photo or approved render of the actual product.
+   */
+  mediaStatus?: string | null;
+  /**
+   * The material on its process must be approved capability (src/content/catalog/manufacturing.ts).
+   */
+  manufacturingStatus?: string | null;
+  /**
+   * SKU, class, pricing model, customer, use case, copy and visual requirement must be APPROVED.
+   */
+  commercialStatus?: string | null;
+  /**
+   * Every blocking reason, each one actionable.
+   */
+  launchReasons?: string | null;
   name: string;
   /**
-   * Stable identifier, e.g. "p-001". Carts, saved items and past orders refer to this. Never change it on a live product.
+   * Stable identifier, e.g. "p-101". Carts and saved items refer to this. Never change it on a live product, and never reuse a retired one.
    */
   productId: string;
   /**
@@ -152,22 +186,10 @@ export interface Product {
    * Two sentences at most. Engineering-plain.
    */
   description?: string | null;
-  applications?:
-    | {
-        value: string;
-        id?: string | null;
-      }[]
-    | null;
   /**
-   * Whole rupees. Zero means the part is quoted from the customer's own geometry and cannot be added to a cart.
+   * Assigned by the business, never generated. Counts as approved only with the commercial approval record.
    */
-  price: number;
-  currency: 'INR';
-  availability: 'in-stock' | 'made-to-order';
-  /**
-   * Small corner label, e.g. "New". Ration these.
-   */
-  badge?: string | null;
+  sku?: string | null;
   /**
    * The leaf category this part is filed under. Ancestors are derived from the tree, not stored.
    */
@@ -177,6 +199,37 @@ export interface Product {
    */
   browseCategory: number | Category;
   /**
+   * Who buys it. Entered values stay PROPOSED until the commercial approval below is recorded.
+   */
+  customers?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * What it is intended for, in one sentence.
+   */
+  useCase?: string | null;
+  applications?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  technology: 'fdm' | 'sla' | 'sls';
+  qualityOptions?:
+    | {
+        value: string;
+        label: string;
+        /**
+         * Approved FDM layer heights: 0.20 MM, 0.16 MM, 0.12 MM.
+         */
+        layerHeight: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * The default material this part is made in.
    */
   material: number | Material;
@@ -184,28 +237,22 @@ export interface Product {
    * Every material offered, including the default. One entry means the material is fixed and is shown as metadata rather than as a choice.
    */
   materials?: (number | Material)[] | null;
-  technology: 'fdm' | 'sla' | 'sls';
-  /**
-   * Default colour facet value, e.g. black. Must be one of the colours the marketplace filters on.
-   */
-  color: string;
-  /**
-   * Every colour offered, including the default.
-   */
-  colors?:
+  materialNotes?:
     | {
         value: string;
         id?: string | null;
       }[]
     | null;
-  qualityOptions?:
+  /**
+   * Default colour. Only approved production colours may be saved.
+   */
+  color: string;
+  /**
+   * Every colour offered, including the default. Approved production colours only.
+   */
+  colors?:
     | {
         value: string;
-        label: string;
-        /**
-         * e.g. "0.16 MM".
-         */
-        layerHeight: string;
         id?: string | null;
       }[]
     | null;
@@ -219,13 +266,62 @@ export interface Product {
         id?: string | null;
       }[]
     | null;
-  materialNotes?:
-    | {
-        value: string;
-        id?: string | null;
-      }[]
-    | null;
+  /**
+   * Grams, measured on a produced part. Leave empty until measured.
+   */
+  weightGrams?: number | null;
+  /**
+   * Whole rupees. Zero means the part is quoted from the customer's own geometry and cannot be added to a cart.
+   */
+  price: number;
+  /**
+   * Approved requires a record under Price approvals in effect today whose amount equals the price; the save is refused otherwise. Provisional prices are labelled as such on the storefront and cannot be charged in launch mode. Quote only requires a price of 0.
+   */
+  priceStatus: 'provisional' | 'approved' | 'quote-only';
+  currency: 'INR';
+  /**
+   * Counts as approved only with the commercial approval record (Approval tab).
+   */
+  pricingModel?: ('FIXED' | 'CONFIGURABLE' | 'QUOTE_ONLY') | null;
+  /**
+   * Counts as approved only with the commercial approval record (Approval tab).
+   */
+  productClass?: ('STANDARD_CATALOG_PRODUCT' | 'CONFIGURABLE_PRODUCT' | 'QUOTE_ONLY_PRODUCT') | null;
+  availability: 'in-stock' | 'made-to-order';
+  /**
+   * A published Media document marked photo or render. Media has no storage adapter yet, so until one is attached use Visual below.
+   */
   image?: (number | null) | Media;
+  /**
+   * An approved photo or render committed to the repository under /catalog/<slug>/. Used when no Media image is set.
+   */
+  visual?: {
+    /**
+     * e.g. /catalog/spur-gear-24t/front.jpg
+     */
+    src?: string | null;
+    /**
+     * Describe the part, not the photo.
+     */
+    alt?: string | null;
+    kind?: ('photo' | 'render') | null;
+    /**
+     * Required for the image to count as approved media. Records who confirmed that it truly shows this product. A file existing is not an approval.
+     */
+    approval?: {
+      reference?: string | null;
+      approvedBy?: string | null;
+      approvedOn?: string | null;
+    };
+  };
+  /**
+   * Which kind of visual this product requires to launch.
+   */
+  visualRequirement?: ('REAL_PHOTO' | 'APPROVED_RENDER') | null;
+  /**
+   * For a render: what it must show. Not a claim that one exists.
+   */
+  renderSpecification?: string | null;
   /**
    * Additional views. The gallery only appears when there is more than one image.
    */
@@ -245,6 +341,66 @@ export interface Product {
     description?: string | null;
     ogImage?: (number | null) | Media;
   };
+  /**
+   * Business approval, separate from publishing. Draft and archived products cannot be published. Only approved products appear on the launch storefront and can be purchased.
+   */
+  approvalStatus: 'draft' | 'proposed' | 'provisional' | 'approved' | 'archived';
+  /**
+   * Required to approve. Approver and date are filled from the signed-in operator and today when left empty.
+   */
+  approval?: {
+    /**
+     * Where the decision is recorded.
+     */
+    reference?: string | null;
+    approvedBy?: string | null;
+    approvedOn?: string | null;
+  };
+  /**
+   * Approves the commercial definition: SKU, product class, pricing model, target customers, use case, copy and visual requirement. Without it those values stay PROPOSED.
+   */
+  commercialApproval?: {
+    /**
+     * Where the decision is recorded.
+     */
+    reference?: string | null;
+    approvedBy?: string | null;
+    approvedOn?: string | null;
+  };
+  /**
+   * Questions that must be answered YES, with a reference, before launch.
+   */
+  openQuestions?:
+    | {
+        questionId: string;
+        question: string;
+        answer?: ('unanswered' | 'yes' | 'no') | null;
+        reference?: string | null;
+        approvedBy?: string | null;
+        approvedOn?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Deprecated in Stage 19.8: replaced by the structured fields. Kept, hidden and unwritten, so no destructive migration was needed.
+   */
+  commercialDefinition?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Feature on the homepage. Honoured only while the product is launch-ready: approved, published, approved price, approved media, approved manufacturing and approved commercial definition.
+   */
+  featured?: boolean | null;
+  /**
+   * Small corner label, e.g. "New". Ration these.
+   */
+  badge?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -265,6 +421,10 @@ export interface Category {
    * Stable identifier used in URLs and by products. Lowercase, hyphenated. Changing it breaks existing links.
    */
   value: string;
+  /**
+   * One technical line describing what is filed here. Shown on the homepage category index.
+   */
+  description?: string | null;
   /**
    * Leave empty for a top-level category.
    */
@@ -297,6 +457,10 @@ export interface Category {
 export interface Material {
   id: number;
   /**
+   * Available now = an approved business decision. Coming soon = on the roadmap, not approved: shown to customers, never quotable or orderable. Not available = neither.
+   */
+  capabilityStatus?: string | null;
+  /**
    * Must match a material the manufacturing domain knows: pla, petg, abs, tpu or resin. Not free text — the quote engine narrows against these.
    */
   value: string;
@@ -321,9 +485,31 @@ export interface Material {
     heat: number;
   };
   /**
+   * Processes this material is printed with. Products may only pair a material with one of these — the import rejects anything else.
+   */
+  technologies: ('fdm' | 'sla')[];
+  /**
    * What this material is typically used for.
    */
   applications?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * One line each: the reason somebody picks this material.
+   */
+  bestFor?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Qualitative limitations. Never a number without a datasheet behind it.
+   */
+  avoidFor?:
     | {
         value: string;
         id?: string | null;
@@ -349,6 +535,10 @@ export interface Material {
    * Optional sample render.
    */
   image?: (number | null) | Media;
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -366,6 +556,10 @@ export interface Media {
    */
   alt: string;
   /**
+   * What this image is. Product imagery without a kind is not used on a launch storefront — it is how placeholder media would otherwise get published.
+   */
+  kind?: ('photo' | 'render') | null;
+  /**
    * Attribution, where one is required.
    */
   credit?: string | null;
@@ -381,6 +575,35 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * Approved commercial prices. Append-only: to change a price, add a new record; records cannot be edited or deleted.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "price-approvals".
+ */
+export interface PriceApproval {
+  id: number;
+  product: number | Product;
+  /**
+   * Whole rupees, excluding GST.
+   */
+  amount: number;
+  currency: 'INR';
+  /**
+   * The price applies from the start of this day (UTC).
+   */
+  effectiveFrom: string;
+  /**
+   * Where the decision is recorded, e.g. a signed price list and its version.
+   */
+  reference: string;
+  /**
+   * Filled from the signed-in operator when left empty.
+   */
+  approvedBy: string;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Content operators with access to this admin.
@@ -440,6 +663,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'products';
         value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'price-approvals';
+        value: number | PriceApproval;
       } | null)
     | ({
         relationTo: 'categories';
@@ -504,39 +731,57 @@ export interface PayloadMigration {
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
+  source?: T;
+  launchStatus?: T;
+  technicalStatus?: T;
+  priceStatusLabel?: T;
+  mediaStatus?: T;
+  manufacturingStatus?: T;
+  commercialStatus?: T;
+  launchReasons?: T;
   name?: T;
   productId?: T;
   slug?: T;
   summary?: T;
   description?: T;
+  sku?: T;
+  category?: T;
+  browseCategory?: T;
+  customers?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  useCase?: T;
   applications?:
     | T
     | {
         value?: T;
         id?: T;
       };
-  price?: T;
-  currency?: T;
-  availability?: T;
-  badge?: T;
-  category?: T;
-  browseCategory?: T;
-  material?: T;
-  materials?: T;
   technology?: T;
-  color?: T;
-  colors?:
-    | T
-    | {
-        value?: T;
-        id?: T;
-      };
   qualityOptions?:
     | T
     | {
         value?: T;
         label?: T;
         layerHeight?: T;
+        id?: T;
+      };
+  material?: T;
+  materials?: T;
+  materialNotes?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  color?: T;
+  colors?:
+    | T
+    | {
+        value?: T;
         id?: T;
       };
   specifications?:
@@ -546,13 +791,30 @@ export interface ProductsSelect<T extends boolean = true> {
         value?: T;
         id?: T;
       };
-  materialNotes?:
+  weightGrams?: T;
+  price?: T;
+  priceStatus?: T;
+  currency?: T;
+  pricingModel?: T;
+  productClass?: T;
+  availability?: T;
+  image?: T;
+  visual?:
     | T
     | {
-        value?: T;
-        id?: T;
+        src?: T;
+        alt?: T;
+        kind?: T;
+        approval?:
+          | T
+          | {
+              reference?: T;
+              approvedBy?: T;
+              approvedOn?: T;
+            };
       };
-  image?: T;
+  visualRequirement?: T;
+  renderSpecification?: T;
   gallery?: T;
   model?:
     | T
@@ -567,9 +829,52 @@ export interface ProductsSelect<T extends boolean = true> {
         description?: T;
         ogImage?: T;
       };
+  approvalStatus?: T;
+  approval?:
+    | T
+    | {
+        reference?: T;
+        approvedBy?: T;
+        approvedOn?: T;
+      };
+  commercialApproval?:
+    | T
+    | {
+        reference?: T;
+        approvedBy?: T;
+        approvedOn?: T;
+      };
+  openQuestions?:
+    | T
+    | {
+        questionId?: T;
+        question?: T;
+        answer?: T;
+        reference?: T;
+        approvedBy?: T;
+        approvedOn?: T;
+        id?: T;
+      };
+  commercialDefinition?: T;
+  featured?: T;
+  badge?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "price-approvals_select".
+ */
+export interface PriceApprovalsSelect<T extends boolean = true> {
+  product?: T;
+  amount?: T;
+  currency?: T;
+  effectiveFrom?: T;
+  reference?: T;
+  approvedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -578,6 +883,7 @@ export interface ProductsSelect<T extends boolean = true> {
 export interface CategoriesSelect<T extends boolean = true> {
   name?: T;
   value?: T;
+  description?: T;
   parent?: T;
   isBrowse?: T;
   browseOrder?: T;
@@ -596,6 +902,7 @@ export interface CategoriesSelect<T extends boolean = true> {
  * via the `definition` "materials_select".
  */
 export interface MaterialsSelect<T extends boolean = true> {
+  capabilityStatus?: T;
   value?: T;
   name?: T;
   code?: T;
@@ -607,7 +914,20 @@ export interface MaterialsSelect<T extends boolean = true> {
         flexibility?: T;
         heat?: T;
       };
+  technologies?: T;
   applications?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  bestFor?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  avoidFor?:
     | T
     | {
         value?: T;
@@ -621,6 +941,12 @@ export interface MaterialsSelect<T extends boolean = true> {
         id?: T;
       };
   image?: T;
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -631,6 +957,7 @@ export interface MaterialsSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  kind?: T;
   credit?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -726,7 +1053,7 @@ export interface Homepage {
    */
   featuredProducts?: (number | Product)[] | null;
   /**
-   * Figures SADA 3D can stand behind. An invented number here is a claim made to every visitor.
+   * Figures Reality 3D can stand behind. An invented number here is a claim made to every visitor.
    */
   capabilityMetrics?:
     | {

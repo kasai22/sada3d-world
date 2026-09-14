@@ -6,7 +6,7 @@ import { readSupabaseAuthConfig } from "@/lib/auth/config";
  * Since Stage 17 this exists only for local work without a Supabase project:
  * the moment `NEXT_PUBLIC_SUPABASE_*` is set, real authentication replaces it.
  *
- * SADA 3D has no authentication. Phase 17 brings Supabase Auth, and until it
+ * Reality 3D has no authentication. Phase 17 brings Supabase Auth, and until it
  * does there is no trusted way to know who is reading a page — so in a
  * production build there is no signed-in customer, ever, and the portal says
  * so rather than pretending otherwise.

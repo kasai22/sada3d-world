@@ -54,22 +54,27 @@ test("a parent is always planned before its children", () => {
   }
 });
 
-test("the three category levels survive flattening", () => {
+test("the category tree survives flattening", () => {
   const rows = planCategories();
   const byValue = new Map(rows.map((row) => [row.value, row]));
 
-  // functional → mechanical → gears
-  assert.equal(byValue.get("functional")?.parent, null);
-  assert.equal(byValue.get("functional")?.depth, 0);
-  assert.equal(byValue.get("mechanical")?.parent, "functional");
-  assert.equal(byValue.get("mechanical")?.depth, 1);
+  // mechanical → gears, mechanical → spacers
+  assert.equal(byValue.get("mechanical")?.parent, null);
+  assert.equal(byValue.get("mechanical")?.depth, 0);
   assert.equal(byValue.get("gears")?.parent, "mechanical");
-  assert.equal(byValue.get("gears")?.depth, 2);
-
-  assert.ok(rows.some((row) => row.depth === 2), "no third level was planned");
+  assert.equal(byValue.get("gears")?.depth, 1);
+  assert.equal(byValue.get("spacers")?.parent, "mechanical");
 });
 
-test("browse categories keep their rail order, whatever their depth", () => {
+test("no pre-reset or operator test category is planned", () => {
+  // Every one of these was in Payload or the old tree before the reset.
+  const values = new Set(planCategories().map((row) => row.value));
+  for (const stale of ["functional", "custom-products", "automotive", "lifestyle", "18% GST", "v-gears", "v-gears002"]) {
+    assert.ok(!values.has(stale), `${stale} is still planned`);
+  }
+});
+
+test("browse categories are the published roots, in rail order", () => {
   const rows = planCategories().filter((row) => row.isBrowse);
 
   assert.equal(rows.length, BROWSE_CATEGORIES.length);
@@ -79,10 +84,24 @@ test("browse categories keep their rail order, whatever their depth", () => {
     .map((row) => row.value);
   assert.deepEqual(ordered, [...BROWSE_CATEGORIES]);
 
-  // The rail deliberately mixes levels; flattening must not have regularised it.
-  const byValue = new Map(planCategories().map((row) => [row.value, row]));
-  assert.equal(byValue.get("mechanical")?.depth, 1);
-  assert.equal(byValue.get("components")?.depth, 0);
+  for (const row of rows) {
+    assert.equal(row.depth, 0, `${row.value} is a browse category but not a root`);
+    assert.equal(row.status, "published");
+  }
+});
+
+test("a category is published only when a publishable product sits beneath it", () => {
+  for (const row of planCategories()) {
+    const underneath = PRODUCTS.some((product) => categoryPath(product.category).includes(row.value));
+    assert.equal(row.status, underneath ? "published" : "draft", row.value);
+  }
+});
+
+test("every planned product carries the publication status validation gave it", () => {
+  const published = new Set(PRODUCTS.map((product) => product.id));
+  for (const row of planProducts()) {
+    assert.equal(row.status, published.has(row.productId) ? "published" : "draft", row.productId);
+  }
 });
 
 test("materials join the facet list to the homepage content", () => {
@@ -96,6 +115,11 @@ test("materials join the facet list to the homepage content", () => {
   assert.equal(petg.properties?.strength, 4);
   assert.ok(petg.applications.includes("Enclosures"));
   assert.ok(petg.swatches.length > 0);
+  assert.deepEqual(petg.technologies, ["fdm"]);
+  assert.ok(petg.bestFor.length > 0 && petg.avoidFor.length > 0);
+  assert.equal(petg.seo.title, "PETG");
+
+  assert.deepEqual(rows.find((row) => row.value === "resin")?.technologies, ["sla"]);
 });
 
 test("the price multiplier is not imported into the CMS", () => {
@@ -109,13 +133,14 @@ test("the price multiplier is not imported into the CMS", () => {
 
 test("every product is planned with its stable identifier and slug", () => {
   const rows = planProducts();
-  assert.equal(rows.length, PRODUCTS.length);
+  assert.ok(rows.length >= PRODUCTS.length);
 
   for (const product of PRODUCTS) {
     const row = rows.find((entry) => entry.productId === product.id);
     assert.ok(row, `${product.id} was not planned`);
     assert.equal(row.slug, product.slug);
     assert.equal(row.price, product.price);
+    assert.equal(row.priceStatus, product.priceStatus);
   }
 });
 
@@ -246,6 +271,15 @@ test("one broken product does not take the catalog down with it", () => {
  * Parity
  * ------------------------------------------------------------------ */
 
+test("the canonical catalog is served in catalog order, as the Payload source serves it", () => {
+  const ids = PRODUCTS.map((product) => product.id);
+  assert.deepEqual(ids, [...ids].sort());
+
+  // Payload returns newest-first; mapping must restore catalog order.
+  const reversed = [...PRODUCTS].reverse();
+  assert.notDeepEqual(compareQueries(PRODUCTS, reversed), []);
+});
+
 test("a catalog compared against itself has no differences", () => {
   const { missing, extra, differences } = compareProducts(PRODUCTS, PRODUCTS);
 
@@ -291,7 +325,8 @@ test("a changed price is caught by the query comparison, not only field by field
 test("the parity sweep exercises every facet, sort and page", () => {
   const queries = parityQueries();
 
-  assert.ok(queries.length > 25);
+  // Stage 19.8: fewer facet values exist (three materials, one technology).
+  assert.ok(queries.length > 15);
   assert.ok(queries.some((q) => q.scopeCategory !== undefined));
   assert.ok(queries.some((q) => q.material.length > 0));
   assert.ok(queries.some((q) => q.price.length > 0));

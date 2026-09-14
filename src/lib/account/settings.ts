@@ -4,7 +4,7 @@ import type { AuthenticatedCustomerContext, CustomerSettings } from "./types";
  * Account settings.
  *
  * Deliberately small, and smaller than it looks like it should be. Almost
- * everything a settings page usually holds belongs to a system SADA 3D does not
+ * everything a settings page usually holds belongs to a system Reality 3D does not
  * have yet:
  *
  *   the profile        comes from the identity provider — Phase 17

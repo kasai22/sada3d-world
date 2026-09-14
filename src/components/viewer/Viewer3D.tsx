@@ -51,7 +51,7 @@ const LABEL_CLEARANCE_X = 110;
 const LABEL_CLEARANCE_Y = 22;
 
 /**
- * The SADA 3D viewer.
+ * The Reality 3D viewer.
  *
  * A thin React boundary over the engine: this component owns mounting,
  * teardown and the surrounding controls, and the engine owns everything on the

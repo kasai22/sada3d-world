@@ -6,7 +6,7 @@ import { SUPPORTED_COUNTRIES, type ShippingAddress } from "./types";
  * Shipping and tax policy.
  *
  * Both are seams with nothing behind them yet, and that is the honest state of
- * the system rather than an omission. SADA 3D has no published shipping tariff
+ * the system rather than an omission. Reality 3D has no published shipping tariff
  * and no configured GST treatment, so neither can be quoted.
  *
  * The important consequence: shipping and tax are *unknown*, not zero. A zero
@@ -31,7 +31,7 @@ export type DestinationCheck =
   | { supported: false; message: string };
 
 /**
- * Whether SADA 3D ships to an address.
+ * Whether Reality 3D ships to an address.
  *
  * India only. An unsupported destination is refused with a reason rather than
  * accepted and quietly quoted at nothing.
@@ -40,7 +40,7 @@ export function checkDestination(address: ShippingAddress): DestinationCheck {
   if (!isSupportedCountry(address.country)) {
     return {
       supported: false,
-      message: "SADA 3D currently ships within India only.",
+      message: "Reality 3D currently ships within India only.",
     };
   }
 

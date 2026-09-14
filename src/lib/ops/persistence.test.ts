@@ -521,7 +521,9 @@ test("a design shows what was measured, and a STEP file says it is never measure
   if (cube?.analysis.state === "available") {
     assert.equal(Math.round(cube.analysis.dimensionsMm.x), 20);
     assert.equal(cube.analysis.manufacturable, true);
-    assert.equal(cube.analysis.constraints, "unconfigured");
+    // Stage 19.8: the approved Bambu Lab A1 build volume is configured, and a
+    // 20 mm cube fits it.
+    assert.equal(cube.analysis.constraints, "configured");
   }
 
   const step = page.rows.find((row) => row.id === "dsn_step");

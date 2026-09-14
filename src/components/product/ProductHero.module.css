@@ -115,3 +115,26 @@
 @media (max-width: 767px) {
   .price { font-size: 32px; }
 }
+
+/* Stage 19.6: a price that is not final commercial pricing. Amber: a caution, not an error. */
+.provisional {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--status-warning-surface);
+  border-left: 2px solid var(--status-warning);
+}
+
+.provisionalLabel {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--status-warning);
+}
+
+.provisionalText {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}

@@ -1,3 +1,4 @@
+import { platformFor } from "@/content/catalog/decisions";
 import { measurementValue, type GeometryAnalysisResult } from "@/lib/geometry/types";
 
 /**
@@ -19,7 +20,7 @@ import { measurementValue, type GeometryAnalysisResult } from "@/lib/geometry/ty
  *
  * ── What this deliberately does not contain ──────────────────────────────
  *
- * **No machine limits.** SADA 3D has no published build volume, no minimum wall
+ * **No machine limits.** Reality 3D has no published build volume, no minimum wall
  * thickness, no maximum part count and no material-specific constraints in this
  * repository, so none is asserted here. Inventing "must fit within 256 × 256 ×
  * 256 mm" would be inventing a manufacturing capability.
@@ -233,7 +234,13 @@ export function checkManufacturability(
  * configuration exists, this is the one function that changes.
  */
 export function configuredConstraints(): MachineConstraints | undefined {
-  return undefined;
+  /*
+   * Stage 19.8: the build volume of the approved FDM printer (Bambu Lab A1),
+   * from the business decision ledger. Only an APPROVED decision supplies it;
+   * minimum feature size stays unset because no validated value exists.
+   */
+  const platform = platformFor("fdm");
+  return platform ? { buildVolumeMm: { ...platform.buildVolumeMm } } : undefined;
 }
 
 /**

@@ -39,7 +39,9 @@ export const SORT_OPTIONS: readonly { value: SortValue; label: string }[] = [
   { value: "newest", label: "Newest" },
   { value: "price-asc", label: "Price: low to high" },
   { value: "price-desc", label: "Price: high to low" },
-  { value: "popularity", label: "Popularity" },
+  // Stage 19.8: "Popularity" removed. It ordered by stock and price, and no sales
+  // data exists to support a popularity claim. A ?sort=popularity link falls back
+  // to relevance.
 ];
 
 const SORT_VALUES = new Set(SORT_OPTIONS.map((option) => option.value));

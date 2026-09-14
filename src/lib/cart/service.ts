@@ -1,9 +1,12 @@
 import { designFileAvailability } from "@/lib/account/design-files";
 import { getCustomerContext } from "@/lib/account/identity";
+import { purchaseBlockers } from "@/lib/catalog/commerce";
+import { serverCatalogMode } from "@/lib/catalog/commerce-server";
 import { getProductById, isQuoteOnly } from "@/lib/catalog/query";
 import { extensionOf } from "@/lib/custom-print/inspect";
 import { measurementValue } from "@/lib/geometry/types";
 import { findStoredAnalysis } from "@/lib/models/analysis-store";
+import { unavailableReason } from "@/content/catalog/capabilities";
 import { calculateQuote } from "@/lib/pricing/calculateQuote";
 import { isDesignId } from "@/lib/storage/keys";
 import {
@@ -106,6 +109,10 @@ export async function addCatalogLine(
       message: "This part is priced from your own geometry. Order it through custom print.",
     };
   }
+
+  // Stage 19.6: refused at the door as well as at checkout.
+  const [blocker] = purchaseBlockers(product, serverCatalogMode());
+  if (blocker) return { ok: false, message: blocker.message };
 
   const materials = product.materials ?? [product.material];
   if (!materials.includes(input.material as (typeof materials)[number])) {
@@ -234,13 +241,15 @@ export async function addCustomLine(
   input: AddCustomLineInput,
 ): Promise<CartMutation> {
   if (!materialOption(input.material)) {
-    return { ok: false, message: "That material is not offered." };
+    // Stage 19.9: a Coming Soon material is named as such, and cannot enter the cart.
+    return { ok: false, message: unavailableReason("material", input.material) ?? "That material is not offered." };
   }
-  if (!qualityOption(input.quality)) {
-    return { ok: false, message: "That print quality is not offered." };
+  // Stage 19.7: checked against the material's process, not a global list.
+  if (!qualityOption(input.quality, input.material)) {
+    return { ok: false, message: "That print quality is not offered for this material." };
   }
   if (!finishOption(input.finish)) {
-    return { ok: false, message: "That finish is not offered." };
+    return { ok: false, message: unavailableReason("finish", input.finish) ?? "That finish is not offered." };
   }
 
   const quantity = clampQuantity(input.quantity);

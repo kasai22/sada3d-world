@@ -69,6 +69,11 @@ export type GeometryPricing =
 export interface QuoteRequest {
   model: QuoteModelInput;
   material: string;
+  /**
+   * Optional. The process is implied by the material; when a client names one
+   * it must be available and must be the material's own (Stage 19.9).
+   */
+  technology?: string;
   quality?: string;
   finish?: string;
   quantity: number;
@@ -129,6 +134,7 @@ export interface ManufacturingQuote {
 export type QuoteErrorField =
   | "model"
   | "material"
+  | "technology"
   | "quality"
   | "finish"
   | "quantity";

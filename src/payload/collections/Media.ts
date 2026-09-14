@@ -61,6 +61,18 @@ export const Media: CollectionConfig = {
       },
     },
     {
+      name: "kind",
+      type: "select",
+      options: [
+        { label: "Product photo", value: "photo" },
+        { label: "Approved render", value: "render" },
+      ],
+      admin: {
+        description:
+          "What this image is. Product imagery without a kind is not used on a launch storefront — it is how placeholder media would otherwise get published.",
+      },
+    },
+    {
       name: "credit",
       type: "text",
       admin: { description: "Attribution, where one is required." },

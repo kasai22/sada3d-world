@@ -40,7 +40,7 @@
   text-transform: uppercase;
 }
 
-.wordmarkSada { color: var(--text-primary); }
+.wordmarkName { color: var(--text-primary); }
 .wordmarkAccent { color: var(--text-accent); }
 
 .links {

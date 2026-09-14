@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { PRODUCTS } from "@/lib/catalog/products";
+import { catalogSourceFrom, localCatalogSource, setCatalogSource } from "@/lib/catalog/source";
 import { calculateQuote } from "@/lib/pricing/calculateQuote";
 import { PRICING_RULES } from "@/lib/pricing/rules";
 
@@ -26,19 +27,28 @@ import type { Cart, CatalogCartLine, CustomCartLine } from "./types";
  * passes says something about the system rather than about its mocks.
  * ------------------------------------------------------------------ */
 
-const GEAR = PRODUCTS.find((p) => p.slug === "precision-gear");
-const BRACKET = PRODUCTS.find((p) => p.slug === "cable-bracket");
-const CUSTOM = PRODUCTS.find((p) => p.price === 0);
+/*
+ * Content reset: the gear and the bracket these tests were written against
+ * were retired. The spur gear (PLA) and the hex spacer (PETG) take their
+ * places — two products in two different materials, which is the property the
+ * tests actually need. A missing fixture now fails loudly rather than falling
+ * back to an id that resolves to nothing.
+ */
+const GEAR = PRODUCTS.find((p) => p.slug === "spur-gear-24t");
+const BRACKET = PRODUCTS.find((p) => p.slug === "hex-shaft-spacer");
+assert.ok(GEAR && BRACKET, "the cart fixtures must exist in the catalog");
 
 function catalogLine(overrides: Partial<CatalogCartLine> = {}): CatalogCartLine {
+  const productId = overrides.productId ?? GEAR!.id;
+  const product = PRODUCTS.find((p) => p.id === productId);
+
+  // A configuration the product actually offers, unless the test says otherwise.
   const configuration = {
-    material: "pla",
-    color: "black",
-    quality: "precision",
+    material: product?.material ?? "pla",
+    color: product?.color ?? "black",
+    quality: product?.qualityOptions?.[0]?.value ?? "standard",
     ...overrides.configuration,
   };
-
-  const productId = overrides.productId ?? GEAR?.id ?? "p-001";
 
   return {
     ...overrides,
@@ -47,7 +57,7 @@ function catalogLine(overrides: Partial<CatalogCartLine> = {}): CatalogCartLine 
     productId,
     quantity: overrides.quantity ?? 1,
     configuration,
-    priceAtAdd: overrides.priceAtAdd ?? GEAR?.price ?? 399,
+    priceAtAdd: overrides.priceAtAdd ?? product?.price ?? 0,
     addedAt: "2026-01-01T00:00:00.000Z",
   };
 }
@@ -147,7 +157,7 @@ test("the same product at a different quality is a separate line", () => {
 
 test("different products are separate lines", () => {
   const gear = catalogLine();
-  const bracket = catalogLine({ productId: BRACKET?.id ?? "p-020" });
+  const bracket = catalogLine({ productId: BRACKET!.id });
 
   assert.equal(addLine(addLine([], gear), bracket).length, 2);
 });
@@ -176,7 +186,7 @@ test("the same model in a different finish is a separate job", () => {
 
 test("merging preserves the position of an existing line", () => {
   const gear = catalogLine();
-  const bracket = catalogLine({ productId: BRACKET?.id ?? "p-020" });
+  const bracket = catalogLine({ productId: BRACKET!.id });
 
   const lines = addLine(addLine(addLine([], gear), bracket), gear);
   assert.equal(lines.length, 2);
@@ -199,7 +209,7 @@ test("setting quantity to zero removes the line", () => {
 
 test("removing a line leaves the others alone", () => {
   const gear = catalogLine();
-  const bracket = catalogLine({ productId: BRACKET?.id ?? "p-020" });
+  const bracket = catalogLine({ productId: BRACKET!.id });
   const lines = removeLine([gear, bracket], gear.id);
 
   assert.equal(lines.length, 1);
@@ -214,7 +224,7 @@ test("a guest cart merges into an account cart by the same identity rule", () =>
   const account = cartOf(catalogLine());
   const guest = cartOf(
     catalogLine({ quantity: 2 }),
-    catalogLine({ productId: BRACKET?.id ?? "p-020" }),
+    catalogLine({ productId: BRACKET!.id }),
   );
 
   const merged = mergeCarts(account, guest);
@@ -310,9 +320,29 @@ test("a product that left the catalog cannot be checked out", async () => {
 });
 
 test("a quote-only product cannot be bought as a catalog line", async () => {
-  const cart = await priceCart(cartOf(catalogLine({ productId: CUSTOM?.id ?? "p-036" })));
+  /*
+   * The canonical catalog has no quote-only product since the reset, so the
+   * rule is exercised against a catalog that does. The rule is what matters.
+   */
+  const quoteOnly = { ...GEAR!, id: "p-990", slug: "quoted-part", price: 0, priceStatus: "quote-only" as const };
+  setCatalogSource(catalogSourceFrom("fixture", async () => [...PRODUCTS, quoteOnly]));
 
-  assert.ok(cart.issues.some((issue) => issue.code === "product_not_purchasable"));
+  try {
+    const cart = await priceCart(cartOf(catalogLine({ productId: quoteOnly.id, priceAtAdd: 0 })));
+    assert.ok(cart.issues.some((issue) => issue.code === "product_not_purchasable"));
+    assert.equal(cart.checkoutReady, false);
+  } finally {
+    setCatalogSource(null);
+  }
+
+  assert.equal(await localCatalogSource.byId("p-990"), undefined);
+});
+
+test("a cart line holding a retired pre-reset id reports the part unavailable", async () => {
+  // Guest carts in browsers may still hold "p-001" after the reset.
+  const cart = await priceCart(cartOf(catalogLine({ productId: "p-001" })));
+
+  assert.equal(cart.issues[0]?.code, "product_unavailable");
   assert.equal(cart.checkoutReady, false);
 });
 
@@ -384,7 +414,7 @@ test("an empty cart is not checkout ready", async () => {
 
 test("pricing the same cart twice gives the same total", async () => {
   const cart = cartOf(catalogLine({ quantity: 3 }), catalogLine({
-    productId: BRACKET?.id ?? "p-020",
+    productId: BRACKET!.id,
     quantity: 2,
   }));
 
@@ -400,7 +430,7 @@ test("pricing the same cart twice gives the same total", async () => {
 
 test("the fingerprint changes with quantity and not with order", () => {
   const gear = catalogLine();
-  const bracket = catalogLine({ productId: BRACKET?.id ?? "p-020" });
+  const bracket = catalogLine({ productId: BRACKET!.id });
 
   assert.equal(
     cartFingerprint(cartOf(gear, bracket)),

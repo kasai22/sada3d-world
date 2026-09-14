@@ -158,7 +158,7 @@ export function AuthForms({ initialMode, next, status }: AuthFormsProps) {
       >
         <p className={styles.intro}>
           {mode === "signin"
-            ? "Sign in with the email and password for your SADA 3D account."
+            ? "Sign in with the email and password for your Reality 3D account."
             : mode === "signup"
               ? "Create an account to store designs, order custom parts and follow production."
               : "Enter your account email and we will send a link to choose a new password."}

@@ -1,0 +1,347 @@
+.page {
+  padding-top: var(--spacing-8);
+  padding-bottom: var(--spacing-10);
+}
+
+/* ------------------------------------------------------------------ *
+ * Why material decides the part
+ * ------------------------------------------------------------------ */
+
+.why {
+  margin-bottom: var(--spacing-10);
+}
+
+.whyGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  gap: var(--spacing-8);
+  margin-top: var(--spacing-6);
+}
+
+.whyLead {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+  max-width: 40ch;
+}
+
+.whyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-5);
+}
+
+.whyList > li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.whyKey {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.whyValue {
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------ *
+ * One material
+ * ------------------------------------------------------------------ */
+
+.materials {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-10);
+}
+
+.material {
+  /* The header is sticky, so an anchored section would otherwise land under
+     it. This offsets the scroll target rather than the layout. */
+  scroll-margin-top: var(--spacing-9);
+}
+
+.materialGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.52fr);
+  gap: var(--spacing-8);
+  margin-top: var(--spacing-6);
+}
+
+.materialMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.description {
+  margin: 0;
+  font: var(--type-body-lg);
+  color: var(--text-secondary);
+  max-width: 56ch;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-6);
+}
+
+.subhead {
+  margin: 0 0 var(--spacing-3);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.bullets > li {
+  position: relative;
+  padding-left: var(--spacing-4);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+/* A machined tick rather than a bullet glyph. */
+.bullets > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 8px;
+  height: 1px;
+  background: var(--border-accent);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+/* ------------------------------------------------------------------ *
+ * Aside — the counted facts
+ * ------------------------------------------------------------------ */
+
+.materialAside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  padding: var(--spacing-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  align-self: start;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.blockTitle {
+  margin: 0;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.blockValue {
+  margin: 0;
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.blockNote {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}
+
+.properties {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.colors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+}
+
+.color {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 1px solid var(--border-subtle);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ------------------------------------------------------------------ *
+ * Closing note
+ * ------------------------------------------------------------------ */
+
+.note {
+  margin-top: var(--spacing-10);
+  padding-top: var(--spacing-7);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.noteText {
+  margin: var(--spacing-5) 0 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  max-width: 72ch;
+}
+
+.noteActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-6);
+}
+
+/* ------------------------------------------------------------------ *
+ * Responsive — the existing SADA breakpoints, no new ones
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .page {
+    padding-top: var(--spacing-6);
+  }
+
+  .whyGrid,
+  .materialGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-6);
+  }
+
+  .materials {
+    gap: var(--spacing-9);
+  }
+}
+
+@media (max-width: 767px) {
+  .whyList,
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .materials {
+    gap: var(--spacing-8);
+  }
+
+  .actions,
+  .noteActions {
+    /* Full-width stacked CTAs rather than two half-width buttons whose labels
+       would wrap onto three lines at 375px. */
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ---- Stage 19.9: coming soon — visibly not an orderable material ---- */
+
+.roadmap {
+  margin-top: var(--spacing-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+.roadmapLead {
+  margin: 0;
+  max-width: 64ch;
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+.roadmapList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.roadmapItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-5);
+  border: 1px dashed var(--border-subtle);
+  scroll-margin-top: var(--spacing-9);
+}
+
+.roadmapTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-3);
+}
+
+.roadmapName {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.roadmapCode {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-disabled);
+}
+
+.roadmapDescription {
+  margin: 0;
+  font: var(--type-body-sm);
+  color: var(--text-muted);
+}

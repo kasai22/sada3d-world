@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "/custom-print",
-    title: "Custom 3D printing — SADA 3D",
+    title: "Custom 3D printing — Reality 3D",
     description: DESCRIPTION,
   },
 };

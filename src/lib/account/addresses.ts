@@ -58,7 +58,7 @@ const MAX_LABEL_LENGTH = 40;
  * Composed from the checkout rules, not a reimplementation of them: the
  * recipient reuses the contact name and phone checks, and the address reuses
  * `validateAddress` whole — including its destination policy, so a country
- * SADA 3D does not ship to is refused here for the same reason and with the
+ * Reality 3D does not ship to is refused here for the same reason and with the
  * same message.
  *
  * Field paths match the form's input names so each message can be rendered

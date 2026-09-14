@@ -29,7 +29,7 @@ loadEnvForCli();
  *   npm run storage:verify
  *   npm run storage:verify -- --file ./part.3mf          also stores, re-reads
  *                                                        and analyses a real file
- *   npm run storage:verify -- --origin https://sada3d.in  also checks the bucket's
+ *   npm run storage:verify -- --origin https://reality3d.in  also checks the bucket's
  *                                                        CORS policy for that origin
  *
  * Everything it writes goes under `verification/…` — never under

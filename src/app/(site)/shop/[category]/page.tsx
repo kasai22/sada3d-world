@@ -12,8 +12,9 @@ import {
   parseQuery,
   type SearchParams,
 } from "@/lib/catalog/params";
-import { queryCatalog } from "@/lib/catalog/query";
-import { BROWSE_CATEGORIES, categoryLabel } from "@/lib/catalog/taxonomy";
+import { getBrowseCategories, queryCatalog } from "@/lib/catalog/query";
+import { categoryLabel } from "@/lib/catalog/taxonomy";
+import { categoryHref } from "@/lib/routes";
 import styles from "../shop.module.css";
 
 /** One short technical line per category. */
@@ -28,20 +29,21 @@ const DESCRIPTIONS: Record<string, string> = {
   "custom-products": "Your geometry, manufactured to your specification.",
 };
 
-/** The eight browse categories are known at build time. */
-export function generateStaticParams() {
-  return BROWSE_CATEGORIES.map((category) => ({ category }));
+/** The categories with parts at build time. */
+export async function generateStaticParams() {
+  return (await getBrowseCategories()).map((category) => ({ category }));
 }
 
 /**
- * Unknown categories 404 at the routing layer.
+ * Stage 19.8: categories are not fixed at build time. An administrator can
+ * publish the first product in a category after the build, so unknown params
+ * render on request and are checked against the served catalog.
  *
- * Calling notFound() inside the component is not enough here: the shop segment
- * has a loading boundary, so the shell streams with a 200 before the component
- * runs and the status can no longer be changed. Rejecting the param up front
- * returns a real 404.
+ * The 404 is raised in generateMetadata, which resolves before any of the page
+ * streams — and the shop segment has no loading boundary — so the response
+ * status is a real 404, not a 200 shell with an error inside it.
  */
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export async function generateMetadata({
   params,
@@ -55,7 +57,7 @@ export async function generateMetadata({
   // Rejected here rather than in the component: the shop segment has a loading
   // boundary, so by the time the component runs the shell has streamed with a
   // 200 and the status can no longer be set.
-  if (!BROWSE_CATEGORIES.includes(category)) notFound();
+  if (!(await getBrowseCategories()).includes(category)) notFound();
 
   const label = categoryLabel(category) ?? category;
 
@@ -65,12 +67,12 @@ export async function generateMetadata({
   return {
     title: label,
     description,
-    alternates: { canonical: `/shop/${category}` },
+    alternates: { canonical: categoryHref(category) },
     robots: hasActiveFilters(query) ? { index: false, follow: true } : undefined,
     openGraph: {
       type: "website",
-      url: `/shop/${category}`,
-      title: `${label} — SADA 3D`,
+      url: categoryHref(category),
+      title: `${label} — Reality 3D`,
       description,
     },
   };
@@ -87,10 +89,11 @@ export default async function CategoryPage({
 
   // Only real browse categories resolve; anything else is a 404 rather than an
   // empty results page.
-  if (!BROWSE_CATEGORIES.includes(category)) notFound();
+  const categories = await getBrowseCategories();
+  if (!categories.includes(category)) notFound();
 
   const label = categoryLabel(category) ?? category;
-  const pathname = `/shop/${category}`;
+  const pathname = categoryHref(category);
 
   // scopeCategory, not the category facet: the path constrains the results but
   // never appears as a removable chip, so what the sidebar shows and what the
@@ -109,7 +112,7 @@ export default async function CategoryPage({
           description={DESCRIPTIONS[category] ?? `${label} parts, made to order.`}
         />
 
-        <CategoryRail active={category} counts={railCounts} />
+        <CategoryRail active={category} categories={categories} counts={railCounts} />
 
         <MarketplaceView
           query={query}

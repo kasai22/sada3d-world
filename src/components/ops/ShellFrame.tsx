@@ -119,11 +119,11 @@ export function ShellFrame({ operator, issues, initialCollapsed, search, childre
         <div className={styles.brand}>
           <Link href="/ops" className={styles.wordmark}>
             <span className={styles.mark} aria-hidden="true">
-              S
+              R
             </span>
             <span className={styles.brandText}>
               <span className={styles.brandName}>
-                SADA<span className={styles.brandAccent}>3D</span>
+                Reality<span className={styles.brandAccent}>3D</span>
               </span>
               <span className={styles.brandProduct}>Operations</span>
             </span>

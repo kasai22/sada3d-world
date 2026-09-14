@@ -16,6 +16,12 @@ export interface ProductCardProps {
   color?: string;
   /** Pre-formatted for the locale, e.g. "₹399". Omit when unavailable. */
   price?: string;
+  /**
+   * Qualifies the price, e.g. "Provisional price". Rendered beside it and read
+   * with it, so a figure that is not final commercial pricing never appears
+   * without saying so. Omit for an approved price.
+   */
+  priceNote?: string;
   meta?: readonly ProductMeta[];
   /** Small orange corner label, e.g. "IN STOCK". */
   badge?: string;
@@ -47,6 +53,7 @@ export function ProductCard({
   material = "PLA",
   color = "Black",
   price,
+  priceNote,
   meta = [],
   badge,
   image,
@@ -107,7 +114,10 @@ export function ProductCard({
 
         <div className={styles.footer}>
           {price ? (
-            <span className={styles.price}>{price}</span>
+            <span className={styles.priceGroup}>
+              <span className={styles.price}>{price}</span>
+              {priceNote && <span className={styles.priceNote}>{priceNote}</span>}
+            </span>
           ) : (
             <span className={styles.unavailable}>Unavailable</span>
           )}

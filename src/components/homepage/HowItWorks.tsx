@@ -1,5 +1,6 @@
 import { Button, Icon } from "@/components/core";
 import { WORKFLOW } from "@/content/home";
+import { ROUTES } from "@/lib/routes";
 import styles from "./HowItWorks.module.css";
 
 /**
@@ -49,7 +50,7 @@ export function HowItWorks() {
         </ol>
 
         <div className={styles.footer}>
-          <Button href="/how-it-works" variant="technical" iconRight="arrow-right">
+          <Button href={ROUTES.howItWorks} variant="technical" iconRight="arrow-right">
             Read the full process
           </Button>
         </div>

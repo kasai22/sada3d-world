@@ -10,11 +10,18 @@ import {
 } from "@/lib/catalog/taxonomy";
 
 /**
- * Catalog parity.
+ * Catalog parity: canonical catalog = Payload.
  *
- * The gate the CMS has to pass before it replaces the local catalog. Phase 14's
- * rule is that the source is not switched until the two have been shown to
- * agree, and this is what shows it.
+ * Since the content reset the expected side is the canonical catalog's
+ * published subset (`PRODUCTS`, derived from `content/catalog`), and the actual
+ * side is what Payload serves an anonymous visitor. Before the reset the two
+ * sides were independently maintained catalogs and this reported 36 against 37
+ * with 111 differences; now one is imported from the other, and any difference
+ * is drift to be fixed at its source rather than tolerated.
+ *
+ * Nothing is excluded from the comparison to make it pass. The fields Payload
+ * holds that the domain `Product` does not are listed in `CMS_ONLY_FIELDS` with
+ * the reason each is not compared.
  *
  * ── What is compared ─────────────────────────────────────────────────────
  *
@@ -37,6 +44,7 @@ export interface Difference {
 }
 
 export interface ParityReport {
+  /** Expected: the canonical catalog's published products. */
   localCount: number;
   payloadCount: number;
   missing: string[];
@@ -84,10 +92,10 @@ export function parityQueries(): CatalogQuery[] {
   for (const bracket of PRICE_BRACKETS) {
     queries.push({ ...EMPTY_QUERY, price: [bracket.value] });
   }
-  for (const sort of ["newest", "price-asc", "price-desc", "popularity"] as const) {
+  for (const sort of ["newest", "price-asc", "price-desc"] as const) {
     queries.push({ ...EMPTY_QUERY, sort });
   }
-  for (const term of ["gear", "bracket", "clip"]) {
+  for (const term of ["gear", "spacer", "bracket", "pla"]) {
     queries.push({ ...EMPTY_QUERY, q: term });
   }
   queries.push({ ...EMPTY_QUERY, page: 2 });
@@ -123,6 +131,11 @@ const COMPARED: readonly (keyof Product)[] = [
   "color",
   "price",
   "currency",
+  "priceStatus",
+  "approvalStatus",
+  "featured",
+  "launch",
+  "image",
   "availability",
   "badge",
   "description",
@@ -231,4 +244,89 @@ export function buildParityReport(payload: readonly Product[]): ParityReport {
     queriesCompared: parityQueries().length,
     ok: missing.length === 0 && extra.length === 0 && all.length === 0,
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * CMS-only fields
+ * ------------------------------------------------------------------ */
+
+/**
+ * Payload product fields deliberately outside the product comparison, and why.
+ *
+ * Everything the storefront renders is compared. These are not rendered from
+ * the product record, so there is nothing for them to disagree with:
+ */
+export const CMS_ONLY_FIELDS: Readonly<Record<string, string>> = {
+  "seo.title / seo.description":
+    "Written by the importer from the name and description; the product page builds its metadata from those fields directly, which are compared.",
+  "seo.ogImage": "No product has social imagery; media is CMS-managed and not part of the canonical record.",
+  gallery:
+    "Additional views are CMS uploads with no storage adapter yet; no product has any. The primary image (upload or visual) is compared as `image`.",
+  "approval.reference / approvedBy / approvedOn":
+    "Compared through validation rather than field parity: validateEntryApprovals refuses an approved product without them on either side, and the canonical record is the reviewed copy.",
+  "_status": "Compared by construction — the public read returns published documents only, and document counts are checked separately.",
+};
+
+/* ------------------------------------------------------------------ *
+ * Categories and materials
+ * ------------------------------------------------------------------ */
+
+export interface ContentParity {
+  expected: number;
+  actual: number;
+  differences: Difference[];
+  ok: boolean;
+}
+
+export function compareRows(
+  kind: string,
+  expected: readonly Record<string, unknown>[],
+  actual: readonly Record<string, unknown>[],
+  fields: readonly string[],
+): ContentParity {
+  const differences: Difference[] = [];
+  const byValue = new Map(actual.map((row) => [String(row.value), row]));
+  const expectedValues = new Set(expected.map((row) => String(row.value)));
+
+  for (const row of expected) {
+    const stored = byValue.get(String(row.value));
+    if (!stored) {
+      differences.push({ subject: `${kind} ${String(row.value)}`, field: "(missing)", local: row.value, payload: undefined });
+      continue;
+    }
+    for (const field of fields) {
+      if (canonical(row[field]) !== canonical(stored[field])) {
+        differences.push({ subject: `${kind} ${String(row.value)}`, field, local: row[field], payload: stored[field] });
+      }
+    }
+  }
+
+  for (const row of actual) {
+    if (!expectedValues.has(String(row.value))) {
+      differences.push({ subject: `${kind} ${String(row.value)}`, field: "(extra)", local: undefined, payload: row.value });
+    }
+  }
+
+  return { expected: expected.length, actual: actual.length, differences, ok: differences.length === 0 };
+}
+
+export const CATEGORY_FIELDS = ["value", "name", "description", "parent", "isBrowse", "browseOrder"] as const;
+
+export const MATERIAL_FIELDS = [
+  "value", "name", "code", "description", "properties", "technologies", "applications",
+  "bestFor", "avoidFor", "surface", "swatches", "seo",
+] as const;
+
+export function compareCategories(
+  expected: readonly Record<string, unknown>[],
+  actual: readonly Record<string, unknown>[],
+): ContentParity {
+  return compareRows("category", expected, actual, CATEGORY_FIELDS);
+}
+
+export function compareMaterials(
+  expected: readonly Record<string, unknown>[],
+  actual: readonly Record<string, unknown>[],
+): ContentParity {
+  return compareRows("material", expected, actual, MATERIAL_FIELDS);
 }

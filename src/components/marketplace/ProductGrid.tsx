@@ -1,6 +1,11 @@
 import { ProductCard } from "@/components/commerce";
-import { formatPrice } from "@/lib/catalog/format";
-import { AVAILABILITY, COLORS, MATERIALS } from "@/lib/catalog/taxonomy";
+import {
+  availabilityLabel,
+  formatPrice,
+  priceQualifier,
+  productHref,
+} from "@/lib/catalog/format";
+import { COLORS, MATERIALS } from "@/lib/catalog/taxonomy";
 import type { Product } from "@/lib/catalog/types";
 import styles from "./ProductGrid.module.css";
 
@@ -28,13 +33,13 @@ export function ProductGrid({ products, priorityCount = 0 }: ProductGridProps) {
         <li key={product.id}>
           <ProductCard
             name={product.name}
-            href={`/shop/${product.browseCategory}/${product.slug}`}
+            href={productHref(product)}
             material={label(MATERIALS, product.material)}
             color={label(COLORS, product.color)}
             price={formatPrice(product.price)}
-            badge={
-              product.badge ?? label(AVAILABILITY, product.availability)
-            }
+            priceNote={priceQualifier(product)}
+            // Availability, always. See availabilityLabel.
+            badge={availabilityLabel(product)}
             image={product.image}
             priority={index < priorityCount}
           />

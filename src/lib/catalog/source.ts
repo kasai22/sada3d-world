@@ -1,3 +1,5 @@
+import { visibleProducts } from "./commerce";
+import { serverCatalogMode } from "./commerce-server";
 import { PRODUCTS } from "./products";
 import { relatedProducts, runCatalogQuery } from "./engine";
 import type { CatalogQuery, CatalogResult, Product } from "./types";
@@ -96,10 +98,17 @@ export function catalogSourceFrom(
   };
 }
 
-/** The typed catalog that has been the source of truth since Phase 5. */
+
+/*
+ * Stage 19.6: both sources serve only what the catalog mode makes visible —
+ * approved products in launch mode, approved and provisional ones in review
+ * mode. Applied here, once, so the shop, product pages, cart, checkout, sitemap
+ * and materials counts all see the same set. The parity verifier reads the
+ * unfiltered published catalog directly.
+ */
 export const localCatalogSource: CatalogSource = catalogSourceFrom(
   "local",
-  async () => PRODUCTS,
+  async () => visibleProducts(PRODUCTS, serverCatalogMode()),
 );
 
 /* ------------------------------------------------------------------ *
@@ -146,6 +155,6 @@ export function resolveCatalogSource(): CatalogSource {
 function lazyPayloadSource(): CatalogSource {
   return catalogSourceFrom("payload", async () => {
     const { loadPayloadCatalog } = await import("./payload-source");
-    return loadPayloadCatalog();
+    return visibleProducts(await loadPayloadCatalog(), serverCatalogMode());
   });
 }

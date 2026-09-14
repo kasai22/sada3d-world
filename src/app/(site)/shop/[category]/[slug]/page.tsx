@@ -19,24 +19,26 @@ import {
   productParams,
 } from "@/lib/catalog/query";
 import { categoryLabel } from "@/lib/catalog/taxonomy";
+import { categoryHref, productHref } from "@/lib/routes";
 import { serializeJsonForScript } from "@/lib/security/serialize";
-import { siteUrl } from "@/lib/site";
+import { SITE, siteUrl } from "@/lib/site";
 import styles from "./page.module.css";
 
-/** Every valid category/slug pair in the catalog. */
+/** Every category/slug pair in the catalog at build time. */
 export async function generateStaticParams() {
   return productParams();
 }
 
 /**
- * Unknown products, and valid slugs under the wrong category, 404 at the
- * routing layer rather than inside the component.
+ * Stage 19.8: products are administrator-managed, so a product published after
+ * the build must resolve without one. Unknown params render on request.
  *
- * This is the Phase 5 lesson applied up front: a notFound() raised after a
- * streamed shell cannot change a status that has already been sent. Restricting
- * the params means the response is a real 404 before rendering starts.
+ * Unknown products, and valid slugs under the wrong category, still 404 before
+ * anything streams: generateMetadata raises notFound() first, and there is no
+ * loading boundary above this page (the Phase 5 lesson — a notFound() after a
+ * streamed shell cannot change a status already sent).
  */
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 interface RouteParams {
   params: Promise<{ category: string; slug: string }>;
@@ -46,10 +48,10 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   const { category, slug } = await params;
   const product = await getProduct(category, slug);
 
-  if (!product) return {};
+  if (!product) notFound();
 
   const description = product.description ?? product.summary;
-  const path = `/shop/${product.browseCategory}/${product.slug}`;
+  const path = productHref(product);
 
   return {
     title: product.name,
@@ -58,7 +60,7 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
     openGraph: {
       type: "website",
       url: path,
-      title: `${product.name} — SADA 3D`,
+      title: `${product.name} — Reality 3D`,
       description,
     },
   };
@@ -85,7 +87,8 @@ export default async function ProductPage({ params }: RouteParams) {
     sku: partId(product),
     category: categoryLabel(product.category),
     material: product.material.toUpperCase(),
-    url: new URL(`/shop/${product.browseCategory}/${product.slug}`, siteUrl()).toString(),
+    brand: { "@type": "Brand", name: SITE.name },
+    url: new URL(productHref(product), siteUrl()).toString(),
     ...(isQuoteOnly(product)
       ? {}
       : {
@@ -118,7 +121,7 @@ export default async function ProductPage({ params }: RouteParams) {
             { label: "Shop", href: "/shop" },
             {
               label: categoryLabel(product.browseCategory) ?? product.browseCategory,
-              href: `/shop/${product.browseCategory}`,
+              href: categoryHref(product.browseCategory),
             },
             { label: product.name },
           ]}

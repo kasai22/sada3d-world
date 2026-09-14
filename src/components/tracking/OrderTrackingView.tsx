@@ -74,7 +74,7 @@ export function OrderTrackingView({
         /*
          * Said before anything else. These fixtures exist so the tracking
          * experience can be built against states that actually occur; none of
-         * them is a real SADA 3D production record.
+         * them is a real Reality 3D production record.
          */
         <p className={styles.demo} role="note">
           <Icon name="info" size={15} />

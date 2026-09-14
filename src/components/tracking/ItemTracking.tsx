@@ -137,7 +137,7 @@ export function ItemTracking({ item, manufacturing, shipment }: ItemTrackingProp
               <div>
                 <p className={styles.exceptionTitle}>Manufacturing issue</p>
                 <p className={styles.exceptionBody}>
-                  Production could not be completed for this part. SADA 3D will
+                  Production could not be completed for this part. Reality 3D will
                   be in touch about what happens next.
                 </p>
               </div>

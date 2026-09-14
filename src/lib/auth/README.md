@@ -120,8 +120,8 @@ session, and a confirmation or recovery link, the guest cart is merged
 1. **Authentication → Providers → Email**: enabled. Choose whether *Confirm
    email* is on; the application handles both honestly.
 2. **Authentication → URL Configuration**:
-   - Site URL: the production origin, e.g. `https://sada3d.in`
-   - Redirect URLs: `https://sada3d.in/auth/confirm`,
+   - Site URL: the production origin, e.g. `https://reality3d.in`
+   - Redirect URLs: `https://reality3d.in/auth/confirm`,
      `http://localhost:3000/auth/confirm`, and each preview origin you test
      sign-up or recovery from.
 3. **Authentication → Email Templates** — so links work in any browser, not only

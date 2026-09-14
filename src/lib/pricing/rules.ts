@@ -4,7 +4,7 @@
  * ============================================================
  *
  * Every number in this file is a demonstration constant. The repository
- * contains no approved SADA 3D commercial pricing — no material rates, machine
+ * contains no approved Reality 3D commercial pricing — no material rates, machine
  * rates, setup fees, finishing fees, quantity breaks, shipping tariffs or GST
  * policy — so none is asserted here.
  *

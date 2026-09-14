@@ -40,9 +40,9 @@ function invalidate(tag: ContentTag): void {
       const { revalidateTag } = await import("next/cache");
       /*
        * `expire: 0`, not "max". "max" serves the previous catalog to the first
-       * request after a publish while the new one builds behind it — and the
-       * product route has `dynamicParams = false`, so a product published a
-       * moment ago is absent from that stale catalog and its page 404s.
+       * request after a publish while the new one builds behind it — so a
+       * product published a moment ago is absent from that stale catalog and
+       * its page 404s.
        * Expiring immediately makes that request wait for the rebuild instead,
        * which for a catalog this size is one query. The single-argument form is
        * deprecated in Next 16.

@@ -11,7 +11,7 @@ export default function AccountAddressesLoading() {
   return (
     <AccountShell
       title="Addresses"
-      description="Where your orders are delivered. SADA 3D ships within India."
+      description="Where your orders are delivered. Reality 3D ships within India."
       crumbs={[{ label: "Addresses" }]}
     >
       <SkeletonCards rows={2} />

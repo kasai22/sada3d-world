@@ -39,7 +39,7 @@ const ACTIVE_PARTS = 4;
  * The account overview.
  *
  * An operational summary, not a dashboard. No spend totals, no order counts
- * dressed up as metrics, no reward points — none of that is a thing SADA 3D
+ * dressed up as metrics, no reward points — none of that is a thing Reality 3D
  * knows about a customer, and a portal is not improved by inventing figures for
  * it to display.
  *

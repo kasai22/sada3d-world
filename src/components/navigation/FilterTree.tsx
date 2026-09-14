@@ -34,7 +34,7 @@ export interface FilterTreeProps {
 
 /**
  * Nested facet navigation, up to three levels. Amazon-grade information
- * architecture on the SADA 3D surface.
+ * architecture on the Reality 3D surface.
  *
  * Selection is controlled by the caller so it can live in the URL; only
  * expand/collapse is local. Every control is a real button or checkbox, so the

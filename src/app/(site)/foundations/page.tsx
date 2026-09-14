@@ -211,45 +211,49 @@ export default function FoundationsPage() {
         <div className={styles.row}>
           <span className={styles.rowLabel}>Product card</span>
         </div>
+        {/* Real catalog addresses, not invented ones. This page is noindex and
+            unlinked, but a gallery whose demo links 404 teaches the wrong URL
+            shape — which is how /shop/{slug} reached the homepage in the first
+            place. links.test.ts checks this file too. */}
         <div className={styles.productGrid}>
           <ProductCard
-            name="Precision Gear"
-            href="/shop/precision-gear"
+            name="Spur Gear, 24 Teeth"
+            href="/shop/mechanical/spur-gear-24t"
             material="PLA"
             color="Black"
-            price="₹399"
-            badge="In stock"
+            price="₹650"
+            badge="Made to order"
             meta={[
-              { label: "Layer", value: "0.16 MM" },
-              { label: "Weight", value: "34 G" },
+              { label: "Layer", value: "0.20 MM" },
+              { label: "Teeth", value: "24" },
             ]}
           />
           <ProductCard
-            name="Optical Mount"
-            href="/shop/optical-mount"
-            material="Resin"
-            color="Grey"
-            price="₹1,240"
-            badge="SLA"
+            name="Planetary Gear Set"
+            href="/shop/mechanical/planetary-gear-set"
+            material="PLA"
+            color="Orange"
+            price="₹2,650"
+            badge="Made to order"
             variant="featured"
             meta={[
-              { label: "Layer", value: "0.05 MM" },
-              { label: "Weight", value: "46 G" },
+              { label: "Layer", value: "0.20 MM" },
+              { label: "Parts", value: "6" },
             ]}
           />
           <ProductCard
-            name="Cable Bracket"
-            href="/shop/cable-bracket"
+            name="Hex Shaft Spacer, 8 mm Bore"
+            href="/shop/mechanical/hex-shaft-spacer"
             material="PETG"
-            color="Graphite"
-            price="₹249"
+            color="Black"
+            price="₹730"
             variant="compact"
           />
           <ProductCard
-            name="Manifold Housing"
-            href="/shop/manifold-housing"
+            name="Hex Shaft Spacer, 8 mm Bore"
+            href="/shop/mechanical/hex-shaft-spacer"
             material="PETG"
-            color="Carbon"
+            color="Blue"
           />
         </div>
 
@@ -301,9 +305,8 @@ export default function FoundationsPage() {
             <Breadcrumbs
               items={[
                 { label: "Shop", href: "/shop" },
-                { label: "Functional", href: "/shop/functional" },
-                { label: "Mechanical", href: "/shop/functional/mechanical" },
-                { label: "Precision Gear" },
+                { label: "Mechanical", href: "/shop/mechanical" },
+                { label: "Spur Gear, 24 Teeth" },
               ]}
             />
           </div>

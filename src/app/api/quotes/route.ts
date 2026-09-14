@@ -39,7 +39,7 @@ import type { QuoteGeometryInput } from "@/lib/pricing/types";
  */
 export const dynamic = "force-dynamic";
 
-const BODY_FIELDS = ["model", "material", "quality", "finish", "quantity", "geometry"];
+const BODY_FIELDS = ["model", "material", "technology", "quality", "finish", "quantity", "geometry"];
 const MODEL_FIELDS = ["name", "extension", "sizeBytes", "triangles"];
 const GEOMETRY_FIELDS = ["dimensionsMm", "volumeMm3", "surfaceAreaMm2", "triangleCount", "partCount"];
 const DIMENSION_FIELDS = ["x", "y", "z"];
@@ -152,6 +152,9 @@ export async function POST(request: Request) {
           : {}),
       },
       material: readString(body, "material", { max: 64 }) ?? "",
+      ...(body.technology !== undefined
+        ? { technology: readString(body, "technology", { required: false, max: 32 }) }
+        : {}),
       ...(body.quality !== undefined
         ? { quality: readString(body, "quality", { required: false, max: 64 }) }
         : {}),

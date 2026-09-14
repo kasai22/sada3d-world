@@ -25,7 +25,7 @@ export interface SelectProps
   className?: string;
 }
 
-/** Native select styled to the SADA 3D field spec. Native keeps mobile pickers. */
+/** Native select styled to the Reality 3D field spec. Native keeps mobile pickers. */
 export function Select({
   label,
   hint,

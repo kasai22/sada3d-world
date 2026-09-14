@@ -29,7 +29,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: siteUrl(),
   title: {
-    default: `${SITE.name} — Manufacturing, reimagined.`,
+    default: `${SITE.name} — ${SITE.tagline}`,
     template: `%s — ${SITE.name}`,
   },
   description: SITE.description,
@@ -38,12 +38,12 @@ export const metadata: Metadata = {
     type: "website",
     siteName: SITE.name,
     locale: SITE.locale,
-    title: `${SITE.name} — Manufacturing, reimagined.`,
+    title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} — Manufacturing, reimagined.`,
+    title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
   },
   robots: {

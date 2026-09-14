@@ -1,7 +1,13 @@
 import { ProductCard } from "@/components/commerce";
 import { Tag } from "@/components/core";
 import { SectionHeading, SpecTable, type SpecRow } from "@/components/structure";
-import { formatPrice, partId } from "@/lib/catalog/format";
+import {
+  availabilityLabel,
+  formatPrice,
+  priceQualifier,
+  partId,
+  productHref,
+} from "@/lib/catalog/format";
 import { AVAILABILITY, COLORS, MATERIALS, TECHNOLOGIES } from "@/lib/catalog/taxonomy";
 import type { Product } from "@/lib/catalog/types";
 import styles from "./ProductSections.module.css";
@@ -199,11 +205,12 @@ export function RelatedProducts({ products }: { products: readonly Product[] }) 
           <li key={product.id}>
             <ProductCard
               name={product.name}
-              href={`/shop/${product.browseCategory}/${product.slug}`}
+              href={productHref(product)}
               material={label(MATERIALS, product.material)}
               color={label(COLORS, product.color)}
               price={formatPrice(product.price)}
-              badge={product.badge}
+              priceNote={priceQualifier(product)}
+              badge={availabilityLabel(product)}
               image={product.image}
             />
           </li>

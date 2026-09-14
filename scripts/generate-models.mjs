@@ -65,23 +65,11 @@ function gear({ teeth = 24, pitch = 22, depth = 3, boreRadius = 3, thickness = 8
   return new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
 }
 
-/* ---- L bracket with two fixing holes ---- */
-function bracket({ length = 34, height = 22, thickness = 4, width = 14 }) {
-  const shape = new THREE.Shape();
-  shape.moveTo(0, 0);
-  shape.lineTo(length, 0);
-  shape.lineTo(length, thickness);
-  shape.lineTo(thickness, thickness);
-  shape.lineTo(thickness, height);
-  shape.lineTo(0, height);
-  shape.closePath();
-
-  const hole = new THREE.Path();
-  hole.absarc(length - 8, thickness / 2, 1.6, 0, Math.PI * 2, true);
-  shape.holes.push(hole);
-
-  return new THREE.ExtrudeGeometry(shape, { depth: width, bevelEnabled: false });
-}
+/*
+ * The L bracket (cable-bracket.stl) was removed in the content reset. Its only
+ * hole ran along the inside of the 4 mm leg, leaving 0.4 mm walls and no fixing
+ * hole through the part, so it was not a part worth publishing as drawn.
+ */
 
 /* ---- hex coupler: hex outer, round bore, tall ---- */
 function coupler({ across = 11, boreRadius = 4, height = 34 }) {
@@ -226,10 +214,9 @@ async function writeObj(name, object) {
 const set = process.argv[3] ?? "product";
 
 if (set === "product") {
-  write("precision-gear.stl", gear({}));
-  write("cable-bracket.stl", bracket({}));
-  write("hex-drive-coupler.stl", coupler({}));
-  await writeGltf("planetary-carrier.glb", planetaryCarrier());
+  write("spur-gear-24t.stl", gear({}));
+  write("hex-shaft-spacer.stl", coupler({}));
+  await writeGltf("planetary-gear-set.glb", planetaryCarrier());
 } else if (set === "assembly") {
   await writeGltf("assembly.glb", planetaryCarrier());
   await writeObj("assembly.obj", planetaryCarrier());

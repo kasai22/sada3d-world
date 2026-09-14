@@ -1,10 +1,14 @@
+import { BRAND } from "./brand";
+
 /** Site-wide constants. Nothing here is content — content comes from the CMS. */
 
 export const SITE = {
-  name: "SADA 3D",
-  tagline: "Imagine. Design. Create.",
+  name: BRAND.name,
+  tagline: BRAND.tagline,
   /** Used for the metadata title template and structured data. */
-  legalName: "SADA 3D",
+  legalName: BRAND.name,
+  /** The intended customer-facing domain. Canonical URLs follow NEXT_PUBLIC_SITE_URL (see siteUrl). */
+  domain: BRAND.domain,
   description:
     "Turn digital designs into physical products through advanced on-demand manufacturing.",
   locale: "en_IN",

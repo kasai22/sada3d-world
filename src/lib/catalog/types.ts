@@ -9,6 +9,44 @@ export type MaterialValue = "pla" | "petg" | "abs" | "tpu" | "resin";
 export type TechnologyValue = "fdm" | "sla" | "sls";
 export type AvailabilityValue = "in-stock" | "made-to-order";
 
+/**
+ * Whether a catalog price is a commercial decision or a derived figure.
+ *
+ *   approved     backed by a price approval record in effect today; the only
+ *                status a launch-mode checkout will charge
+ *   provisional  derived from the provisional pricing rules; not approved, and
+ *                labelled "Provisional price" wherever it is shown
+ *   quote-only   no catalog price; always paired with `price: 0`
+ *
+ * Stage 19.6 renamed "verified" to "approved": the status records a business
+ * decision, and no product ever carried "verified".
+ */
+export type PriceStatus = "approved" | "provisional" | "quote-only";
+
+/**
+ * Business approval of a product — independent of whether it is technically
+ * valid, and independent of whether it is published.
+ *
+ *   draft        being written; never visible, never publishable
+ *   proposed     submitted for review; content not yet signed off
+ *   provisional  reviewed and usable before launch, explicitly not final
+ *   approved     signed off by Reality 3D for sale
+ *   archived     withdrawn; never visible, never publishable
+ *
+ * Publication (Payload's draft/published) is the other axis. A product is
+ * launchable only when it is approved AND published AND commercially complete;
+ * see `lib/catalog/commerce.ts`.
+ */
+export type ApprovalStatus = "draft" | "proposed" | "provisional" | "approved" | "archived";
+
+export const APPROVAL_STATUSES: readonly ApprovalStatus[] = [
+  "draft",
+  "proposed",
+  "provisional",
+  "approved",
+  "archived",
+];
+
 /** A single row in the technical specifications table. */
 export interface ProductSpecification {
   label: string;
@@ -26,6 +64,29 @@ export interface QualityOption {
 export interface ProductImage {
   src: string;
   alt: string;
+  /**
+   * What the image is. A launchable product needs a real photograph or an
+   * approved render; an image with no kind counts as unapproved media.
+   */
+  kind?: "photo" | "render";
+  /**
+   * Stage 19.8: who approved this image as a true visual of this product, when,
+   * and where it is recorded. A file existing is never an approval.
+   */
+  approval?: { reference: string; approvedBy: string; approvedOn: string };
+}
+
+/**
+ * Launch status computed on the server from the product's full record. Never
+ * read from a client, never persisted; carried on the product so featuring and
+ * the storefront can honour it without re-deriving commercial state.
+ */
+export interface LaunchSummary {
+  ready: boolean;
+  price: "APPROVED" | "PROVISIONAL" | "QUOTE_ONLY" | "MISSING";
+  media: "APPROVED" | "MISSING";
+  manufacturing: "APPROVED" | "NOT_APPROVED";
+  commercial: "COMPLETE" | "INCOMPLETE";
 }
 
 /**
@@ -37,6 +98,17 @@ export interface ProductImage {
 export interface ProductModel {
   url: string;
   format: "stl" | "obj" | "glb" | "gltf";
+}
+
+/**
+ * The order every catalog source returns products in: by id, compared by code
+ * unit. "Relevance" is source order, so this is part of what a visitor sees —
+ * a CMS returning newest-first and a local catalog returning file order once
+ * showed the same three parts in opposite orders. Deliberately not
+ * `localeCompare` or a database collation, which can disagree about hyphens.
+ */
+export function catalogOrder(a: { id: string }, b: { id: string }): number {
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
 export interface Product {
@@ -56,6 +128,17 @@ export interface Product {
   /** Whole rupees. Formatting happens at render time. */
   price: number;
   currency: "INR";
+  /**
+   * Optional in the type so fixtures and older records still describe a
+   * product; `validateProduct` refuses to publish a product without one.
+   */
+  priceStatus?: PriceStatus;
+  /** Optional in the type for fixtures; validation requires it. */
+  approvalStatus?: ApprovalStatus;
+  /** Editorial request to feature. Honoured only for launchable products. */
+  featured?: boolean;
+  /** Server-computed; see LaunchSummary. */
+  launch?: LaunchSummary;
   availability: AvailabilityValue;
   /** Set when a render exists in storage. Wired for R2 in Phase 16. */
   image?: ProductImage;

@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "description": "SADA 3D business decision ledger. Append-only: a changed decision is a new record with a later approvedOn. Validate with `npm run content:decisions`; add records with `npm run content:decisions -- --input <file> --dry-run`, then `--apply`.",
+  "decisions": [
+    {
+      "id": "BD-2026-09-14-01",
+      "kind": "manufacturing-platform",
+      "subject": "fdm",
+      "decision": "APPROVED",
+      "values": {
+        "printer": "Bambu Lab A1",
+        "buildVolumeMm": { "x": 256, "y": 256, "z": 256 },
+        "includedNozzle": "0.4 mm stainless-steel nozzle",
+        "optionalNozzleSizesMm": [0.2, 0.6, 0.8],
+        "maxHotendTemperatureC": 300,
+        "specificationReference": "Bambu Lab A1 official documentation"
+      },
+      "rationale": "Primary FDM printer. Manufacturer specifications are the authoritative technical reference; no additional machine capability is claimed.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §1 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-02",
+      "kind": "manufacturing-process",
+      "subject": "fdm",
+      "decision": "APPROVED",
+      "rationale": "Initial launch manufacturing process.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §6 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-03",
+      "kind": "manufacturing-process",
+      "subject": "sla",
+      "decision": "NOT_APPROVED",
+      "rationale": "Not approved for initial launch: no SLA printer or process is available. Resin existing in the configurator is not an SLA capability.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §6 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-04",
+      "kind": "material",
+      "subject": "pla",
+      "decision": "APPROVED",
+      "rationale": "Approved for launch on FDM (Bambu Lab A1).",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §2 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-05",
+      "kind": "material",
+      "subject": "petg",
+      "decision": "APPROVED",
+      "rationale": "Approved for launch on FDM (Bambu Lab A1).",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §2 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-06",
+      "kind": "material",
+      "subject": "tpu",
+      "decision": "APPROVED",
+      "rationale": "Approved for launch on FDM (Bambu Lab A1).",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §2 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-07",
+      "kind": "material",
+      "subject": "abs",
+      "decision": "NOT_APPROVED",
+      "rationale": "Not approved for initial launch unless separately justified and explicitly approved.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §2 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-08",
+      "kind": "material",
+      "subject": "resin",
+      "decision": "NOT_APPROVED",
+      "rationale": "Not approved: no real SLA printer or process is available.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §2 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-09",
+      "kind": "material-colours",
+      "subject": "launch-materials",
+      "decision": "APPROVED",
+      "values": { "materials": ["pla", "petg", "tpu"], "colours": ["black", "white"] },
+      "rationale": "Initial production colours. No additional colours are commercially available.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §3, §11 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-10",
+      "kind": "layer-heights",
+      "subject": "fdm",
+      "decision": "APPROVED",
+      "values": { "layerHeights": ["0.20 MM", "0.16 MM", "0.12 MM"] },
+      "rationale": "FDM options only; they must not appear for resin/SLA.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §5 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-11",
+      "kind": "manufacturing-limitation",
+      "subject": "Maximum build volume",
+      "decision": "APPROVED",
+      "values": {
+        "policy": "256 × 256 × 256 mm — the Bambu Lab A1 build volume. A part must fit this envelope in some orientation.",
+        "buildVolumeMm": { "x": 256, "y": 256, "z": 256 }
+      },
+      "rationale": "Physical build envelope of the approved printer.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §4 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-12",
+      "kind": "catalog-policy",
+      "subject": "catalog-strategy",
+      "decision": "APPROVED",
+      "values": { "strategy": "ADMIN_MANAGED" },
+      "rationale": "Products are created, edited, approved and featured by an administrator in Payload. No products are generated.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §7, §9 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-13",
+      "kind": "catalog-policy",
+      "subject": "sales-claims",
+      "decision": "APPROVED",
+      "values": { "bestSellerLabels": false, "allowedMerchandisingLabels": ["Recommended products", "Featured products"] },
+      "rationale": "No sales history exists to support best-seller or popularity claims. Featured and recommended products are selected by an administrator.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §7, §10 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    },
+    {
+      "id": "BD-2026-09-14-14",
+      "kind": "catalog-policy",
+      "subject": "initial-products",
+      "decision": "APPROVED",
+      "values": { "products": ["p-101", "p-102", "p-103"], "status": "PROVISIONAL" },
+      "rationale": "The three existing products are retained and remain provisional until individually approved.",
+      "approval": {
+        "reference": "Stage 19.8 business decisions, §8 and §12 (supplied 2026-09-14)",
+        "approvedBy": "SADA 3D business owner",
+        "approvedOn": "2026-09-14"
+      }
+    }
+  ]
+}

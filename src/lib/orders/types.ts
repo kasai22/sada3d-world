@@ -266,7 +266,7 @@ export interface Order {
   provisional: boolean;
   /**
    * True for the deterministic development fixtures. Nothing marked this way is
-   * a real SADA 3D order, and the interface says so wherever one is shown.
+   * a real Reality 3D order, and the interface says so wherever one is shown.
    */
   demo?: boolean;
 }

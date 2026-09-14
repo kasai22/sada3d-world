@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
  * Account settings.
  *
  * Deliberately short. Almost everything a settings page usually holds belongs
- * to systems SADA 3D does not have yet, and the honest version of this page is
+ * to systems Reality 3D does not have yet, and the honest version of this page is
  * one that says so instead of offering controls that do nothing.
  *
  * There are no notification toggles, because there are no notifications. There
@@ -102,7 +102,7 @@ export default async function AccountSettingsPage() {
           {resolveCredentialsAdapter() ? (
             <>
               <p className={styles.body}>
-                You sign in with your email and password. SADA 3D never stores
+                You sign in with your email and password. Reality 3D never stores
                 your password; the sign-in provider holds it. Signing out ends
                 the session on this device.
               </p>
@@ -126,7 +126,7 @@ export default async function AccountSettingsPage() {
             Notifications
           </SectionHeading>
           <p className={styles.body}>
-            SADA 3D does not send notifications yet, so there is nothing to turn
+            Reality 3D does not send notifications yet, so there is nothing to turn
             on or off. Order updates are shown on the order itself, and this
             section will list real choices when there are some to make.
           </p>

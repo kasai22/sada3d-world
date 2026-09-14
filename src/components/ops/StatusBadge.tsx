@@ -99,7 +99,7 @@ export function SeverityBadge({ severity }: { severity: IssueSeverity }) {
 /** Marks a development fixture wherever one appears. */
 export function DemoTag() {
   return (
-    <Tag tone="info" className={styles.badge} title="Demonstration order — not a real SADA 3D order">
+    <Tag tone="info" className={styles.badge} title="Demonstration order — not a real Reality 3D order">
       Demo
     </Tag>
   );

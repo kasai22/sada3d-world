@@ -105,7 +105,7 @@ export default async function LoginPage({
             </AccountState>
           ) : (
             <>
-              <h1 className="u-visually-hidden">Sign in to SADA 3D</h1>
+              <h1 className="u-visually-hidden">Sign in to Reality 3D</h1>
               <AuthForms initialMode={mode} next={next} status={status} />
             </>
           )}

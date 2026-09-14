@@ -226,3 +226,72 @@ p.uploadStatus {
 
   .stepper { margin-bottom: var(--spacing-7); }
 }
+
+/* ---- Stage 19.9: processes and the roadmap ---- */
+
+.processes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2) var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+}
+
+.processesLabel {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.process {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--spacing-2);
+  padding: var(--spacing-1) var(--spacing-3);
+  border: 1px solid var(--border-accent);
+  background: var(--interactive-selected-surface);
+}
+
+.processSoon {
+  border-style: dashed;
+  border-color: var(--border-subtle);
+  background: transparent;
+}
+
+.processCode {
+  font: var(--type-technical);
+  letter-spacing: var(--ls-technical);
+  color: var(--text-primary);
+}
+
+.processSoon .processCode {
+  color: var(--text-muted);
+}
+
+.processStatus {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.roadmapHeading {
+  margin: var(--spacing-6) 0 var(--spacing-3);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.roadmapNotice {
+  min-height: 22px;
+  margin: var(--spacing-3) 0 0;
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.roadmapNotice:empty {
+  margin: 0;
+  min-height: 0;
+}

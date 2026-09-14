@@ -8,6 +8,7 @@ import {
   validateQuoteRequest,
 } from "./calculateQuote";
 import { PRICING_RULES, type PricingRules } from "./rules";
+import { MATERIAL_OPTIONS } from "@/lib/custom-print/options";
 import type { ManufacturingQuote, QuoteRequest, QuoteResponse } from "./types";
 
 const MODEL = { name: "cube.stl", extension: ".stl", sizeBytes: 684, triangles: 12 };
@@ -44,8 +45,8 @@ test("prices a minimal valid configuration", () => {
 test("the breakdown always sums to the total", () => {
   const cases: QuoteRequest[] = [
     request(),
-    request({ material: "resin", quality: "high-detail", finish: "smooth", quantity: 7 }),
-    request({ material: "tpu", quality: "precision", finish: "matte", quantity: 3 }),
+    request({ material: "petg", quality: "high-detail", finish: "standard", quantity: 7 }),
+    request({ material: "tpu", quality: "precision", finish: "standard", quantity: 3 }),
     request({ material: "pla", quantity: 500 }),
   ];
 
@@ -68,7 +69,8 @@ test("every line is a whole number of rupees", () => {
 });
 
 test("a total is never negative", () => {
-  for (const material of Object.keys(PRICING_RULES.materialFactor)) {
+  // Stage 19.8: every offered material; unapproved ones are refused, not priced.
+  for (const material of MATERIAL_OPTIONS.map((option) => option.value)) {
     for (const quantity of [1, 2, 50, 500]) {
       const quote = quoteOf(calculateQuote(request({ material, quantity })));
       assert.ok(quote.total >= 0, `${material} × ${quantity} produced a negative total`);
@@ -82,9 +84,9 @@ test("a total is never negative", () => {
 
 test("the same request produces the same result every time", () => {
   const input = request({
-    material: "abs",
+    material: "petg",
     quality: "precision",
-    finish: "smooth",
+    finish: "standard",
     quantity: 4,
   });
 
@@ -102,12 +104,12 @@ test("the same request produces the same result every time", () => {
 
 test("material changes the total, and the reference material adds no line", () => {
   const pla = quoteOf(calculateQuote(request({ material: "pla", quantity: 5 })));
-  const resin = quoteOf(calculateQuote(request({ material: "resin", quantity: 5 })));
+  const tpu = quoteOf(calculateQuote(request({ material: "tpu", quantity: 5 })));
 
   // PLA is the 1.0 reference, so there is no material adjustment to show.
   assert.equal(line(pla, "material"), undefined);
-  assert.ok(line(resin, "material"));
-  assert.ok(resin.total > pla.total);
+  assert.ok(line(tpu, "material"));
+  assert.ok(tpu.total > pla.total);
 });
 
 test("quality changes the total, and standard adds no line", () => {
@@ -119,13 +121,17 @@ test("quality changes the total, and standard adds no line", () => {
   assert.ok(detailed.total > standard.total);
 });
 
-test("finish changes the total, and a zero-fee finish adds no line", () => {
+test("the offered finish adds no line, and a fee still prices when the rules allow a finish", () => {
   const plain = quoteOf(calculateQuote(request({ finish: "standard", quantity: 5 })));
-  const smooth = quoteOf(calculateQuote(request({ finish: "smooth", quantity: 5 })));
-
   assert.equal(line(plain, "finish"), undefined);
-  assert.equal(line(smooth, "finish")?.amount, PRICING_RULES.finishFee.smooth! * 5);
-  assert.ok(smooth.total > plain.total);
+
+  // The arithmetic for a fee-bearing finish, proven with rules that price it
+  // under the offered finish's value — the rule is tested without offering an
+  // unapproved finish.
+  const withFee: PricingRules = { ...PRICING_RULES, finishFee: { ...PRICING_RULES.finishFee, standard: 120 } };
+  const fee = quoteOf(calculateQuote(request({ finish: "standard", quantity: 5 }), withFee));
+  assert.equal(line(fee, "finish")?.amount, 600);
+  assert.ok(fee.total > plain.total);
 });
 
 test("more units never cost less", () => {
@@ -173,7 +179,7 @@ test("a small job is lifted to the minimum by an explicit line", () => {
 });
 
 test("a job above the minimum carries no adjustment line", () => {
-  const quote = quoteOf(calculateQuote(request({ material: "resin", quantity: 10 })));
+  const quote = quoteOf(calculateQuote(request({ material: "tpu", quantity: 10 })));
   assert.equal(line(quote, "minimum"), undefined);
 });
 
@@ -292,7 +298,7 @@ test("geometry-dependent cost, shipping and tax are all declared as excluded", (
 
 test("no line claims a measured quantity the system cannot compute", () => {
   const quote = quoteOf(
-    calculateQuote(request({ material: "resin", quality: "high-detail", quantity: 2 })),
+    calculateQuote(request({ material: "petg", quality: "high-detail", quantity: 2 })),
   );
 
   // Volume, weight and print time are not measured, so they must never appear.
@@ -303,5 +309,34 @@ test("no line claims a measured quantity the system cannot compute", () => {
       !entry.detail || !forbidden.test(entry.detail),
       `detail "${entry.detail}" implies measured geometry`,
     );
+  }
+});
+
+test("an FDM layer height cannot be ordered for SLA resin (Stage 19.7)", () => {
+  /*
+   * The configurator used to offer 0.20, 0.16 and 0.12 mm to every material.
+   * Those are FDM nozzle layer heights; resin is SLA. The engine now refuses the
+   * pairing whatever a client sends, and resin keeps its one quality.
+   */
+  for (const quality of ["standard", "precision", "high-detail"]) {
+    const response = calculateQuote(request({ material: "resin", quality }));
+    assert.equal(response.status, "invalid", quality);
+  }
+  assert.equal(calculateQuote(request({ material: "petg", quality: "high-detail" })).status, "available");
+});
+
+test("only approved materials and finishes are quoted, whatever a client sends (Stage 19.8)", () => {
+  for (const material of ["abs", "resin"]) {
+    const response = calculateQuote(request({ material }));
+    assert.equal(response.status, "invalid", material);
+    assert.ok(response.status === "invalid" && response.errors.some((e) => e.field === "material"));
+  }
+  for (const finish of ["smooth", "matte"]) {
+    const response = calculateQuote(request({ finish }));
+    assert.equal(response.status, "invalid", finish);
+    assert.ok(response.status === "invalid" && response.errors.some((e) => e.field === "finish"));
+  }
+  for (const material of ["pla", "petg", "tpu"]) {
+    assert.equal(calculateQuote(request({ material })).status, "available", material);
   }
 });

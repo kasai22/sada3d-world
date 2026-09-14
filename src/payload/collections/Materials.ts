@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 
-import { adminsOnly, publishedOrAdmin } from "../access";
+import { CAPABILITY_STATUS_LABEL, capabilityStatus } from "../../content/catalog/capabilities";
+import { adminFieldOnly, adminsOnly, publishedOrAdmin } from "../access";
 import { revalidateContent } from "../revalidate";
 
 /**
@@ -39,7 +40,7 @@ export const Materials: CollectionConfig = {
   slug: "materials",
   admin: {
     useAsTitle: "name",
-    defaultColumns: ["name", "value", "code", "_status"],
+    defaultColumns: ["name", "value", "capabilityStatus", "_status"],
     group: "Catalog",
     description: "How each manufacturing material is described to customers.",
   },
@@ -55,6 +56,33 @@ export const Materials: CollectionConfig = {
     afterDelete: [revalidateContent("catalog")],
   },
   fields: [
+    {
+      /*
+       * Stage 19.9. Virtual: derived from the business decision ledger (AVAILABLE)
+       * and the roadmap (COMING SOON) on every read — never stored, never edited,
+       * and never an approval. Publishing a material record does not make it
+       * available; an APPROVED ledger decision does.
+       */
+      name: "capabilityStatus",
+      label: "Capability status",
+      type: "text",
+      virtual: true,
+      access: { read: adminFieldOnly, create: () => false, update: () => false },
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description:
+          "Available now = an approved business decision. Coming soon = on the roadmap, not approved: shown to customers, never quotable or orderable. Not available = neither.",
+      },
+      hooks: {
+        afterRead: [
+          ({ siblingData }) => {
+            const status = capabilityStatus("material", (siblingData as { value?: string } | undefined)?.value);
+            return status === "AVAILABLE" ? "AVAILABLE NOW" : CAPABILITY_STATUS_LABEL[status].toUpperCase();
+          },
+        ],
+      },
+    },
     {
       type: "tabs",
       tabs: [
@@ -110,11 +138,41 @@ export const Materials: CollectionConfig = {
               ],
             },
             {
+              name: "technologies",
+              type: "select",
+              hasMany: true,
+              required: true,
+              options: [
+                { label: "FDM", value: "fdm" },
+                { label: "SLA", value: "sla" },
+              ],
+              admin: {
+                description:
+                  "Processes this material is printed with. Products may only pair a material with one of these — the import rejects anything else.",
+              },
+            },
+            {
               name: "applications",
               type: "array",
               labels: { singular: "Application", plural: "Applications" },
               fields: [{ name: "value", type: "text", required: true }],
               admin: { description: "What this material is typically used for." },
+            },
+            {
+              name: "bestFor",
+              type: "array",
+              labels: { singular: "Use case", plural: "Best for" },
+              fields: [{ name: "value", type: "text", required: true }],
+              admin: { description: "One line each: the reason somebody picks this material." },
+            },
+            {
+              name: "avoidFor",
+              type: "array",
+              labels: { singular: "Limitation", plural: "Avoid for" },
+              fields: [{ name: "value", type: "text", required: true }],
+              admin: {
+                description: "Qualitative limitations. Never a number without a datasheet behind it.",
+              },
             },
             {
               name: "surface",
@@ -148,6 +206,20 @@ export const Materials: CollectionConfig = {
               type: "upload",
               relationTo: "media",
               admin: { description: "Optional sample render." },
+            },
+          ],
+        },
+        {
+          label: "SEO",
+          fields: [
+            {
+              name: "seo",
+              type: "group",
+              label: false,
+              fields: [
+                { name: "title", type: "text" },
+                { name: "description", type: "textarea" },
+              ],
             },
           ],
         },

@@ -43,7 +43,7 @@ export type ButtonProps = AsButton | AsLink;
 const ICON_SIZE: Record<ButtonSize, number> = { sm: 14, md: 16, lg: 18 };
 
 /**
- * SADA 3D action. Sharp corners, uppercase technical label, never a pill.
+ * Reality 3D action. Sharp corners, uppercase technical label, never a pill.
  *
  * Hover, press, focus and disabled are handled entirely in CSS, so this renders
  * as a Server Component. The design system's prototype tracked hover in React

@@ -24,6 +24,12 @@ export interface MaterialCardProps {
   selected?: boolean;
   onSelect?: () => void;
   disabled?: boolean;
+  /**
+   * Stage 19.9: a roadmap material. Rendered muted with a "Coming soon" badge,
+   * never pressed, and announced as unavailable. Clicking calls onSelect so the
+   * caller can explain; the caller must not select it.
+   */
+  comingSoon?: boolean;
   className?: string;
 }
 
@@ -40,18 +46,25 @@ export function MaterialCard({
   selected = false,
   onSelect,
   disabled,
+  comingSoon = false,
   className,
 }: MaterialCardProps) {
   return (
     <button
       type="button"
       onClick={onSelect}
-      aria-pressed={selected}
+      aria-pressed={comingSoon ? false : selected}
+      aria-disabled={comingSoon || undefined}
       disabled={disabled}
-      className={clsx(styles.card, className)}
+      className={clsx(styles.card, comingSoon && styles.comingSoon, className)}
     >
       <span className={styles.top}>
         <span className={styles.name}>{name}</span>
+        {comingSoon && (
+          <span className={styles.soonBadge}>
+            Coming soon<span className="u-visually-hidden"> — not available to order yet</span>
+          </span>
+        )}
         {multiplier && (
           <span className={styles.multiplier}>
             ×{multiplier}
@@ -65,6 +78,7 @@ export function MaterialCard({
       {code && <span className={styles.code}>{code}</span>}
       {description && <span className={styles.description}>{description}</span>}
 
+      {!comingSoon && (
       <dl className={styles.properties}>
         {PROPERTY_ORDER.map((key) => {
           const rating = properties[key];
@@ -72,8 +86,9 @@ export function MaterialCard({
           return <PropertyScale key={key} label={key} rating={rating} />;
         })}
       </dl>
+      )}
 
-      {colors.length > 0 && (
+      {!comingSoon && colors.length > 0 && (
         <span className={styles.colors}>
           {colors.map((color) => (
             <span

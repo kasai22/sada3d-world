@@ -2,7 +2,14 @@
   padding-block: var(--space-section);
 }
 
+/* Headline left, the solutions link right — the same head pattern the
+   featured-products section uses, so the page keeps one rhythm. */
 .head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-6);
+  flex-wrap: wrap;
   margin-bottom: var(--spacing-10);
 }
 

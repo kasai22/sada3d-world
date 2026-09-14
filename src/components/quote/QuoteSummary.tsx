@@ -116,7 +116,7 @@ export function QuoteSummary({
                 </span>
                 <span>
                   <Tag tone="info">Provisional</Tag> This figure uses
-                  demonstration rates, not confirmed SADA 3D pricing. It prices
+                  demonstration rates, not confirmed Reality 3D pricing. It prices
                   your selections only — the part itself has not been measured.
                 </span>
               </p>

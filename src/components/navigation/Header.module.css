@@ -37,7 +37,7 @@
   border-bottom: 0;
 }
 
-.wordmarkSada { color: var(--text-primary); }
+.wordmarkName { color: var(--text-primary); }
 .wordmarkAccent { color: var(--text-accent); }
 
 .nav {

@@ -11,11 +11,11 @@ import {
   parseQuery,
   type SearchParams,
 } from "@/lib/catalog/params";
-import { catalogSize, queryCatalog } from "@/lib/catalog/query";
+import { catalogSize, getBrowseCategories, queryCatalog } from "@/lib/catalog/query";
 import styles from "../shop.module.css";
 
 const DESCRIPTION =
-  "Browse functional parts, objects, components and designs ready to become physical.";
+  "Browse parts that are ready to make, or send a model of your own.";
 
 /**
  * Filtered permutations are the same catalog in a different order, so they
@@ -36,7 +36,7 @@ export async function generateMetadata({
     openGraph: {
       type: "website",
       url: "/shop",
-      title: "Shop — SADA 3D",
+      title: "Shop — Reality 3D",
       description: DESCRIPTION,
     },
   };
@@ -64,7 +64,7 @@ export default async function ShopPage({
           description={DESCRIPTION}
         />
 
-        <CategoryRail counts={railCounts} />
+        <CategoryRail categories={await getBrowseCategories()} counts={railCounts} />
 
         <MarketplaceView query={query} result={result} pathname="/shop" />
       </div>
