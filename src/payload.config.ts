@@ -78,10 +78,33 @@ export default buildConfig({
    * the CMS gets its own.
    *
    * The admin panel follows this setting automatically.
+   *
+   * Stage 22.5: Payload’s admin moves to /cms. /admin is Reality 3D Admin, the
+   * business application (src/app/(admin)); Payload’s panel stays fully working
+   * underneath as Advanced CMS, with the same users and the same session.
+   * `CMS_HOME` in src/lib/ops/routes.ts must match.
    */
-  routes: { api: "/payload-api" },
+  routes: { api: "/payload-api", admin: "/cms" },
   admin: {
     user: Users.slug,
+    /*
+     * Reality 3D, not Payload, through Payload’s supported extension points
+     * only: the graphics slots, nav and dashboard slots, and a stylesheet of
+     * theme variables imported by the (payload) layout. Nothing in Payload is
+     * patched. The paths resolve against `importMap.baseDir` (this directory);
+     * `npm run generate:importmap` rewrites the import map when they change.
+     */
+    theme: "dark",
+    importMap: { baseDir: directory, importMapFile: join(directory, "app/(payload)/cms/importMap.ts") },
+    components: {
+      graphics: {
+        Logo: "/payload/admin/Brand#Logo",
+        Icon: "/payload/admin/Brand#Mark",
+      },
+      beforeNavLinks: ["/payload/admin/Brand#BackToAdmin"],
+      beforeDashboard: ["/payload/admin/Brand#AdvancedCmsNotice"],
+      afterLogin: ["/payload/admin/Brand#LoginNote"],
+    },
     meta: {
       /*
        * Empty, deliberately.
@@ -96,6 +119,21 @@ export default buildConfig({
        * suffix: "Dashboard — Reality 3D".
        */
       titleSuffix: "",
+      /*
+       * Stage 22.5: without these Payload fills in its own favicon, "Payload
+       * App" and its own description. The panel is not indexed or shared, so no
+       * Open Graph image is generated either.
+       */
+      description: "Reality 3D Advanced CMS — Imagine. Design. Create.",
+      applicationName: "Reality 3D Admin",
+      icons: [{ rel: "icon", url: "/favicon.ico" }],
+      defaultOGImageType: "off",
+      openGraph: {
+        siteName: "Reality 3D",
+        title: "Reality 3D Advanced CMS",
+        description: "Reality 3D Advanced CMS — Imagine. Design. Create.",
+      },
+      robots: { index: false, follow: false },
     },
   },
   collections: [Products, PriceApprovals, Categories, Materials, Media, Users],

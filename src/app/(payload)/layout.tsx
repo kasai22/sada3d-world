@@ -3,14 +3,19 @@
 
    Note the route group: (payload) sits outside (site), so the admin inherits
    none of the storefront's chrome, fonts or global styles — and the storefront
-   inherits none of the admin's. They are two applications sharing a process. */
+   inherits none of the admin's. They are two applications sharing a process.
+
+   Stage 22.5: the panel is mounted at /cms (routes.admin); /admin is Reality 3D
+   Admin in the (admin) route group. */
 import type { ServerFunctionClient } from "payload";
 
 import config from "@payload-config";
 import { handleServerFunctions, RootLayout } from "@payloadcms/next/layouts";
-import { importMap } from "./admin/importMap";
+import { importMap } from "./cms/importMap";
 
 import "@payloadcms/next/css";
+/* Stage 22.5: Reality 3D theme variables for Advanced CMS. After Payload's CSS. */
+import "./custom.css";
 
 type Args = {
   children: React.ReactNode;

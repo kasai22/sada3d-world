@@ -18,7 +18,7 @@ import type {
 } from "@/lib/manufacturing/types";
 
 import type { OrderRepository } from "./repository";
-import type { Order, OrderItem, OrderItemSourceFile, Shipment } from "./types";
+import type { Order, OrderItem, OrderItemCatalogSnapshot, OrderItemSourceFile, Shipment } from "./types";
 
 /**
  * The order domain, stored in PostgreSQL.
@@ -123,8 +123,32 @@ function toSourceFile(row: ItemRow): OrderItemSourceFile | undefined {
   };
 }
 
+/** The sales dimensions, when the row has a complete set. */
+function toCatalogSnapshot(row: ItemRow): OrderItemCatalogSnapshot | undefined {
+  if (
+    !row.productId ||
+    !row.categoryId ||
+    !row.categoryName ||
+    !row.browseCategoryId ||
+    !row.browseCategoryName ||
+    !row.dimensionsRecordedAt
+  ) {
+    return undefined;
+  }
+  return {
+    productId: row.productId,
+    ...(row.productSku ? { sku: row.productSku } : {}),
+    categoryId: row.categoryId,
+    categoryName: row.categoryName,
+    browseCategoryId: row.browseCategoryId,
+    browseCategoryName: row.browseCategoryName,
+    recordedAt: iso(row.dimensionsRecordedAt),
+  };
+}
+
 function toItem(row: ItemRow, jobId?: string): OrderItem {
   const sourceFile = toSourceFile(row);
+  const catalog = toCatalogSnapshot(row);
 
   return {
     id: row.id,
@@ -145,6 +169,7 @@ function toItem(row: ItemRow, jobId?: string): OrderItem {
     ...(jobId ? { manufacturingJobId: jobId } : {}),
     ...(row.shipmentId ? { shipmentId: row.shipmentId } : {}),
     ...(sourceFile ? { sourceFile } : {}),
+    ...(catalog ? { catalog } : {}),
   };
 }
 
@@ -310,6 +335,13 @@ function itemValues(order: Order, item: OrderItem, position: number) {
     sourceContentType: item.sourceFile?.contentType ?? null,
     sourceAnalysisIdentity: item.sourceFile?.analysisIdentity ?? null,
     sourceConfiguration: item.sourceFile?.configuration ?? null,
+    productId: item.catalog?.productId ?? null,
+    productSku: item.catalog?.sku ?? null,
+    categoryId: item.catalog?.categoryId ?? null,
+    categoryName: item.catalog?.categoryName ?? null,
+    browseCategoryId: item.catalog?.browseCategoryId ?? null,
+    browseCategoryName: item.catalog?.browseCategoryName ?? null,
+    dimensionsRecordedAt: item.catalog ? new Date(item.catalog.recordedAt) : null,
   };
 }
 
@@ -354,6 +386,14 @@ async function writeOrder(
       sourceContentType: _sourceContentType,
       sourceAnalysisIdentity: _sourceAnalysisIdentity,
       sourceConfiguration: _sourceConfiguration,
+      // Stage 22: the sales dimensions are insert-only too.
+      productId: _productId,
+      productSku: _productSku,
+      categoryId: _categoryId,
+      categoryName: _categoryName,
+      browseCategoryId: _browseCategoryId,
+      browseCategoryName: _browseCategoryName,
+      dimensionsRecordedAt: _dimensionsRecordedAt,
       ...itemUpdatable
     } = row;
 

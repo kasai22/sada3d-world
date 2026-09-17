@@ -1,3 +1,4 @@
+import type { ProductValidationOptions } from "./validation";
 import type { CatalogEntry, CommercialDefinition, Fact, OpenQuestion } from "@/content/catalog";
 import type { Product as PayloadProduct } from "@/payload-types";
 
@@ -97,6 +98,8 @@ export function entryFromPayloadDoc(
   doc: PayloadProduct,
   priceApprovals: readonly PriceApprovalRecord[],
   now: Date = new Date(),
+  /** Stage 20: the CMS category tree and the verified catalog files. */
+  validation?: ProductValidationOptions,
 ): EntryResult {
   const mapped = toDomainProduct(doc);
   if (!mapped.ok) return { ok: false, productId: mapped.failure.productId, reason: mapped.failure.reason };
@@ -115,7 +118,7 @@ export function entryFromPayloadDoc(
     commercial: commercialFromDoc(doc),
   };
 
-  const launch = assessLaunch(entry, product, { now });
+  const launch = assessLaunch(entry, product, { now, ...(validation ? { validation } : {}) });
   return { ok: true, product: { ...product, launch: summarize(launch) }, entry, launch };
 }
 

@@ -381,6 +381,16 @@ export const customerDesignOrders = pgTable(
 
 export { ENUM_VALUES } from "./orders.schema";
 export {
+  INVENTORY_ITEM_TYPES,
+  INVENTORY_MOVEMENT_TYPES,
+  inventoryItems,
+  inventoryMovements,
+  inventoryPurchases,
+  productConsumption,
+  suppliers,
+} from "./inventory.schema";
+import { inventoryItems, inventoryMovements, inventoryPurchases, productConsumption, suppliers } from "./inventory.schema";
+export {
   checkoutReservations,
   counters,
   manufacturingEvents,
@@ -423,4 +433,9 @@ export const appSchema = {
   orderItemsRelations,
   manufacturingJobsRelations,
   manufacturingEventsRelations,
+  suppliers,
+  inventoryItems,
+  inventoryMovements,
+  inventoryPurchases,
+  productConsumption,
 };

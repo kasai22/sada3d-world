@@ -61,11 +61,13 @@ export interface Category {
  * tree, followed by custom print, which is always available. A category added
  * with its first product appears here without anyone editing this file.
  */
-export function homeCategories(browseCategories: readonly string[]): readonly Category[] {
+export function homeCategories(
+  browseCategories: readonly { value: string; label: string; description?: string }[],
+): readonly Category[] {
   return [
-  ...browseCategories.map((value) => ({
-    name: categoryLabel(value) ?? value,
-    descriptor: categoryDescription(value) ?? "",
+  ...browseCategories.map(({ value, label, description }) => ({
+    name: label,
+    descriptor: description ?? "",
     href: categoryHref(value),
   })),
   {
@@ -77,7 +79,9 @@ export function homeCategories(browseCategories: readonly string[]): readonly Ca
 }
 
 /** The repository seed's index. Pages pass the served catalog's categories. */
-export const CATEGORIES: readonly Category[] = homeCategories(BROWSE_CATEGORIES);
+export const CATEGORIES: readonly Category[] = homeCategories(
+  BROWSE_CATEGORIES.map((value) => ({ value, label: categoryLabel(value) ?? value, description: categoryDescription(value) })),
+);
 
 /* ------------------------------------------------------------------ *
  * 03 / 06 — Manufacturing flow

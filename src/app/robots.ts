@@ -10,8 +10,9 @@ import { siteUrl } from "@/lib/site";
  * Every entry is a surface that is either private, per-session, or not content:
  *
  *   /api, /payload-api  the product API and the CMS API. Neither is a page.
- *   /admin              the Payload admin panel.
- *   /ops                the operations console — internal, and access-gated.
+ *   /admin              Reality 3D Admin — internal, and access-gated.
+ *   /cms                the Payload CMS admin panel.
+ *   /ops                the Stage 21 console address, now a redirect to /admin.
  *   /account            one customer's own data.
  *   /cart, /checkout    per-session state; there is nothing stable to index.
  *   /orders             order tracking, reachable with a reference.
@@ -19,7 +20,7 @@ import { siteUrl } from "@/lib/site";
  *   /foundations        the design-system gallery. It also sets noindex itself.
  *
  * These are not a security measure — robots.txt is a request, and the access
- * rules that actually protect /ops and /account live in the application. This
+ * rules that actually protect /admin and /account live in the application. This
  * keeps them out of an index, which is a separate and much weaker job.
  *
  * The catalog's filtered permutations are not disallowed. They are the same
@@ -36,6 +37,7 @@ export default function robots(): MetadataRoute.Robots {
         "/api/",
         "/payload-api/",
         "/admin",
+        "/cms",
         "/ops",
         "/account",
         "/cart",

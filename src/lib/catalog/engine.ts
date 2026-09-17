@@ -1,5 +1,6 @@
 import { isQuoteOnly } from "./format";
-import { PRICE_BRACKETS, categoryPath } from "./taxonomy";
+import type { CategoryIndex } from "./category-tree";
+import { PRICE_BRACKETS, SEED_CATEGORY_INDEX } from "./taxonomy";
 import type {
   CatalogFacets,
   CatalogQuery,
@@ -59,13 +60,14 @@ function matchesFacet(
   product: Product,
   facet: Facet,
   selected: readonly string[],
+  categories: CategoryIndex,
 ): boolean {
   if (selected.length === 0) return true;
 
   switch (facet) {
     case "category":
       // Selecting a parent matches everything filed beneath it.
-      return categoryPath(product.category).some((value) => selected.includes(value));
+      return categories.path(product.category).some((value) => selected.includes(value));
     case "material":
       return selected.includes(product.material);
     case "technology":
@@ -95,6 +97,7 @@ function matchesSearch(product: Product, term: string): boolean {
 function filter(
   products: readonly Product[],
   query: CatalogQuery,
+  categories: CategoryIndex,
   except?: Facet,
 ): Product[] {
   return products.filter((product) => {
@@ -104,13 +107,13 @@ function filter(
     // counts on a category page describe that category.
     if (
       query.scopeCategory &&
-      !categoryPath(product.category).includes(query.scopeCategory)
+      !categories.path(product.category).includes(query.scopeCategory)
     ) {
       return false;
     }
 
     return FACETS.every(
-      (facet) => facet === except || matchesFacet(product, facet, query[facet]),
+      (facet) => facet === except || matchesFacet(product, facet, query[facet], categories),
     );
   });
 }
@@ -178,20 +181,21 @@ function priceCounts(products: readonly Product[]): FacetCounts {
 function buildFacets(
   products: readonly Product[],
   query: CatalogQuery,
+  categories: CategoryIndex,
 ): CatalogFacets {
   return {
     // Each facet is counted against the results of every *other* facet, so the
     // numbers say what would happen if you added that filter.
-    category: countBy(filter(products, query, "category"), (p) =>
-      categoryPath(p.category),
+    category: countBy(filter(products, query, categories, "category"), (p) =>
+      categories.path(p.category),
     ),
-    material: countBy(filter(products, query, "material"), (p) => [p.material]),
-    technology: countBy(filter(products, query, "technology"), (p) => [p.technology]),
-    color: countBy(filter(products, query, "color"), (p) => [p.color]),
-    availability: countBy(filter(products, query, "availability"), (p) => [
+    material: countBy(filter(products, query, categories, "material"), (p) => [p.material]),
+    technology: countBy(filter(products, query, categories, "technology"), (p) => [p.technology]),
+    color: countBy(filter(products, query, categories, "color"), (p) => [p.color]),
+    availability: countBy(filter(products, query, categories, "availability"), (p) => [
       p.availability,
     ]),
-    price: priceCounts(filter(products, query, "price")),
+    price: priceCounts(filter(products, query, categories, "price")),
   };
 }
 
@@ -202,8 +206,9 @@ function buildFacets(
 export function runCatalogQuery(
   products: readonly Product[],
   query: CatalogQuery,
+  categories: CategoryIndex = SEED_CATEGORY_INDEX,
 ): CatalogResult {
-  const matched = sortProducts(filter(products, query), query.sort);
+  const matched = sortProducts(filter(products, query, categories), query.sort);
 
   const total = matched.length;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -216,7 +221,10 @@ export function runCatalogQuery(
     page,
     pageCount,
     pageSize: PAGE_SIZE,
-    facets: buildFacets(products, query),
+    facets: buildFacets(products, query, categories),
+    // Stage 20: the served tree travels with the result, so filters and chips
+    // label administrator-created categories without a rebuild.
+    categories: categories.tree,
   };
 }
 

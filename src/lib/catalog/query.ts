@@ -2,6 +2,7 @@ import { PAGE_SIZE } from "./engine";
 import { selectFeatured, type FeaturedSelection } from "./featured";
 import { formatPrice, isQuoteOnly, partId, productHref } from "./format";
 import { resolveCatalogSource } from "./source";
+import type { CategoryIndex } from "./category-tree";
 import { browseCategoriesFor } from "./taxonomy";
 import type { CatalogQuery, CatalogResult, Product } from "./types";
 
@@ -113,7 +114,29 @@ export async function getFeaturedProducts(): Promise<FeaturedSelection> {
  * disappears everywhere at once.
  */
 export async function getBrowseCategories(): Promise<string[]> {
-  return browseCategoriesFor(await resolveCatalogSource().all());
+  const source = resolveCatalogSource();
+  return browseCategoriesFor(await source.all(), await source.categories());
+}
+
+/** Stage 20: the served catalog's category index — CMS categories included. */
+export async function getCategoryIndex(): Promise<CategoryIndex> {
+  return resolveCatalogSource().categories();
+}
+
+export interface CategoryLink {
+  value: string;
+  label: string;
+  description?: string;
+}
+
+/** Browse categories with their labels and descriptions, for rails, footers and indexes. */
+export async function getBrowseCategoryLinks(): Promise<CategoryLink[]> {
+  const index = await getCategoryIndex();
+  return (await getBrowseCategories()).map((value) => ({
+    value,
+    label: index.label(value) ?? value,
+    ...(index.description(value) ? { description: index.description(value) } : {}),
+  }));
 }
 
 /**

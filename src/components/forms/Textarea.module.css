@@ -1,0 +1,11 @@
+.shell {
+  align-items: stretch;
+  padding: 8px 12px;
+}
+
+.control {
+  min-height: 4.5em;
+  resize: vertical;
+  font: var(--type-body-sm);
+  line-height: 1.55;
+}

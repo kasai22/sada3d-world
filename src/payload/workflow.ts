@@ -16,6 +16,9 @@
  */
 
 import { capabilityDefinition, capabilityStatus } from "../content/catalog/capabilities";
+import { RETIRED_PRODUCT_IDS, RETIRED_SLUGS } from "../content/catalog/retired";
+import { SALES_CLAIM } from "../lib/catalog/merchandising";
+import { skuProblem } from "../lib/catalog/sku";
 
 type ApprovalFields = { approvedBy?: string | null; approvedOn?: string | null; reference?: string | null };
 
@@ -28,6 +31,11 @@ export interface ProductWrite {
   openQuestions?: ({ question?: string | null; answer?: string | null } & ApprovalFields & Record<string, unknown>)[] | null;
   price?: number | null;
   priceStatus?: string | null;
+  sku?: string | null;
+  productId?: string | null;
+  slug?: string | null;
+  badge?: string | null;
+  model?: { url?: string | null; format?: string | null } | null;
 }
 
 export interface WorkflowContext {
@@ -40,6 +48,8 @@ export interface WorkflowContext {
    * Undefined for a product that has none (including one not yet created).
    */
   effectiveApprovedAmount?: number;
+  /** True when the write creates the product. */
+  creating?: boolean;
 }
 
 export interface WorkflowResult {
@@ -47,6 +57,8 @@ export interface WorkflowResult {
   /** The data with approver and date stamped where they were left empty. */
   data: ProductWrite;
 }
+
+const SLUG_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export function checkProductWrite(data: ProductWrite, context: WorkflowContext): WorkflowResult {
   const errors: string[] = [];
@@ -108,6 +120,37 @@ export function checkProductWrite(data: ProductWrite, context: WorkflowContext):
       if (!row.reference?.trim()) errors.push(`The answer to "${row.question ?? `question ${index + 1}`}" needs a reference.`);
       return { ...row, ...stamped };
     });
+  }
+
+  /*
+   * Stage 20: Payload skips field validators on draft saves, so rules that must
+   * hold for every stored record are checked here, where drafts are included.
+   */
+  /*
+   * Stage 22.6: identity. A retired product id or slug may still sit in a stale
+   * cart or a bookmark, so it can never name a new product — and a slug is half
+   * of a URL, so it is lower-case words joined by hyphens. content:verify already
+   * reported both; the CMS now refuses them when a product is created or
+   * published. Withdrawing an existing record (unpublishing, archiving) stays
+   * possible, so a bad record can always be taken down.
+   */
+  const identityMatters = context.creating === true || next._status === "published";
+  if (identityMatters && next.productId && RETIRED_PRODUCT_IDS.has(next.productId)) {
+    errors.push(`Product id "${next.productId}" belonged to the retired catalog and can never name another product.`);
+  }
+  if (identityMatters && next.slug && RETIRED_SLUGS.has(next.slug)) {
+    errors.push(`The URL segment "${next.slug}" belonged to the retired catalog and cannot be reused.`);
+  } else if (identityMatters && next.slug && !SLUG_SHAPE.test(next.slug)) {
+    errors.push(`The URL segment "${next.slug}" must be lower-case letters and digits joined by single hyphens, e.g. spur-gear-24t.`);
+  }
+
+  const malformedSku = skuProblem(next.sku);
+  if (malformedSku) errors.push(`SKU "${next.sku}": ${malformedSku}`);
+  if (next.badge && SALES_CLAIM.test(next.badge)) {
+    errors.push("A badge cannot claim a sales ranking: no sales data supports one. Use Featured or Recommended.");
+  }
+  if (next.model?.url && !/^\/models\/[a-z0-9]+(?:-[a-z0-9]+)*\.(stl|obj|glb|gltf)$/.test(next.model.url)) {
+    errors.push('A model path looks like "/models/part-name.stl": lowercase, hyphenated, under /models/.');
   }
 
   const price = next.price ?? 0;
@@ -187,6 +230,34 @@ export function blockingApprovalReasons(reasons: string): string[] {
     .split("\n")
     .map((line) => line.replace(/^• /, "").trim())
     .filter((line) => line && !NOT_PREREQUISITES.some((pattern) => pattern.test(line)));
+}
+
+/**
+ * The launch stage (Stage 20) — derived on the server, never selected.
+ *
+ *   NOT READY          a prerequisite is unmet (technical, manufacturing,
+ *                      commercial, price, media, open questions)
+ *   READY FOR REVIEW   every prerequisite passes; the product approval itself
+ *                      has not been recorded
+ *   APPROVED           approved, not yet published
+ *   LAUNCH READY       approved and published: sellable in launch mode
+ *
+ * Reuses the approval status and Payload publication; it is a reading of them
+ * plus the launch assessment, not a second state machine. A Featured, Published
+ * or Approved flag cannot move a product past a stage its prerequisites do not
+ * support: approval is refused until they pass, and this reads the assessment.
+ */
+export type LaunchStage = "NOT READY" | "READY FOR REVIEW" | "APPROVED" | "LAUNCH READY";
+
+export function launchStage(
+  reasons: readonly string[],
+  product: { approvalStatus?: string | null; _status?: string | null },
+): LaunchStage {
+  const blocking = blockingApprovalReasons(reasons.map((reason) => `• ${reason}`).join("\n"));
+  if (blocking.length > 0) return "NOT READY";
+  if (product.approvalStatus !== "approved") return "READY FOR REVIEW";
+  if (product._status !== "published") return "APPROVED";
+  return "LAUNCH READY";
 }
 
 /**

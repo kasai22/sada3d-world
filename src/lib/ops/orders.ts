@@ -11,6 +11,7 @@ import {
   isNull,
   lt,
   notExists,
+  notInArray,
   or,
   type SQL,
 } from "drizzle-orm";
@@ -64,6 +65,7 @@ import {
   type DemoFilter,
   type OrderListQuery,
   type OrderSort,
+  type OrderStage,
   type ProductionFilter,
 } from "./query";
 import {
@@ -131,7 +133,7 @@ export interface OpsOrderRow {
 
 type OrderFilters = Pick<
   OrderListQuery,
-  "q" | "status" | "payment" | "production" | "customer" | "from" | "to" | "demo"
+  "q" | "stage" | "status" | "payment" | "production" | "customer" | "from" | "to" | "demo"
 >;
 
 function productionCondition(db: AppDatabase, filter: ProductionFilter): SQL {
@@ -150,6 +152,49 @@ function productionCondition(db: AppDatabase, filter: ProductionFilter): SQL {
       return exists(jobsOfOrder(eq(manufacturingJobs.state, "failed")));
     case "none":
       return notExists(jobsOfOrder());
+  }
+}
+
+/**
+ * Where an order stands, as the command centre's quick filters read it.
+ *
+ * Built only from the recorded states: the order status the aggregate derives,
+ * the manufacturing jobs, and each item's fulfilment status. The same condition
+ * filters the list and counts the chips, so a chip's number is the list it opens.
+ */
+export function stageCondition(db: AppDatabase, stage: OrderStage): SQL {
+  const live = notInArray(orders.status, ["cancelled", "failed"]);
+  const itemIn = (statuses: OrderItemFulfillmentStatus[]) =>
+    exists(
+      db
+        .select({ id: orderItems.id })
+        .from(orderItems)
+        .where(and(eq(orderItems.orderReference, orders.reference), inArray(orderItems.fulfillmentStatus, statuses))),
+    );
+
+  switch (stage) {
+    case "new":
+      return inArray(orders.status, ["pending", "awaiting_payment"]);
+    case "paid":
+      return eq(orders.status, "confirmed");
+    case "production":
+      return and(
+        live,
+        exists(
+          db
+            .select({ id: manufacturingJobs.id })
+            .from(manufacturingJobs)
+            .where(and(eq(manufacturingJobs.orderReference, orders.reference), jobIsActive())),
+        ),
+      ) as SQL;
+    case "ready":
+      return and(live, itemIn(["ready"])) as SQL;
+    case "shipped":
+      return and(live, itemIn(["shipped"])) as SQL;
+    case "completed":
+      return eq(orders.status, "fulfilled");
+    case "cancelled":
+      return eq(orders.status, "cancelled");
   }
 }
 
@@ -173,6 +218,7 @@ function orderConditions(db: AppDatabase, query: OrderFilters): SQL | undefined 
     );
   }
 
+  if (query.stage) conditions.push(stageCondition(db, query.stage));
   if (query.status) conditions.push(eq(orders.status, query.status));
   if (query.payment) conditions.push(eq(orders.paymentStatus, query.payment));
 
@@ -284,6 +330,7 @@ async function summariseOrders(
 export async function listOpsOrders(
   _operator: OperatorSession,
   query: OrderListQuery,
+  pageSize: number = PAGE_SIZE,
 ): Promise<OpsPage<OpsOrderRow>> {
   const db = await getDatabase();
   const where = orderConditions(db, query);
@@ -305,8 +352,8 @@ export async function listOpsOrders(
       .from(orders)
       .where(where)
       .orderBy(...orderBy(query.sort))
-      .limit(PAGE_SIZE)
-      .offset((query.page - 1) * PAGE_SIZE),
+      .limit(pageSize)
+      .offset((query.page - 1) * pageSize),
     db.select({ value: count() }).from(orders).where(where),
   ]);
 
@@ -341,7 +388,7 @@ export async function listOpsOrders(
     };
   });
 
-  return toPage(result, Number(counted[0]?.value ?? 0), query.page, PAGE_SIZE);
+  return toPage(result, Number(counted[0]?.value ?? 0), query.page, pageSize);
 }
 
 /* ------------------------------------------------------------------ *
@@ -365,6 +412,8 @@ export interface OpsOrderItem {
   fulfillmentStatus: OrderItemFulfillmentStatus;
   jobId?: string;
   shipmentId?: string;
+  /** The catalog product this line recorded at checkout, when it recorded one. */
+  productId?: string;
   /** The manufacturing file snapshot. No storage key. */
   design?: {
     id: string;
@@ -485,6 +534,7 @@ function toItem(item: Order["items"][number]): OpsOrderItem {
     fulfillmentStatus: item.fulfillmentStatus,
     ...(item.manufacturingJobId ? { jobId: item.manufacturingJobId } : {}),
     ...(item.shipmentId ? { shipmentId: item.shipmentId } : {}),
+    ...(item.type === "catalog" && item.catalog?.productId ? { productId: item.catalog.productId } : {}),
     ...(item.sourceFile
       ? {
           design: {

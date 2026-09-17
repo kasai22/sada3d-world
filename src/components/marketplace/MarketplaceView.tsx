@@ -32,6 +32,7 @@ export function MarketplaceView({
 }: MarketplaceViewProps) {
   const groups = buildFilterGroups(result.facets, {
     includeCategory: showCategoryFacet,
+    categoryTree: result.categories,
   });
 
   return (
@@ -54,7 +55,7 @@ export function MarketplaceView({
           total={result.total}
         />
 
-        <ActiveFilters query={query} pathname={pathname} />
+        <ActiveFilters query={query} pathname={pathname} categories={result.categories} />
 
         <div className={styles.grid}>
           {result.items.length === 0 ? (

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { allCatalogProducts } from "@/lib/catalog/query";
+import { allCatalogProducts, getCategoryIndex } from "@/lib/catalog/query";
 import { browseCategoriesFor } from "@/lib/catalog/taxonomy";
 import { ROUTES, categoryHref, productHref } from "@/lib/routes";
 import { siteUrl } from "@/lib/site";
@@ -64,7 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const served = await allCatalogProducts();
-  const categories: MetadataRoute.Sitemap = browseCategoriesFor(served).map((category) => ({
+  const categories: MetadataRoute.Sitemap = browseCategoriesFor(served, await getCategoryIndex()).map((category) => ({
     url: absolute(categoryHref(category)),
     lastModified,
     changeFrequency: "weekly",

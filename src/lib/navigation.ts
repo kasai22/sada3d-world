@@ -54,7 +54,7 @@ export interface FooterColumn {
  * Footer columns for a served catalog. Stage 19.8: the shop column names the
  * served catalog's browse categories, so the layout passes them in.
  */
-export function footerColumns(browseCategories: readonly string[]): readonly FooterColumn[] {
+export function footerColumns(browseCategories: readonly { value: string; label: string }[]): readonly FooterColumn[] {
   return [
   {
     title: "Manufacture",
@@ -89,9 +89,9 @@ export function footerColumns(browseCategories: readonly string[]): readonly Foo
        * browse categories, so the footer cannot link a category page that has
        * nothing on it.
        */
-      ...browseCategories.slice(0, 3).map((value) => ({
+      ...browseCategories.slice(0, 3).map(({ value, label }) => ({
         href: categoryHref(value),
-        label: categoryLabel(value) ?? value,
+        label,
       })),
     ],
   },
@@ -110,4 +110,6 @@ export function footerColumns(browseCategories: readonly string[]): readonly Foo
 }
 
 /** The repository seed's footer — what a build with no catalog source serves. */
-export const FOOTER_COLUMNS: readonly FooterColumn[] = footerColumns(BROWSE_CATEGORIES);
+export const FOOTER_COLUMNS: readonly FooterColumn[] = footerColumns(
+  BROWSE_CATEGORIES.map((value) => ({ value, label: categoryLabel(value) ?? value })),
+);

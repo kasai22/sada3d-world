@@ -1,0 +1,577 @@
+/* Inventory: forms, the item panel and the ledger.
+   Fields match the design system's Input (Stage 22.6, ADMIN_UX_AUDIT F-01):
+   same height, surface, border, type and focus treatment. */
+
+/* ---------------------------------------------------------------- *
+ * Action forms
+ * ---------------------------------------------------------------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4) var(--spacing-5) var(--spacing-5);
+}
+
+.compact {
+  padding: 0;
+  gap: var(--spacing-2);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.label {
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.hint {
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+  line-height: 1.4;
+}
+
+.field input:not([type="checkbox"]):not([type="radio"]),
+.field select,
+.field textarea {
+  width: 100%;
+  height: var(--control-height-sm);
+  padding: 0 var(--spacing-3);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font: var(--type-body-sm);
+  color-scheme: dark;
+  transition: var(--transition-control);
+}
+
+.field textarea {
+  height: auto;
+  min-height: 72px;
+  padding: var(--spacing-2) var(--spacing-3);
+  resize: vertical;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: var(--border-strong);
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
+  border-color: var(--border-focus);
+  outline: none;
+  box-shadow: var(--glow-orange-xs);
+}
+
+.field select:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2) var(--spacing-5);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+  cursor: pointer;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--orange-500);
+}
+
+.submitRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.message {
+  margin: 0;
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+}
+
+.success {
+  color: var(--status-success);
+}
+
+.failure {
+  margin: 0;
+  color: var(--status-danger);
+  font: var(--type-body-sm);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+}
+
+.details {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.details > summary {
+  padding: var(--spacing-3) var(--spacing-5);
+  color: var(--text-primary);
+  font: var(--type-ui);
+  cursor: pointer;
+}
+
+.details > summary:hover {
+  background: var(--interactive-hover-surface);
+}
+
+/* ---------------------------------------------------------------- *
+ * The item panel
+ * ---------------------------------------------------------------- */
+
+.close,
+.close:hover {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 0;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.close:hover {
+  color: var(--text-primary);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  padding: var(--spacing-4) var(--spacing-5);
+}
+
+.figure + .figure {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.figureLabel {
+  color: var(--text-muted);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.figureValue {
+  color: var(--text-primary);
+  font: var(--fw-medium) var(--fs-body)/1.3 var(--font-technical);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.figureNote {
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+  line-height: 1.4;
+}
+
+.notes {
+  margin: 0;
+  padding: var(--spacing-3) var(--spacing-5);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.grid > * + * {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.subheading {
+  margin: 0;
+  padding: var(--spacing-4) var(--spacing-5) 0;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.ledger {
+  width: calc(100% - var(--spacing-5) * 2);
+  margin: var(--spacing-3) var(--spacing-5) var(--spacing-5);
+  border-collapse: collapse;
+  font: var(--type-technical);
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger th,
+.ledger td {
+  padding: var(--spacing-2) 0;
+  border-top: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.ledger th {
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+}
+
+.ledger td {
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.ledgerTotal th,
+.ledgerTotal td {
+  border-top: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font-weight: var(--fw-semibold);
+}
+
+/* ---------------------------------------------------------------- *
+ * Tables and lists
+ * ---------------------------------------------------------------- */
+
+.cellLink,
+.cellLink:hover {
+  position: relative;
+  z-index: 1;
+  border-bottom: 1px solid transparent;
+  color: var(--text-primary);
+}
+
+.cellLink:hover {
+  border-bottom-color: var(--border-strong);
+}
+
+/* Direction is also in the sign; colour only reinforces it. */
+.in {
+  color: var(--status-success);
+}
+
+.out {
+  color: var(--text-primary);
+}
+
+.statusFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4) var(--spacing-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.receipts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.receipts li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-3) var(--spacing-5);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font: var(--type-body-sm);
+}
+
+.receipts li:last-child {
+  border-bottom: 0;
+}
+
+.receiptMeta {
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+}
+
+/* ---------------------------------------------------------------- *
+ * Page pieces
+ * ---------------------------------------------------------------- */
+
+.overviewFigures {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.groupLead {
+  max-width: 76ch;
+  margin-bottom: 0;
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+}
+
+.maintenance {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+}
+
+.maintenance > summary {
+  padding: var(--spacing-3) var(--spacing-5);
+  color: var(--text-secondary);
+  font: var(--type-ui);
+  cursor: pointer;
+}
+
+.maintenance > p {
+  padding: 0 var(--spacing-5);
+}
+
+/* ---------------------------------------------------------------- *
+ * Add item
+ * ---------------------------------------------------------------- */
+
+.narrow {
+  max-width: 880px;
+}
+
+.itemForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  padding: var(--spacing-5);
+}
+
+.kinds {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.kinds > legend {
+  margin-bottom: var(--spacing-2);
+  padding: 0;
+}
+
+.kind {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.kind:hover {
+  border-color: var(--border-strong);
+}
+
+.kind[data-selected] {
+  background: var(--interactive-selected-surface);
+  border-color: var(--border-accent);
+}
+
+.kind:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.kind input {
+  margin: 3px 0 0;
+  accent-color: var(--orange-500);
+}
+
+.kindText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kindName {
+  color: var(--text-primary);
+  font: var(--type-ui);
+}
+
+.kindHint {
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+  line-height: 1.4;
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+}
+
+.notice > svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.footerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  margin-left: auto;
+}
+
+.cancel,
+.cancel:hover {
+  border-bottom: 0;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.cancel:hover {
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------- *
+ * Tablet
+ * ---------------------------------------------------------------- */
+
+@media (max-width: 1279px) {
+  .summary,
+  .overviewFigures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .figure:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .figure:nth-child(n + 3) {
+    border-top: 1px solid var(--border-subtle);
+  }
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .grid > * + * {
+    border-top: 1px solid var(--border-subtle);
+    border-left: 0;
+  }
+
+  .kinds {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .summary,
+  .overviewFigures {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .figure + .figure {
+    border-top: 1px solid var(--border-subtle);
+    border-left: 0;
+  }
+}
+
+/* Used by products (Stage 22.7). */
+.usedBy {
+  border-top: 1px solid var(--border-subtle);
+  padding-bottom: var(--spacing-3);
+}
+
+.usedByList {
+  margin: var(--spacing-2) var(--spacing-5) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.usedByList li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font: var(--type-body-sm);
+}
+
+.usedByQty {
+  color: var(--text-primary);
+  font: var(--type-technical);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.usedByNote {
+  color: var(--text-muted);
+}
+
+.usedByEmpty {
+  margin: var(--spacing-2) var(--spacing-5) 0;
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+}

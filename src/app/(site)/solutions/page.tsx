@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/structure";
 import { published } from "@/content/pages";
 import { SOLUTIONS, SOLUTIONS_NOTE, SOLUTIONS_PAGE } from "@/content/solutions";
 import { allCatalogProducts } from "@/lib/catalog/query";
+import { getCategoryIndex } from "@/lib/catalog/query";
 import { browseCategoriesFor, categoryLabel } from "@/lib/catalog/taxonomy";
 import { ROUTES, categoryHref } from "@/lib/routes";
 import { SITE } from "@/lib/site";
@@ -55,7 +56,8 @@ export default async function SolutionsPage() {
     );
   }
 
-  const browse = new Set(browseCategoriesFor(products));
+  const categoryIndex = await getCategoryIndex();
+  const browse = new Set(browseCategoriesFor(products, categoryIndex));
 
   /*
    * Catalog-backed sections need a routable category with parts in it.
@@ -93,7 +95,7 @@ export default async function SolutionsPage() {
         <div className={styles.solutions}>
           {solutions.map((solution, index) => {
             const label = solution.browseCategory
-              ? (categoryLabel(solution.browseCategory) ?? solution.browseCategory)
+              ? (categoryLabel(solution.browseCategory, categoryIndex) ?? solution.browseCategory)
               : "Custom print";
 
             const browseButton = solution.browseCategory && (

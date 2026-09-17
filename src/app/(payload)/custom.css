@@ -1,0 +1,172 @@
+/* Reality 3D theme for Payload's admin (Advanced CMS, /cms).
+   Payload's own styles live in `@layer payload-default`; these rules are
+   unlayered, so they win without !important. Only Payload's documented theme
+   variables and this app's own `r3d-` classes are set — no selectors against
+   Payload's internal markup. Values mirror src/styles/tokens/colors.css. */
+
+html[data-theme="dark"] {
+  /* Metal scale: void → white, mapped onto Payload's base ramp. */
+  --color-base-0: #f4f6f8;
+  --color-base-50: #e6e9ec;
+  --color-base-100: #d7dbe0;
+  --color-base-150: #c3c8cf;
+  --color-base-200: #a9b0b9;
+  --color-base-250: #959ca6;
+  --color-base-300: #858c96;
+  --color-base-350: #767d87;
+  --color-base-400: #6c737c;
+  --color-base-450: #5b6169;
+  --color-base-500: #4a4f57;
+  --color-base-550: #40454c;
+  --color-base-600: #343941;
+  --color-base-650: #2d3138;
+  --color-base-700: #262a30;
+  --color-base-750: #1c1f24;
+  --color-base-800: #191c21;
+  --color-base-850: #121417;
+  --color-base-900: #0a0b0d;
+  --color-base-950: #050506;
+  --color-base-1000: #000000;
+
+  --theme-bg: #050506;
+  --theme-input-bg: #0a0b0d;
+  --theme-border-color: #262a30;
+
+  --font-body: var(--font-archivo, "Archivo"), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono, "JetBrains Mono"), ui-monospace, monospace;
+  --style-radius-s: 2px;
+  --style-radius-m: 3px;
+  --style-radius-l: 4px;
+
+  accent-color: #ff6b00;
+}
+
+html[data-theme="dark"] ::selection {
+  background: rgba(255, 107, 0, 0.35);
+}
+
+html[data-theme="dark"] :focus-visible {
+  outline-color: #ff8226;
+}
+
+/* ---- Brand ---- */
+
+.r3d-glyph {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: #121417;
+  border: 1px solid #343941;
+  border-radius: 3px;
+  color: #ff6b00;
+  font: 600 12px/1 var(--font-body);
+  letter-spacing: 0.04em;
+}
+
+.r3d-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.r3d-logo .r3d-glyph {
+  font-size: 17px;
+}
+
+.r3d-logo__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.r3d-logo__name {
+  color: #f4f6f8;
+  font: 600 20px/1 var(--font-body);
+  letter-spacing: 0.18em;
+}
+
+.r3d-accent {
+  color: #ff6b00;
+}
+
+.r3d-logo__tagline {
+  color: #a9b0b9;
+  font: 400 13px/1.2 var(--font-body);
+}
+
+.r3d-logo__product,
+.r3d-nav-home__note,
+.r3d-notice__eyebrow {
+  color: #6c737c;
+  font: 400 11px/1.3 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---- Navigation: the way back ---- */
+
+.r3d-nav-home {
+  margin: 0 0 16px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid #1c1f24;
+}
+
+.r3d-nav-home__link {
+  display: inline-flex;
+  gap: 6px;
+  color: #f4f6f8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.r3d-nav-home__link:hover,
+.r3d-notice__link:hover {
+  color: #ff8226;
+}
+
+.r3d-nav-home__note {
+  margin: 4px 0 0;
+}
+
+/* ---- Dashboard notice ---- */
+
+.r3d-notice {
+  margin: 0 0 32px;
+  padding: 20px 22px;
+  background: #0a0b0d;
+  border: 1px solid #262a30;
+  border-left: 2px solid #ff6b00;
+  border-radius: 4px;
+}
+
+.r3d-notice__eyebrow {
+  margin: 0 0 6px;
+}
+
+.r3d-notice__title {
+  margin: 0 0 8px;
+  color: #f4f6f8;
+  font: 600 20px/1.2 var(--font-body);
+}
+
+.r3d-notice__body {
+  max-width: 72ch;
+  margin: 0 0 12px;
+  color: #a9b0b9;
+}
+
+.r3d-notice__link {
+  color: #ff6b00;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.r3d-login-note {
+  margin: 20px 0 0;
+  color: #6c737c;
+  font-size: 12px;
+}
+
+.r3d-login-note a {
+  color: #ff8226;
+}

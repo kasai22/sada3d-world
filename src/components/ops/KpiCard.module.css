@@ -42,6 +42,18 @@
   color: var(--text-primary);
 }
 
+.meta {
+  margin-top: calc(var(--spacing-1) * -1);
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+  letter-spacing: 0.02em;
+}
+
+.mutedValue {
+  color: var(--text-muted);
+  font: var(--fw-medium) var(--fs-h5) / 1.2 var(--font-technical);
+}
+
 .detail {
   font: var(--type-body-sm);
   line-height: 1.45;

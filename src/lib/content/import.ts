@@ -59,6 +59,8 @@ export interface ImportSummary {
   priceApprovalsCreated: number;
   /** Administrator-managed products: never written, never unpublished, never deleted by the import. */
   adminManaged: string[];
+  /** Stage 20: administrator-managed categories, likewise never written or withdrawn. */
+  adminManagedCategories: string[];
   problems: PlanProblem[];
 }
 
@@ -173,6 +175,7 @@ export async function importContent(
     stale: [],
     priceApprovalsCreated: 0,
     adminManaged: [],
+    adminManagedCategories: [],
     problems: validatePlan(),
   };
 
@@ -181,6 +184,22 @@ export async function importContent(
       subject: "reset",
       reason: "Reset mode needs a transactional reference check, and none was supplied.",
     });
+  }
+
+  /*
+   * Stage 20: a seed SKU already used by a different stored product (an
+   * administrator's) would fail the unique index halfway through the import.
+   * Refused here, before anything is written.
+   */
+  {
+    const stored = await findAll(payload, "products");
+    for (const row of planProducts()) {
+      if (!row.sku) continue;
+      const owner = stored.find((doc) => doc.sku === row.sku && String(doc.productId) !== row.productId);
+      if (owner) {
+        summary.problems.push({ subject: row.productId, reason: `SKU "${row.sku}" is already used by ${String(owner.productId)}.` });
+      }
+    }
   }
 
   // Nothing is written. A plan that does not hold together is not an import.
@@ -192,10 +211,17 @@ export async function importContent(
   const categoryIds = new Map<string, number>();
 
   for (const row of planCategories()) {
+    const existingCategory = storedCategories.find((doc) => doc.value === row.value);
+    // Stage 20: a category an operator has saved is the business's record — never overwritten.
+    if (existingCategory?.source === "admin") {
+      categoryIds.set(row.value, existingCategory.id);
+      summary.adminManagedCategories.push(row.value);
+      continue;
+    }
     const id = await upsert(
       payload,
       "categories",
-      storedCategories.find((doc) => doc.value === row.value),
+      existingCategory,
       {
         value: row.value,
         name: row.name,
@@ -204,6 +230,7 @@ export async function importContent(
         parent: row.parent ? (categoryIds.get(row.parent) ?? null) : null,
         isBrowse: row.isBrowse,
         browseOrder: row.browseOrder,
+        source: "seed",
       },
       row.status,
       summary.categories,
@@ -419,16 +446,24 @@ export async function importContent(
 
   const remainingProducts = await findAll(payload, "products");
   const plannedCategories = new Set(planCategories().map((row) => row.value));
-  const categories = (await findAll(payload, "categories")).map((doc) => ({
+  const storedCategoryDocs = await findAll(payload, "categories");
+  const categories = storedCategoryDocs.map((doc) => ({
     id: doc.id,
     value: String(doc.value),
     _status: doc._status,
     parent: typeof doc.parent === "number" ? doc.parent : null,
+    source: doc.source,
   }));
+  for (const doc of storedCategoryDocs) {
+    if (doc.source === "admin" && !summary.adminManagedCategories.includes(String(doc.value))) {
+      summary.adminManagedCategories.push(String(doc.value));
+    }
+  }
   const deletedCategories = new Set<number>();
 
   for (const doc of deepestFirst(
-    categories.filter((category) => !plannedCategories.has(String(category.value))),
+    // Only seed categories can be stale: an administrator's category is not the import's to withdraw.
+    categories.filter((category) => category.source !== "admin" && !plannedCategories.has(String(category.value))),
     categories,
   )) {
     const referencedBy = [

@@ -319,6 +319,15 @@ export function validatePlan(entries: readonly CatalogEntry[] = CATALOG_ENTRIES)
     }
   }
 
+  // Stage 20: a SKU identifies one product. Two seeds sharing one stop the import.
+  const skus = new Map<string, string>();
+  for (const row of planProducts(entries)) {
+    if (!row.sku) continue;
+    const other = skus.get(row.sku);
+    if (other) problems.push({ subject: row.productId, reason: `SKU "${row.sku}" is also used by ${other}.` });
+    else skus.set(row.sku, row.productId);
+  }
+
   const materials = new Set(planMaterials().map((row) => row.value));
   for (const row of planProducts(entries)) {
     for (const material of row.materials) {

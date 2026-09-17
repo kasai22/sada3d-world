@@ -37,9 +37,10 @@ import { readR2Config } from "../storage/config";
  *
  * ── Where it is not applied ──────────────────────────────────────────────
  *
- * `/admin` and `/payload-api` belong to Payload, whose admin bundle is not ours
+ * `/cms` and `/payload-api` belong to Payload, whose admin bundle is not ours
  * to constrain and has its own authentication. They still get every other
- * header below.
+ * header below. `/admin` is Reality 3D Admin (Stage 22.5) and carries the
+ * policy like every other page of this application.
  *
  * ── HSTS ─────────────────────────────────────────────────────────────────
  *
@@ -66,7 +67,7 @@ export interface HeaderEntry {
 export const R2_UPLOAD_WILDCARD = "https://*.r2.cloudflarestorage.com";
 
 /** Path prefixes owned by Payload, where the CSP is not applied. */
-export const CSP_EXCLUDED_PREFIXES = ["admin", "payload-api"] as const;
+export const CSP_EXCLUDED_PREFIXES = ["cms", "payload-api"] as const;
 
 type Env = Readonly<Record<string, string | undefined>>;
 

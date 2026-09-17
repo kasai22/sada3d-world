@@ -10,6 +10,7 @@ import { CATALOG_CATEGORIES, CATALOG_ENTRIES, type CategoryDefinition } from "@/
 import { CONFIGURATOR_COLOURS, MATERIAL_OPTIONS } from "@/lib/custom-print/options";
 import { isApproved } from "@/content/catalog/decisions";
 
+import { categoryIndexFor, nodesFromDefinitions, type CategoryIndex } from "./category-tree";
 import type { Product } from "./types";
 
 import { isVisible } from "./commerce";
@@ -43,7 +44,8 @@ export const CATEGORY_TREE: readonly TaxonomyNode[] = CATALOG_CATEGORIES.map(fun
 });
 
 /** The one-line description of a category, from the canonical tree. */
-export function categoryDescription(value: string): string | undefined {
+export function categoryDescription(value: string, index?: CategoryIndex): string | undefined {
+  if (index) return index.description(value);
   const walk = (nodes: readonly CategoryDefinition[]): string | undefined => {
     for (const node of nodes) {
       if (node.value === value) return node.description;
@@ -142,37 +144,31 @@ export const PRICE_BRACKETS: readonly PriceBracket[] = [
  * Lookups
  * ------------------------------------------------------------------ */
 
-/** Every category value mapped to itself plus all of its ancestors. */
-const CATEGORY_ANCESTORS = new Map<string, readonly string[]>();
-/** Every category value mapped to its label. */
-const CATEGORY_LABELS = new Map<string, string>();
-
-(function indexCategories(nodes: readonly TaxonomyNode[], trail: string[] = []) {
-  for (const node of nodes) {
-    const path = [...trail, node.value];
-    CATEGORY_ANCESTORS.set(node.value, path);
-    CATEGORY_LABELS.set(node.value, node.label);
-    if (node.children) indexCategories(node.children, path);
-  }
-})(CATEGORY_TREE);
+/**
+ * The repository seed's category index. Stage 20: the served catalog's index
+ * comes from its source (`getCategoryIndex` in query.ts) and may include
+ * categories an administrator created; these seed lookups are the default for
+ * the local catalog and for code that has no source to ask.
+ */
+export const SEED_CATEGORY_INDEX: CategoryIndex = categoryIndexFor(nodesFromDefinitions(CATALOG_CATEGORIES));
 
 /**
  * The value plus its ancestors, so selecting "Functional" matches a product
  * filed under "Gears".
  */
-export function categoryPath(value: string): readonly string[] {
-  return CATEGORY_ANCESTORS.get(value) ?? [value];
+export function categoryPath(value: string, index: CategoryIndex = SEED_CATEGORY_INDEX): readonly string[] {
+  return index.path(value);
 }
 
-export function categoryLabel(value: string): string | undefined {
-  return CATEGORY_LABELS.get(value);
+export function categoryLabel(value: string, index: CategoryIndex = SEED_CATEGORY_INDEX): string | undefined {
+  return index.label(value);
 }
 
 /** Human label for any facet value, used by the active-filter chips. */
-export function facetLabel(facet: string, value: string): string {
+export function facetLabel(facet: string, value: string, index: CategoryIndex = SEED_CATEGORY_INDEX): string {
   switch (facet) {
     case "category":
-      return categoryLabel(value) ?? value;
+      return categoryLabel(value, index) ?? value;
     case "material":
       return MATERIALS.find((m) => m.value === value)?.label ?? value;
     case "technology":
@@ -207,9 +203,12 @@ export function facetLabel(facet: string, value: string): string {
  * the catalog source (`getBrowseCategories` in query.ts) rather than reading
  * `BROWSE_CATEGORIES`, which describes the repository seed only.
  */
-export function browseCategoriesFor(products: readonly Pick<Product, "browseCategory">[]): string[] {
+export function browseCategoriesFor(
+  products: readonly Pick<Product, "browseCategory">[],
+  index: CategoryIndex = SEED_CATEGORY_INDEX,
+): string[] {
   const present = new Set(products.map((product) => product.browseCategory));
-  return CATALOG_CATEGORIES.map((node) => node.value).filter((value) => present.has(value));
+  return index.roots.filter((value) => present.has(value));
 }
 
 export const BROWSE_CATEGORIES: readonly string[] = CATALOG_CATEGORIES.map(

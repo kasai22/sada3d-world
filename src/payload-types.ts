@@ -130,7 +130,7 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Administrator-managed catalog (Stage 19.8). Create, edit, approve and feature products here. A product cannot launch until every gate on its Launch status tab passes. Unpublish to withdraw; do not delete.
+ * The Reality 3D catalog. Create a product here — it starts as a draft — then add its category, manufacturing, material, commercial definition, SKU, price and media; submit it (Proposed) and approve it when its Launch status reads READY FOR REVIEW; publish it. No deployment is needed. Unpublish to withdraw; do not delete.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
@@ -141,6 +141,18 @@ export interface Product {
    * Seed products are kept in sync with src/content/catalog by content:import. Saving a product in the admin makes it administrator-managed, and the import never overwrites it again.
    */
   source?: ('admin' | 'seed') | null;
+  /**
+   * NOT READY → READY FOR REVIEW (every prerequisite passes; approve it) → APPROVED (publish it) → LAUNCH READY. Derived on the server; no checkbox moves it.
+   */
+  launchStage?: string | null;
+  /**
+   * Each section passes (✓) or lists what blocks it (✕), with where to fix it. The same assessment as content:verify -- --require-launch.
+   */
+  readinessPanel?: string | null;
+  /**
+   * Compact form of the panel above, shown in the product list.
+   */
+  readiness?: string | null;
   /**
    * READY only when every line below passes. Computed by the same assessment as `npm run content:verify -- --require-launch`.
    */
@@ -154,7 +166,7 @@ export interface Product {
    */
   priceStatusLabel?: string | null;
   /**
-   * APPROVED requires a product photo or approved render of the actual product.
+   * MISSING (no image) → PROPOSED (image set, media approval not recorded) → APPROVED (photo or approved render of the actual product, approved).
    */
   mediaStatus?: string | null;
   /**
@@ -171,7 +183,7 @@ export interface Product {
   launchReasons?: string | null;
   name: string;
   /**
-   * Stable identifier, e.g. "p-101". Carts and saved items refer to this. Never change it on a live product, and never reuse a retired one.
+   * Stable identifier, assigned automatically for a new product (e.g. "p-104"). Carts and saved items refer to this. Never change it on a live product, and never reuse a retired one.
    */
   productId: string;
   /**
@@ -187,7 +199,7 @@ export interface Product {
    */
   description?: string | null;
   /**
-   * Assigned by the business, never generated. Counts as approved only with the commercial approval record.
+   * Assigned by the business, never generated. Uppercase letters and digits in hyphen-joined groups, 3–32 characters (e.g. "RG-GEAR-024"). Unique. Required for standard and configurable products, not for quote-only. Counts as approved only with the commercial approval record.
    */
   sku?: string | null;
   /**
@@ -271,7 +283,7 @@ export interface Product {
    */
   weightGrams?: number | null;
   /**
-   * Whole rupees. Zero means the part is quoted from the customer's own geometry and cannot be added to a cart.
+   * Whole rupees. Zero means the part is quoted from the customer's own geometry and cannot be added to a cart. Entering a figure does not approve it: it stays provisional until a price approval is recorded.
    */
   price: number;
   /**
@@ -280,20 +292,20 @@ export interface Product {
   priceStatus: 'provisional' | 'approved' | 'quote-only';
   currency: 'INR';
   /**
-   * Counts as approved only with the commercial approval record (Approval tab).
+   * Fixed (a catalog price), Configurable (priced from the customer's choices) or Quote only (no catalog price). Counts as approved only with the commercial approval record (Approval tab).
    */
   pricingModel?: ('FIXED' | 'CONFIGURABLE' | 'QUOTE_ONLY') | null;
   /**
-   * Counts as approved only with the commercial approval record (Approval tab).
+   * Standard: a defined part at a catalog price (needs SKU and approved price). Configurable: needs SKU, at least two material, colour or quality choices, and an approved pricing mechanism. Quote only: no SKU or fixed price required. Custom manufacturing is a service, not a catalog product. Counts as approved only with the commercial approval record.
    */
   productClass?: ('STANDARD_CATALOG_PRODUCT' | 'CONFIGURABLE_PRODUCT' | 'QUOTE_ONLY_PRODUCT') | null;
   availability: 'in-stock' | 'made-to-order';
   /**
-   * A published Media document marked photo or render. Media has no storage adapter yet, so until one is attached use Visual below.
+   * Not the canonical media association. Payload Media has no storage adapter, so uploads cannot be stored; use Visual below, which carries the media approval.
    */
   image?: (number | null) | Media;
   /**
-   * An approved photo or render committed to the repository under /catalog/<slug>/. Used when no Media image is set.
+   * The product's canonical image: a real photograph or an approved render of this product, committed under public/catalog/<slug>/. Media status: MISSING (no image) → PROPOSED (image set) → APPROVED (media approval recorded).
    */
   visual?: {
     /**
@@ -327,17 +339,23 @@ export interface Product {
    */
   gallery?: (number | Media)[] | null;
   /**
-   * A mesh the 3D viewer can render. Leave empty and the card falls back to the placeholder stage.
+   * A verified model file under public/models/ (STL, OBJ or GLB). It is checked on the server: it must parse as a closed mesh (or valid glTF) and fit the approved 256 × 256 × 256 mm build volume — otherwise the Launch status says why. Leave empty for a product without a model.
    */
   model?: {
     url?: string | null;
     format?: ('stl' | 'obj' | 'glb' | 'gltf') | null;
   };
   /**
-   * Optional. The product page falls back to the name and the description when these are empty, which is what it does today.
+   * Optional. Used for the product page title and meta description; the page falls back to the name and description. Product facts only — the same unsupported-claim rules as the copy apply, and launch is blocked by a claim.
    */
   seo?: {
+    /**
+     * Search results usually show about 60 characters; the brand is appended.
+     */
     title?: string | null;
+    /**
+     * Search results usually show about 160 characters. Guidance, not a rule.
+     */
     description?: string | null;
     ogImage?: (number | null) | Media;
   };
@@ -398,7 +416,11 @@ export interface Product {
    */
   featured?: boolean | null;
   /**
-   * Small corner label, e.g. "New". Ration these.
+   * Show a "Recommended" label. An editorial choice — not a sales ranking. Shown only where the product itself is shown (launch mode: launch-ready products only).
+   */
+  recommended?: boolean | null;
+  /**
+   * Small label, e.g. "New". Sales-ranking claims ("Best seller", "Most popular", "#1") are refused.
    */
   badge?: string | null;
   updatedAt: string;
@@ -406,13 +428,17 @@ export interface Product {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * The category tree the marketplace filters on.
+ * The category tree the marketplace filters on. A published category appears in filters, breadcrumbs, the shop rail and the sitemap as soon as it has a launch-visible product — no deployment. A category with products cannot be deleted, renamed (identifier) or unpublished.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
  */
 export interface Category {
   id: number;
+  /**
+   * Seed categories are kept in sync with src/content/catalog by content:import. Saving a category in the admin makes it administrator-managed; the import never overwrites or unpublishes it.
+   */
+  source?: ('admin' | 'seed') | null;
   /**
    * Shown in filters and breadcrumbs, e.g. "Gears".
    */
@@ -732,6 +758,9 @@ export interface PayloadMigration {
  */
 export interface ProductsSelect<T extends boolean = true> {
   source?: T;
+  launchStage?: T;
+  readinessPanel?: T;
+  readiness?: T;
   launchStatus?: T;
   technicalStatus?: T;
   priceStatusLabel?: T;
@@ -857,6 +886,7 @@ export interface ProductsSelect<T extends boolean = true> {
       };
   commercialDefinition?: T;
   featured?: T;
+  recommended?: T;
   badge?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -881,6 +911,7 @@ export interface PriceApprovalsSelect<T extends boolean = true> {
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
+  source?: T;
   name?: T;
   value?: T;
   description?: T;

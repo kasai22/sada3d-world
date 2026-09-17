@@ -86,6 +86,17 @@ Roles, not people: the ledger names the approver of each decision; no owner is o
 | Business approval | NOT APPROVED — status provisional |
 | Launch status | NOT READY |
 
+**Decisions required from Reality 3D** (none is inferred; each needs a reference, an approver and a date):
+
+1. SKU — enter it in the admin (Basic information)
+2. Product class — confirm STANDARD_CATALOG_PRODUCT or change it
+3. Target customer — confirm or replace the proposed customers
+4. Use case — confirm or replace the proposed use case
+5. Commercial description — sign off the published description, applications and limitations
+6. Price — approve a price (a price approval record) or make the product quote-only; ₹650 is a provisional engine figure, not a decision
+7. Media — a real photograph or an approved render of this product, with its media approval
+8. Product approval — once every item above is decided
+
 **Why it cannot launch:**
 
 - Product not approved (status: provisional)
@@ -137,6 +148,18 @@ Roles, not people: the ledger names the approver of each decision; no owner is o
 | Technical approval | PASS — validateProduct and validateCatalog |
 | Business approval | NOT APPROVED — status provisional |
 | Launch status | NOT READY |
+
+**Decisions required from Reality 3D** (none is inferred; each needs a reference, an approver and a date):
+
+1. SKU — enter it in the admin (Basic information)
+2. Product class — confirm STANDARD_CATALOG_PRODUCT or change it
+3. Target customer — confirm or replace the proposed customers
+4. Use case — confirm or replace the proposed use case
+5. Commercial description — sign off the published description, applications and limitations
+6. Price — approve a price (a price approval record) or make the product quote-only; ₹2,650 is a provisional engine figure, not a decision
+7. Media — a real photograph or an approved render of this product, with its media approval
+8. Can the Planetary Gear Set be sold in its current configuration without a ring gear? — YES / NO
+9. Product approval — once every item above is decided
 
 **Why it cannot launch:**
 
@@ -191,6 +214,17 @@ Roles, not people: the ledger names the approver of each decision; no owner is o
 | Business approval | NOT APPROVED — status provisional |
 | Launch status | NOT READY |
 
+**Decisions required from Reality 3D** (none is inferred; each needs a reference, an approver and a date):
+
+1. SKU — enter it in the admin (Basic information)
+2. Product class — confirm STANDARD_CATALOG_PRODUCT or change it
+3. Target customer — confirm or replace the proposed customers
+4. Use case — confirm or replace the proposed use case
+5. Commercial description — sign off the published description, applications and limitations
+6. Price — approve a price (a price approval record) or make the product quote-only; ₹730 is a provisional engine figure, not a decision
+7. Media — a real photograph or an approved render of this product, with its media approval
+8. Product approval — once every item above is decided
+
 **Why it cannot launch:**
 
 - Product not approved (status: provisional)
@@ -229,6 +263,38 @@ Not counted towards the catalog size: a service is made to the customer's geomet
 - **CUSTOM_MANUFACTURING_SERVICE** — the customer's own geometry; a service, never a catalog product.
 - A product that is not launch-ready is not a class: it is the computed launch status of any class.
 
+What each class needs before it can be approved (Stage 20):
+
+| Requirement | Standard | Configurable | Quote-only |
+| --- | --- | --- | --- |
+| Name, slug, category, description | Yes | Yes | Yes |
+| Target customer and use case | Yes | Yes | Yes |
+| Technology and material (available capability) | Yes | Yes | Yes |
+| SKU (unique, well-formed) | Yes | Yes | No |
+| Pricing | Approved price (price approval record) | Approved pricing mechanism — not yet possible: the quote engine rules are provisional | No fixed price |
+| Configuration (≥ 2 material, colour or quality choices) | No | Yes | No |
+| Approved media (photograph or approved render) | Yes | Yes | Yes |
+| Commercial approval record | Yes | Yes | Yes |
+| Product approval record | Yes | Yes | Yes |
+
+### Launch stage
+
+Derived on the server from the launch assessment, the approval status and publication — never selected:
+
+- **NOT READY** — a prerequisite is unmet. The admin's Launch status tab lists each one under the section that fixes it.
+- **READY FOR REVIEW** — every prerequisite passes; the product approval can now be recorded.
+- **APPROVED** — approved, not yet published.
+- **LAUNCH READY** — approved and published: shown and sellable in launch mode.
+
+Featured, Published or an approval status cannot move a product past its stage: approval is refused while a prerequisite fails, and launch mode shows approved products only.
+
+### SKU
+
+- Assigned by Reality 3D and entered in the admin. Never generated.
+- 3–32 characters: uppercase letters and digits in groups joined by single hyphens (example shape: `RG-GEAR-024`). The scheme itself is the business's choice.
+- Unique across the catalog (database unique index; the import refuses a seed SKU already used by another product).
+- Required for standard and configurable products; not for quote-only products.
+
 ### Pricing
 
 - **Fixed** prices become commercial only through a price approval record (amount in whole rupees, INR, effective date, reference, approver) whose amount equals the product price. The CMS refuses `priceStatus: approved` otherwise, and the storefront re-checks it on every read.
@@ -237,6 +303,9 @@ Not counted towards the catalog size: a service is made to the customer's geomet
 
 ### Images and renders
 
+- Media status: **MISSING** (no image) → **PROPOSED** (an image is set, its media approval is not recorded) → **APPROVED** (media approval recorded: reference, approver, date). A file existing is not an approval.
+- The canonical association is the product's Visual (`public/catalog/<slug>/…`), which carries the media approval. Payload Media has no storage adapter, so uploads are not used; the image file must exist on disk.
+- Types: **Photograph** (a real photo of the product) or **Approved render** (generated from the product's own verified model).
 - Required visual per product: **REAL_PHOTO** or **APPROVED_RENDER**. Until one exists the product is **NO_IMAGE_YET**.
 - An image must be classified as `photo` or `render`; an unclassified image is refused, so placeholder media cannot satisfy the requirement.
 - A render must be produced from the product's own verified model, show the actual geometry and be labelled as a render. No render is presented as photography.
@@ -265,3 +334,13 @@ Now: available — FDM; PLA, PETG, TPU; Standard finish. Coming soon — SLA; AB
 ### Homepage featuring
 
 A product is featured only when all hold: approval status APPROVED, published, price APPROVED, approved media, manufacturing capability APPROVED, commercial decisions APPROVED, technically valid, and the featured flag set. `featured` cannot bypass launch readiness.
+
+### Merchandising
+
+- **Featured** and **Recommended** are editorial choices an administrator makes in the admin. Recommended labels a product wherever it is already shown; it does not make an incomplete product visible.
+- **No sales-ranking claim** — "Best seller", "Most popular", "#1" — may appear in a label, badge, SEO field or copy. No order data supports one; validation refuses the wording. A ranking, if ever shown, is derived from real orders.
+
+### 3D models
+
+- A product's model is a file under `public/models/` (STL, OBJ or GLB). It is verified on the server with the geometry analyser: a closed, finite mesh (or a structurally valid glTF 2.0 binary) that fits the approved 256 × 256 × 256 mm build volume. A model that fails is reported, and the product is technically blocked.
+- Customer-uploaded designs are never catalog models: they stay in private storage with their own ownership rules.

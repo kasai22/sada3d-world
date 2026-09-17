@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { Button } from "@/components/core";
 import { Footer, Header } from "@/components/navigation";
-import { getBrowseCategories } from "@/lib/catalog/query";
+import { getBrowseCategoryLinks } from "@/lib/catalog/query";
 import { SectionHeading } from "@/components/structure";
 import styles from "./not-found.module.css";
 
@@ -52,7 +52,7 @@ export default async function NotFound() {
         </div>
       </main>
 
-      <Footer browseCategories={await getBrowseCategories()} />
+      <Footer browseCategories={await getBrowseCategoryLinks()} />
     </div>
   );
 }

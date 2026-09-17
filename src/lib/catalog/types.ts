@@ -84,7 +84,7 @@ export interface ProductImage {
 export interface LaunchSummary {
   ready: boolean;
   price: "APPROVED" | "PROVISIONAL" | "QUOTE_ONLY" | "MISSING";
-  media: "APPROVED" | "MISSING";
+  media: "APPROVED" | "PROPOSED" | "MISSING";
   manufacturing: "APPROVED" | "NOT_APPROVED";
   commercial: "COMPLETE" | "INCOMPLETE";
 }
@@ -115,6 +115,11 @@ export interface Product {
   id: string;
   slug: string;
   name: string;
+  /**
+   * Stage 22: the stock-keeping unit, when the business has assigned one. Never
+   * generated. Snapshotted onto order lines; not shown on the storefront.
+   */
+  sku?: string;
   /** One short technical line. Used by search, not shown on the card. */
   summary: string;
   /** Leaf category value from the taxonomy. Ancestors are derived, not stored. */
@@ -148,6 +153,13 @@ export interface Product {
   model?: ProductModel;
   /** Small corner label on the card, e.g. "New". */
   badge?: string;
+  /** Stage 20: an editorial "Recommended" label — never a sales ranking. */
+  recommended?: boolean;
+  /** Stage 20: page title and meta description, when the administrator set them. */
+  seo?: { title?: string; description?: string };
+  /** Stage 20: display labels of the product's categories, from its source's tree. */
+  categoryLabel?: string;
+  browseCategoryLabel?: string;
 
   /* ---- detail-page fields ----
    *
@@ -228,4 +240,6 @@ export interface CatalogResult {
   pageCount: number;
   pageSize: number;
   facets: CatalogFacets;
+  /** Stage 20: the category tree of the source that produced this result. */
+  categories: readonly import("./category-tree").CategoryNode[];
 }

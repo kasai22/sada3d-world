@@ -319,12 +319,43 @@ function productSection(entry: CatalogEntry): string[] {
     "",
     table(["Field", "State and value"], rows),
     "",
+    "**Decisions required from Reality 3D** (none is inferred; each needs a reference, an approver and a date):",
+    "",
+    ...decisionsRequired(entry, launch),
+    "",
     "**Why it cannot launch:**",
     "",
     ...(launch.launch.reasons.length ? launch.launch.reasons.map((reason) => `- ${reason}`) : ["- Nothing: launch-ready."]),
     ...(entry.contentGaps.length ? ["", "**Recorded gaps:**", "", ...entry.contentGaps.map((gap) => `- ${gap}`)] : []),
     "",
   ];
+}
+
+/**
+ * Stage 20 (§19): the business decisions a seed product still needs, as a
+ * checklist the owner can answer in the admin. Derived from the product's facts —
+ * an APPROVED fact is not listed.
+ */
+function decisionsRequired(entry: CatalogEntry, launch: ReturnType<typeof assessLaunch>): string[] {
+  const c = entry.commercial;
+  const pending = (fact: Fact<unknown>) => fact.state !== "APPROVED";
+  const productClass = "value" in c.productClass ? c.productClass.value : undefined;
+  const lines = [
+    ...(pending(c.sku) && productClass !== "QUOTE_ONLY_PRODUCT" ? ["SKU — enter it in the admin (Basic information)"] : []),
+    ...(pending(c.productClass) ? [`Product class — ${"value" in c.productClass ? `confirm ${c.productClass.value} or change it` : "choose one"}`] : []),
+    ...(pending(c.customer) ? ["Target customer — confirm or replace the proposed customers"] : []),
+    ...(pending(c.useCase) ? ["Use case — confirm or replace the proposed use case"] : []),
+    ...(pending(c.copy) ? ["Commercial description — sign off the published description, applications and limitations"] : []),
+    ...(launch.price === "PROVISIONAL" || launch.price === "MISSING"
+      ? [`Price — approve a price (a price approval record) or make the product quote-only; ${formatINR(entry.product.price)} is a provisional engine figure, not a decision`]
+      : []),
+    ...(launch.media !== "APPROVED" ? ["Media — a real photograph or an approved render of this product, with its media approval"] : []),
+    ...(c.openQuestions ?? [])
+      .filter((question) => !(question.answer.state === "APPROVED" && question.answer.value === "YES"))
+      .map((question) => `${question.question} — YES / NO`),
+    ...(entry.product.approvalStatus !== "approved" ? ["Product approval — once every item above is decided"] : []),
+  ];
+  return lines.map((line, index) => `${index + 1}. ${line}`);
 }
 
 export function renderLaunchCatalog(): string {
@@ -423,6 +454,41 @@ export function renderLaunchCatalog(): string {
     "- **CUSTOM_MANUFACTURING_SERVICE** — the customer's own geometry; a service, never a catalog product.",
     "- A product that is not launch-ready is not a class: it is the computed launch status of any class.",
     "",
+    "What each class needs before it can be approved (Stage 20):",
+    "",
+    table(
+      ["Requirement", "Standard", "Configurable", "Quote-only"],
+      [
+        ["Name, slug, category, description", "Yes", "Yes", "Yes"],
+        ["Target customer and use case", "Yes", "Yes", "Yes"],
+        ["Technology and material (available capability)", "Yes", "Yes", "Yes"],
+        ["SKU (unique, well-formed)", "Yes", "Yes", "No"],
+        ["Pricing", "Approved price (price approval record)", "Approved pricing mechanism — not yet possible: the quote engine rules are provisional", "No fixed price"],
+        ["Configuration (≥ 2 material, colour or quality choices)", "No", "Yes", "No"],
+        ["Approved media (photograph or approved render)", "Yes", "Yes", "Yes"],
+        ["Commercial approval record", "Yes", "Yes", "Yes"],
+        ["Product approval record", "Yes", "Yes", "Yes"],
+      ],
+    ),
+    "",
+    "### Launch stage",
+    "",
+    "Derived on the server from the launch assessment, the approval status and publication — never selected:",
+    "",
+    "- **NOT READY** — a prerequisite is unmet. The admin's Launch status tab lists each one under the section that fixes it.",
+    "- **READY FOR REVIEW** — every prerequisite passes; the product approval can now be recorded.",
+    "- **APPROVED** — approved, not yet published.",
+    "- **LAUNCH READY** — approved and published: shown and sellable in launch mode.",
+    "",
+    "Featured, Published or an approval status cannot move a product past its stage: approval is refused while a prerequisite fails, and launch mode shows approved products only.",
+    "",
+    "### SKU",
+    "",
+    "- Assigned by Reality 3D and entered in the admin. Never generated.",
+    "- 3–32 characters: uppercase letters and digits in groups joined by single hyphens (example shape: `RG-GEAR-024`). The scheme itself is the business's choice.",
+    "- Unique across the catalog (database unique index; the import refuses a seed SKU already used by another product).",
+    "- Required for standard and configurable products; not for quote-only products.",
+    "",
     "### Pricing",
     "",
     "- **Fixed** prices become commercial only through a price approval record (amount in whole rupees, INR, effective date, reference, approver) whose amount equals the product price. The CMS refuses `priceStatus: approved` otherwise, and the storefront re-checks it on every read.",
@@ -431,6 +497,9 @@ export function renderLaunchCatalog(): string {
     "",
     "### Images and renders",
     "",
+    "- Media status: **MISSING** (no image) → **PROPOSED** (an image is set, its media approval is not recorded) → **APPROVED** (media approval recorded: reference, approver, date). A file existing is not an approval.",
+    "- The canonical association is the product's Visual (`public/catalog/<slug>/…`), which carries the media approval. Payload Media has no storage adapter, so uploads are not used; the image file must exist on disk.",
+    "- Types: **Photograph** (a real photo of the product) or **Approved render** (generated from the product's own verified model).",
     "- Required visual per product: **REAL_PHOTO** or **APPROVED_RENDER**. Until one exists the product is **NO_IMAGE_YET**.",
     "- An image must be classified as `photo` or `render`; an unclassified image is refused, so placeholder media cannot satisfy the requirement.",
     "- A render must be produced from the product's own verified model, show the actual geometry and be labelled as a render. No render is presented as photography.",
@@ -455,6 +524,16 @@ export function renderLaunchCatalog(): string {
     "### Homepage featuring",
     "",
     "A product is featured only when all hold: approval status APPROVED, published, price APPROVED, approved media, manufacturing capability APPROVED, commercial decisions APPROVED, technically valid, and the featured flag set. `featured` cannot bypass launch readiness.",
+    "",
+    "### Merchandising",
+    "",
+    "- **Featured** and **Recommended** are editorial choices an administrator makes in the admin. Recommended labels a product wherever it is already shown; it does not make an incomplete product visible.",
+    "- **No sales-ranking claim** — \"Best seller\", \"Most popular\", \"#1\" — may appear in a label, badge, SEO field or copy. No order data supports one; validation refuses the wording. A ranking, if ever shown, is derived from real orders.",
+    "",
+    "### 3D models",
+    "",
+    "- A product's model is a file under `public/models/` (STL, OBJ or GLB). It is verified on the server with the geometry analyser: a closed, finite mesh (or a structurally valid glTF 2.0 binary) that fits the approved 256 × 256 × 256 mm build volume. A model that fails is reported, and the product is technically blocked.",
+    "- Customer-uploaded designs are never catalog models: they stay in private storage with their own ownership rules.",
     "",
   ];
 

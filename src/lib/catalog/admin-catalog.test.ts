@@ -275,3 +275,28 @@ test("the approved Bambu Lab A1 build volume refuses an oversize part and nothin
   assert.equal(checkManufacturability(analysis(250, 250, 250), constraints).manufacturable, true);
   assert.equal(checkManufacturability(analysis(250, 250, 250), constraints).constraints, "configured");
 });
+
+test("a retired product id or slug, or a malformed slug, cannot be created or published — but a bad record can still be withdrawn", () => {
+  const retiredId = checkProductWrite({ productId: "SKU001", slug: "fresh-part", price: 0, priceStatus: "quote-only" }, { today: TODAY, creating: true });
+  assert.match(retiredId.errors.join(" "), /retired catalog/);
+  const retiredSlug = checkProductWrite({ productId: "p-150", slug: "payload_test", price: 0, priceStatus: "quote-only" }, { today: TODAY, creating: true });
+  assert.match(retiredSlug.errors.join(" "), /retired catalog/);
+  const badSlug = checkProductWrite({ productId: "p-150", slug: "Spur_Gear", price: 0, priceStatus: "quote-only" }, { today: TODAY, creating: true });
+  assert.match(badSlug.errors.join(" "), /lower-case letters and digits/);
+  const publishing = checkProductWrite(
+    { productId: "SKU001", slug: "payload_test", _status: "published", approvalStatus: "proposed", price: 0, priceStatus: "quote-only" },
+    { today: TODAY },
+  );
+  assert.equal(publishing.errors.filter((error) => /retired catalog/.test(error)).length, 2, "publishing a retired record is refused");
+
+  const withdrawing = checkProductWrite(
+    { productId: "SKU001", slug: "payload_test", _status: "draft", approvalStatus: "archived", price: 0, priceStatus: "quote-only" },
+    { today: TODAY },
+  );
+  assert.deepEqual(withdrawing.errors, [], "unpublishing and archiving a bad record stays possible");
+
+  assert.deepEqual(
+    checkProductWrite({ productId: "p-150", slug: "spur-gear-24t", price: 0, priceStatus: "quote-only" }, { today: TODAY, creating: true }).errors,
+    [],
+  );
+});

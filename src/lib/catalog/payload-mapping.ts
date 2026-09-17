@@ -101,11 +101,13 @@ function image(media: number | PayloadMedia | null | undefined): ProductImage | 
  * the second path exists.
  */
 function primaryImage(doc: PayloadProduct): ProductImage | undefined {
-  const uploaded = image(doc.image);
-  if (uploaded) return uploaded;
-
+  /*
+   * Stage 20: the repository visual is the canonical media association — it is
+   * the one that carries the media approval. A Media upload (no storage adapter
+   * yet) is used only when no visual is set, and never counts as approved.
+   */
   const visual = doc.visual;
-  if (!visual?.src || !visual.alt) return undefined;
+  if (!visual?.src || !visual.alt) return image(doc.image);
 
   // Stage 19.8: the media approval travels with the image; a partial record approves nothing.
   const approval = visual.approval;
@@ -224,9 +226,13 @@ export function toDomainProduct(doc: PayloadProduct): MappingResult {
     id: productId,
     slug: doc.slug,
     name: doc.name,
+    ...(typeof doc.sku === "string" && doc.sku.trim() ? { sku: doc.sku.trim() } : {}),
     summary: doc.summary,
     category,
     browseCategory,
+    // Stage 20: labels come from the CMS records, so an administrator's category is named.
+    ...(related<PayloadCategory>(doc.category)?.name ? { categoryLabel: related<PayloadCategory>(doc.category)!.name } : {}),
+    ...(related<PayloadCategory>(doc.browseCategory)?.name ? { browseCategoryLabel: related<PayloadCategory>(doc.browseCategory)!.name } : {}),
     material,
     technology,
     color: doc.color,
@@ -239,6 +245,10 @@ export function toDomainProduct(doc: PayloadProduct): MappingResult {
       ? { approvalStatus: doc.approvalStatus as ApprovalStatus }
       : {}),
     ...(doc.featured ? { featured: true } : {}),
+    ...(doc.recommended ? { recommended: true } : {}),
+    ...(doc.seo?.title || doc.seo?.description
+      ? { seo: { ...(doc.seo.title ? { title: doc.seo.title } : {}), ...(doc.seo.description ? { description: doc.seo.description } : {}) } }
+      : {}),
     availability,
     ...(primaryImage(doc) ? { image: primaryImage(doc) } : {}),
     ...(gallery(doc.gallery) ? { gallery: gallery(doc.gallery) } : {}),

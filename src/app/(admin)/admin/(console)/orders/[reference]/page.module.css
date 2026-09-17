@@ -1,0 +1,164 @@
+.sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin: calc(var(--spacing-3) * -1) 0 var(--spacing-5);
+}
+
+.sectionLink,
+.sectionLink:hover {
+  padding: 5px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-chip);
+  color: var(--text-secondary);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.sectionLink:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-4) var(--spacing-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-left: 2px solid var(--orange-500);
+  border-radius: var(--radius-card);
+}
+
+.nextLabel {
+  margin: 0;
+  color: var(--text-muted);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.nextTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font: var(--fw-medium) 16px/1.3 var(--font-interface);
+}
+
+.nextDetail {
+  max-width: 80ch;
+  margin: 0;
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: var(--spacing-5);
+  margin-top: var(--spacing-5);
+}
+
+.main,
+.side {
+  min-width: 0;
+}
+
+.block {
+  margin-top: var(--spacing-5);
+}
+
+.job {
+  margin-top: var(--spacing-4);
+}
+
+.sectionHeading {
+  margin: 0 0 var(--spacing-3);
+  color: var(--text-primary);
+  font: var(--fw-semibold) 15px/1.2 var(--font-display);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.jobHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.hold {
+  margin: 0 0 var(--spacing-3);
+  padding: 10px 12px;
+  background: var(--status-warning-surface);
+  border: 1px solid rgba(255, 195, 77, 0.4);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font: var(--type-body-sm);
+}
+
+.note {
+  margin: var(--spacing-3) 0 0;
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+  line-height: 1.45;
+}
+
+.inlineLink,
+.inlineLink:hover {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  margin-top: 4px;
+  border-bottom: 1px solid transparent;
+  color: var(--text-secondary);
+  font: var(--type-technical-sm);
+}
+
+.inlineLink:hover {
+  border-bottom-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.history {
+  margin-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--spacing-3);
+}
+
+.summary {
+  width: fit-content;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.summary:hover {
+  color: var(--text-primary);
+}
+
+.historyBody {
+  margin-top: var(--spacing-4);
+}
+
+@media (max-width: 1279px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side {
+    order: -1;
+  }
+}
+
+/* Expected consumption (Stage 22.7): a plan, shown apart from actual usage. */
+.expectedLead {
+  margin: 0;
+  padding: var(--spacing-3) var(--spacing-4);
+  color: var(--text-secondary);
+  font: var(--type-body-sm);
+}

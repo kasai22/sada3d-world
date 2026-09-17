@@ -175,6 +175,19 @@ export interface PricedCartLine {
   name: string;
   /** Link back to the product, where one exists. */
   href?: string;
+  /**
+   * Stage 22: the catalog's identity for the product behind a catalog line, as
+   * resolved now. This is what an order placed now snapshots. Server-side only;
+   * the cart UI does not render it.
+   */
+  product?: {
+    id: string;
+    sku?: string;
+    categoryId: string;
+    categoryName: string;
+    browseCategoryId: string;
+    browseCategoryName: string;
+  };
   /** Configuration as one technical string, e.g. "PLA / BLACK / 0.16 MM". */
   spec: string;
   /** Whole rupees, or null when the line cannot currently be priced. */

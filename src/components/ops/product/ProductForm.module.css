@@ -1,0 +1,235 @@
+/* The product form: same surfaces and tab language as the product workspace. */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--spacing-1);
+  margin-top: calc(var(--spacing-2) * -1);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  height: 40px;
+  padding: 0 var(--spacing-3);
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  font: var(--type-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.tab:hover,
+.tabCurrent {
+  color: var(--text-primary);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.tabCurrent::after {
+  content: "";
+  position: absolute;
+  right: var(--spacing-3);
+  bottom: -1px;
+  left: var(--spacing-3);
+  height: 2px;
+  background: var(--gradient-orange-line, var(--orange-500));
+}
+
+.tabError {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--status-danger-surface);
+  border: 1px solid rgba(255, 77, 77, 0.45);
+  border-radius: var(--radius-pill);
+  color: var(--status-danger);
+  font: var(--type-technical-sm);
+}
+
+.panels {
+  display: block;
+}
+
+.panel {
+  padding: var(--spacing-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--spacing-4) var(--spacing-5);
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--spacing-2);
+  padding: 0;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.fieldsetError .legend,
+.fieldError {
+  color: var(--status-danger);
+}
+
+.fieldError {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font: var(--type-body-sm);
+}
+
+.note,
+.warning,
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font: var(--type-body-sm);
+}
+
+.note {
+  color: var(--text-muted);
+}
+
+.note > svg,
+.warning > svg,
+.alert > svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.warning,
+.alert {
+  padding: 10px 12px;
+  border-radius: var(--radius-card);
+  color: var(--text-primary);
+}
+
+.warning {
+  background: var(--status-warning-surface);
+  border: 1px solid rgba(255, 195, 77, 0.35);
+}
+
+.warning > svg {
+  color: var(--status-warning);
+}
+
+.alert {
+  background: var(--status-danger-surface);
+  border: 1px solid rgba(255, 77, 77, 0.45);
+}
+
+.alert > svg {
+  color: var(--status-danger);
+}
+
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) 0;
+  background: var(--surface-page);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  max-width: 70ch;
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+}
+
+.ok {
+  flex: 0 0 auto;
+  color: var(--status-success);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.cancel,
+.cancel:hover {
+  border-bottom: 0;
+  color: var(--text-secondary);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.cancel:hover {
+  color: var(--text-primary);
+}
+
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel {
+    padding: var(--spacing-4);
+  }
+}
+
+.dirtyDot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--status-warning);
+}

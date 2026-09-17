@@ -80,6 +80,21 @@ column or order semantics change.
 Every table is indexed on `customer_id`, because every read is "this customer's
 rows".
 
+### Stage 22 — `0005_stage_22_inventory_sales_dimensions`
+
+The inventory domain and durable sales dimensions (see `lib/inventory`).
+Additive only: new tables, new nullable columns, new indexes. No existing row
+is rewritten and nothing is back-filled.
+
+| Change | Why |
+| --- | --- |
+| tables `suppliers`, `inventory_items`, `inventory_movements`, `inventory_purchases` (+ enums) | a source of record for stock, cost and suppliers |
+| `inventory_items.current_quantity` nullable, CHECK ≥ 0 | NULL is *not tracked*; zero is a count. Changed only with a movement, under `FOR UPDATE` |
+| trigger `inventory_movements_append_only` (UPDATE, DELETE, TRUNCATE) | the ledger cannot be edited; a correction is a new movement |
+| unique `inventory_items_definition_idx`, `_sku_idx`, `_product_idx` | idempotent definitions; one item per SKU and per catalog product |
+| `order_items.product_id`, `product_sku`, `category_id`, `category_name`, `browse_category_id`, `browse_category_name`, `dimensions_recorded_at` | what the catalog said a line was at ordering; insert-only in the repository; NULL on every earlier line |
+| indexes `order_items_product_idx`, `order_items_category_idx`; movement indexes on item/date, date, type, reference | aggregate analytics without scans |
+
 ### The default address
 
 **A customer has at most one default address**, and the database is what
@@ -129,3 +144,25 @@ against hand-written DDL would be testing DDL nobody deploys.
 > PGlite needs a large contiguous allocation for its WASM heap. If its tests
 > fail with `Fatal process out of memory: Zone` while the machine has plenty of
 > free RAM, something else — a stray dev server — is holding the address space.
+
+### Why `npm test` runs two files at a time, with `--liftoff-only`
+
+`node --test` runs one process per test file, by default as many at once as
+there are cores less one. Every file that opens PGlite compiles its large WASM
+module in its own process, and V8's optimising tier (TurboFan) makes that the
+biggest allocation the process ever does. On the 12-thread development machine,
+which has no page file (so its commit limit is its RAM) and whose other
+applications hold most of that, eleven such processes at once — and even four —
+exceeded the commit limit, and processes died with `Fatal process out of
+memory: Zone`, a different set of files on each run.
+
+`package.json` therefore runs the suite with:
+
+- `--liftoff-only`: WebAssembly uses V8's baseline compiler only. A PGlite
+  process peaks at about 0.77 GB instead of 1.25 GB (measured). Child test
+  processes inherit the flag. It lowers memory; it does not raise any limit.
+- `--test-concurrency=2`: at most two such processes at once.
+
+The full suite takes about 50 seconds. PGlite test files also share one
+database per file (emptied or isolated per test) rather than opening one per
+test.

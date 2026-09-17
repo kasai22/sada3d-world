@@ -18,7 +18,7 @@ export default {
    * listing only the barrel produced a migration that created tables
    * referencing enum types it had never created.
    */
-  schema: ["./src/lib/db/schema.ts", "./src/lib/db/orders.schema.ts"],
+  schema: ["./src/lib/db/schema.ts", "./src/lib/db/orders.schema.ts", "./src/lib/db/inventory.schema.ts"],
   out: "./src/lib/db/migrations",
   dialect: "postgresql",
   dbCredentials: { url: process.env.DATABASE_URL ?? "" },
@@ -39,5 +39,10 @@ export default {
     "shipments",
     "checkout_reservations",
     "counters",
+    "suppliers",
+    "inventory_items",
+    "inventory_movements",
+    "inventory_purchases",
+    "product_consumption",
   ],
 } satisfies Config;

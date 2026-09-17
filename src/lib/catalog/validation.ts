@@ -1,3 +1,6 @@
+import { SALES_CLAIM } from "./merchandising";
+import type { CategoryNode } from "./category-tree";
+import type { ModelAsset } from "@/content/catalog/types";
 import {
   CATALOG_CATEGORIES,
   validateFact,
@@ -123,6 +126,8 @@ const UNSUPPORTED_CLAIMS: readonly { pattern: RegExp; claim: string }[] = [
   { pattern: /\bguarantee[ds]?\b|\bwarrant(y|ied)\b/i, claim: "a guarantee" },
   { pattern: /\bweighs?\b|\bweight\b/i, claim: "a weight" },
   { pattern: /print time/i, claim: "a print time" },
+  // Stage 20: no sales data exists, so no ranking may be claimed.
+  { pattern: SALES_CLAIM, claim: "a sales ranking" },
 ];
 
 interface CategoryIndex {
@@ -134,13 +139,13 @@ interface CategoryIndex {
   roots: Set<string>;
 }
 
-function indexCategories(tree: readonly CategoryDefinition[]): CategoryIndex {
+function indexCategories(tree: readonly CategoryNode[]): CategoryIndex {
   const root = new Map<string, string>();
   const ancestors = new Map<string, readonly string[]>();
   const leaves = new Set<string>();
   const roots = new Set(tree.map((node) => node.value));
 
-  const walk = (nodes: readonly CategoryDefinition[], trail: readonly string[]) => {
+  const walk = (nodes: readonly CategoryNode[], trail: readonly string[]) => {
     for (const node of nodes) {
       const path = [...trail, node.value];
       root.set(node.value, trail[0] ?? node.value);
@@ -172,9 +177,18 @@ function materialRecord(value: string) {
 export interface ProductValidationOptions {
   /**
    * The category tree to validate against. Defaults to the canonical one;
-   * tests pass their own.
+   * tests pass their own. Stage 20: a CMS product is validated against the
+   * CMS's published tree.
    */
-  categories?: readonly CategoryDefinition[];
+  categories?: readonly CategoryNode[];
+  /**
+   * Stage 20: verified model assets. Defaults to the seed's recorded list; a CMS
+   * product is validated against the files verified on disk
+   * (`lib/catalog/catalog-assets.ts`).
+   */
+  models?: readonly ModelAsset[];
+  /** Stage 20: files under public/catalog. When given, an image file must exist. */
+  mediaFiles?: ReadonlySet<string>;
 }
 
 /**
@@ -366,6 +380,9 @@ export function validateProduct(
     if (src?.startsWith("/catalog/") && !src.startsWith(`/catalog/${product.slug}/`)) {
       fail("invalid-image", `Image "${src}" is not filed under /catalog/${product.slug}/, so it is not this product's media.`);
     }
+    if (options.mediaFiles && src?.startsWith("/catalog/") && !options.mediaFiles.has(src)) {
+      fail("invalid-image", `Image file "public${src}" does not exist.`);
+    }
     if (/placeholder|stock|sample|dummy|lorem/i.test(src ?? "")) {
       fail("invalid-image", `Image "${src}" is named as placeholder media.`);
     }
@@ -376,13 +393,18 @@ export function validateProduct(
   }
 
   if (product.model) {
-    const verified = VERIFIED_MODELS.find((asset) => asset.url === product.model?.url);
+    const verified = (options.models ?? VERIFIED_MODELS).find((asset) => asset.url === product.model?.url);
     const extension = product.model.url.split(".").pop()?.toLowerCase();
 
     if (extension !== product.model.format) {
       fail("invalid-model", `Model "${product.model.url}" does not have a .${product.model.format} extension.`);
     } else if (!verified) {
-      fail("invalid-model", `Model "${product.model.url}" is not a verified model asset.`);
+      fail(
+        "invalid-model",
+        options.models
+          ? `Model "${product.model.url}" is not a verified model file: it must be in public/models, parse as a closed mesh (or valid glTF) and fit the approved build volume.`
+          : `Model "${product.model.url}" is not a verified model asset.`,
+      );
     } else if (verified.format !== product.model.format) {
       fail("invalid-model", `Model "${product.model.url}" is recorded as ${verified.format}.`);
     }
@@ -395,6 +417,8 @@ export function validateProduct(
     product.summary,
     product.description ?? "",
     product.badge ?? "",
+    product.seo?.title ?? "",
+    product.seo?.description ?? "",
     ...(product.applications ?? []),
     ...(product.materialNotes ?? []),
     ...(product.specifications ?? []).flatMap((row) => [row.label, row.value]),

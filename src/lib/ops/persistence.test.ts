@@ -560,7 +560,7 @@ test("search finds orders by customer and designs by filename", async () => {
   assert.ok(results.some((result) => result.group === "Customers"));
 
   const designs = await searchOps(OPERATOR, "cube.stl");
-  assert.ok(designs.some((result) => result.group === "Designs" && result.href === "/ops/designs/dsn_cube"));
+  assert.ok(designs.some((result) => result.group === "Designs" && result.href === "/admin/designs/dsn_cube"));
 
   assert.deepEqual(await searchOps(OPERATOR, "a"), [], "a one-character search was run");
 });

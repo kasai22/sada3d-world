@@ -138,11 +138,41 @@ export type OrderSort = (typeof ORDER_SORTS)[number];
 export const PRODUCTION_FILTERS = ["active", "held", "failed", "none"] as const;
 export type ProductionFilter = (typeof PRODUCTION_FILTERS)[number];
 
+/**
+ * The command centre's quick filters: where an order stands, in the owner's
+ * words. Each is a reading of the existing state machines (see
+ * `stageCondition` in `orders.ts`), not a new state, and an order can be in
+ * two at once — a part in production beside a part ready to dispatch.
+ */
+export const ORDER_STAGES = ["new", "paid", "production", "ready", "shipped", "completed", "cancelled"] as const;
+export type OrderStage = (typeof ORDER_STAGES)[number];
+
+export const ORDER_STAGE_LABEL: Record<OrderStage, string> = {
+  new: "New",
+  paid: "Paid",
+  production: "Production",
+  ready: "Ready",
+  shipped: "Shipped",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
+export const ORDER_STAGE_HINT: Record<OrderStage, string> = {
+  new: "Placed, payment not completed",
+  paid: "Paid and confirmed, nothing started",
+  production: "Has a part in manufacturing",
+  ready: "Has an item ready to dispatch",
+  shipped: "Has an item in transit",
+  completed: "Every item dispatched",
+  cancelled: "Cancelled",
+};
+
 export const DEMO_FILTERS = ["exclude", "only"] as const;
 export type DemoFilter = (typeof DEMO_FILTERS)[number];
 
 export interface OrderListQuery {
   q?: string;
+  stage?: OrderStage;
   status?: OrderStatus;
   payment?: PaymentState;
   production?: ProductionFilter;
@@ -164,6 +194,7 @@ export function parseOrderListQuery(params: SearchParamsRecord): OrderListQuery 
 
   return {
     q: readText(params, "q"),
+    stage: readEnum(params, "stage", ORDER_STAGES),
     status: readEnum(params, "status", ORDER_STATUSES),
     payment: readEnum(params, "payment", PAYMENT_STATES),
     production: readEnum(params, "production", PRODUCTION_FILTERS),
@@ -179,6 +210,7 @@ export function parseOrderListQuery(params: SearchParamsRecord): OrderListQuery 
 export function orderQueryParams(query: OrderListQuery): ParamValues {
   return {
     q: query.q,
+    stage: query.stage,
     status: query.status,
     payment: query.payment,
     production: query.production,

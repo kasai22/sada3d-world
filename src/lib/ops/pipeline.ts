@@ -215,7 +215,7 @@ export interface IssueSignals {
 const HOUR = 60 * 60 * 1000;
 const SEVERITY_RANK: Record<IssueSeverity, number> = { high: 0, medium: 1, low: 2 };
 
-export const orderHref = (reference: string) => `/ops/orders/${encodeURIComponent(reference)}`;
+export const orderHref = (reference: string) => `/admin/orders/${encodeURIComponent(reference)}`;
 export const jobAnchor = (jobId: string) => `job-${jobId.replace(/[^A-Za-z0-9_-]/g, "-")}`;
 
 function ordinal(value: number): string {
@@ -386,7 +386,7 @@ export function deriveIssues(signals: IssueSignals, now: Date): OpsIssue[] {
       severity: "low",
       title: "Design upload rejected",
       detail: `${design.name}: ${design.reason}`,
-      href: `/ops/designs/${encodeURIComponent(design.designId)}`,
+      href: `/admin/designs/${encodeURIComponent(design.designId)}`,
       subject: design.name,
       since: design.since,
       demo: false,

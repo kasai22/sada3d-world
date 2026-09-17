@@ -7,9 +7,9 @@ import clsx from "clsx";
 import { Icon } from "@/components/core/Icon";
 import { initials } from "@/lib/ops/format";
 import { SEVERITY_LABEL } from "@/lib/ops/pipeline";
-import { CMS_HOME, OPERATOR_ACCOUNT_PATH, OPERATOR_LOGOUT_PATH } from "@/lib/ops/routes";
+import { CMS_HOME, OPERATOR_ACCOUNT_PATH } from "@/lib/ops/routes";
 
-import type { ShellIssueSummary } from "./ShellFrame";
+import type { ShellIssueSummary, SignOutAction } from "./ShellFrame";
 import styles from "./ShellMenus.module.css";
 
 /**
@@ -98,7 +98,7 @@ export function NotificationsMenu({ issues }: { issues: ShellIssueSummary }) {
             </ul>
           )}
 
-          <Link href="/ops/issues" className={styles.footer} onClick={close}>
+          <Link href="/admin/issues" className={styles.footer} onClick={close}>
             View all issues
             <Icon name="arrow-right" size={14} />
           </Link>
@@ -108,7 +108,7 @@ export function NotificationsMenu({ issues }: { issues: ShellIssueSummary }) {
   );
 }
 
-export function AccountMenu({ operator }: { operator: { name: string; email: string } }) {
+export function AccountMenu({ operator, signOut }: { operator: { name: string; email: string }; signOut: SignOutAction }) {
   const { open, setOpen, root, trigger } = useDisclosure();
   const panelId = useId();
 
@@ -133,26 +133,29 @@ export function AccountMenu({ operator }: { operator: { name: string; email: str
           <div className={styles.identity}>
             <span className={styles.identityName}>{operator.name}</span>
             <span className={styles.identityEmail}>{operator.email}</span>
+            <span className={styles.identityRole}>Operator</span>
           </div>
           <ul className={styles.menu}>
             <li>
               <a href={CMS_HOME} className={styles.menuItem}>
-                <Icon name="library" size={15} />
-                Content CMS
+                <Icon name="settings-2" size={15} />
+                Advanced CMS
               </a>
             </li>
             <li>
               <a href={OPERATOR_ACCOUNT_PATH} className={styles.menuItem}>
                 <Icon name="user" size={15} />
-                Your operator account
+                Operator account &amp; password
               </a>
             </li>
             <li className={styles.separator} role="presentation" />
             <li>
-              <a href={OPERATOR_LOGOUT_PATH} className={styles.menuItem}>
-                <Icon name="log-out" size={15} />
-                Sign out
-              </a>
+              <form action={signOut}>
+                <button type="submit" className={styles.menuItem}>
+                  <Icon name="log-out" size={15} />
+                  Sign out
+                </button>
+              </form>
             </li>
           </ul>
         </div>
