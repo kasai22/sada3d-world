@@ -72,14 +72,28 @@ export const currentOperator = cache(async (): Promise<OperatorSession | null> =
   const payload = await getPayload({ config });
   const { user } = await payload.auth({ headers: await headers() });
 
-  if (!user || user.collection !== "users") return null;
+  return operatorFromUser(user);
+});
+
+/**
+ * The decision itself: an authenticated user of Payload's `users` collection is
+ * an operator; nothing else is. No session, a user of another auth collection,
+ * or anything that is not a Payload user — a Supabase customer included — is
+ * not. Pure, so the rule is tested without a request.
+ */
+export function operatorFromUser(user: unknown): OperatorSession | null {
+  if (typeof user !== "object" || user === null) return null;
+  const candidate = user as { collection?: unknown; id?: unknown; email?: unknown; name?: unknown };
+  if (candidate.collection !== "users") return null;
+  if (typeof candidate.email !== "string" || !candidate.email) return null;
+  if (typeof candidate.id !== "number" && typeof candidate.id !== "string") return null;
 
   return {
-    id: String(user.id),
-    name: typeof user.name === "string" && user.name ? user.name : user.email,
-    email: user.email,
+    id: String(candidate.id),
+    name: typeof candidate.name === "string" && candidate.name ? candidate.name : candidate.email,
+    email: candidate.email,
   } as OperatorSession;
-});
+}
 
 /**
  * Requires an operator, or sends the browser to sign in and come back here.

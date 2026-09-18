@@ -7,11 +7,11 @@ import clsx from "clsx";
 
 import { Icon } from "@/components/core/Icon";
 import type { IssueSeverity } from "@/lib/ops/pipeline";
-import { SIDEBAR_COOKIE } from "@/lib/ops/routes";
+import { ADMIN_HOME, SIDEBAR_COOKIE } from "@/lib/ops/routes";
 import type { SearchResult } from "@/lib/ops/search";
 
 import { CommandMenu } from "./CommandMenu";
-import { NAV_GROUPS, isActive } from "./navigation";
+import { NAV_GROUPS, isActive, locate } from "./navigation";
 import { AccountMenu, NotificationsMenu } from "./ShellMenus";
 import styles from "./ShellFrame.module.css";
 
@@ -31,11 +31,14 @@ export type OpsSearchAction = (
   query: string,
 ) => Promise<{ results: SearchResult[]; error?: string }>;
 
+export type SignOutAction = () => Promise<void>;
+
 export interface ShellFrameProps {
   operator: { name: string; email: string };
   issues: ShellIssueSummary;
   initialCollapsed: boolean;
   search: OpsSearchAction;
+  signOut: SignOutAction;
   children: ReactNode;
 }
 
@@ -43,7 +46,7 @@ const noSubscription = () => () => {};
 const onMac = () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
 /**
- * The console shell: sidebar, top bar, command menu.
+ * Reality 3D Admin's shell: sidebar, top bar, command menu.
  *
  * A client component because it holds interface state — the collapsed sidebar,
  * the mobile drawer, the command menu — and nothing else. The page it wraps
@@ -53,7 +56,7 @@ const onMac = () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userA
  * open and returns focus to what opened it; the skip link jumps past the
  * navigation.
  */
-export function ShellFrame({ operator, issues, initialCollapsed, search, children }: ShellFrameProps) {
+export function ShellFrame({ operator, issues, initialCollapsed, search, signOut, children }: ShellFrameProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [navOpen, setNavOpen] = useState(false);
@@ -93,6 +96,8 @@ export function ShellFrame({ operator, issues, initialCollapsed, search, childre
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [navOpen]);
 
+  const place = locate(pathname);
+
   function openNav() {
     setNavOpen(true);
     requestAnimationFrame(() => sidebar.current?.querySelector<HTMLElement>("nav a")?.focus());
@@ -101,7 +106,7 @@ export function ShellFrame({ operator, issues, initialCollapsed, search, childre
   function toggleCollapsed() {
     const next = !collapsed;
     setCollapsed(next);
-    document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "expanded"}; path=/ops; max-age=31536000; samesite=lax`;
+    document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "expanded"}; path=${ADMIN_HOME}; max-age=31536000; samesite=lax`;
   }
 
   return (
@@ -114,18 +119,18 @@ export function ShellFrame({ operator, issues, initialCollapsed, search, childre
         id="ops-sidebar"
         ref={sidebar}
         className={clsx(styles.sidebar, navOpen && styles.sidebarOpen)}
-        aria-label="Console"
+        aria-label="Reality 3D Admin"
       >
         <div className={styles.brand}>
-          <Link href="/ops" className={styles.wordmark}>
+          <Link href={ADMIN_HOME} className={styles.wordmark} aria-label="Reality 3D Admin — overview">
             <span className={styles.mark} aria-hidden="true">
-              R
+              R3
             </span>
-            <span className={styles.brandText}>
+            <span className={styles.brandText} aria-hidden="true">
               <span className={styles.brandName}>
-                Reality<span className={styles.brandAccent}>3D</span>
+                REALITY<span className={styles.brandAccent}>3D</span>
               </span>
-              <span className={styles.brandProduct}>Operations</span>
+              <span className={styles.brandProduct}>Admin · Imagine. Design. Create.</span>
             </span>
           </Link>
           <button
@@ -141,13 +146,15 @@ export function ShellFrame({ operator, issues, initialCollapsed, search, childre
           </button>
         </div>
 
-        <nav className={styles.nav} aria-label="Console sections">
+        <nav className={styles.nav} aria-label="Admin sections">
           {NAV_GROUPS.map((group) => (
-            <div key={group.label} className={styles.group}>
-              <p className={styles.groupLabel} id={`ops-nav-${group.label}`}>
-                {group.label}
-              </p>
-              <ul className={styles.list} aria-labelledby={`ops-nav-${group.label}`}>
+            <div key={group.label ?? "home"} className={styles.group}>
+              {group.label && (
+                <p className={styles.groupLabel} id={`ops-nav-${group.label}`}>
+                  {group.label}
+                </p>
+              )}
+              <ul className={styles.list} aria-labelledby={group.label ? `ops-nav-${group.label}` : undefined}>
                 {group.items.map((item) => {
                   const count = item.badge === "issues" ? issues.total : 0;
                   const content = (
@@ -168,7 +175,7 @@ export function ShellFrame({ operator, issues, initialCollapsed, search, childre
                       {item.external && (
                         <>
                           <Icon name="external-link" size={13} className={styles.external} />
-                          <span className="u-visually-hidden"> (content CMS)</span>
+                          <span className="u-visually-hidden"> (opens the Payload CMS)</span>
                         </>
                       )}
                     </>
@@ -180,7 +187,7 @@ export function ShellFrame({ operator, issues, initialCollapsed, search, childre
                         <a
                           href={item.href}
                           className={styles.link}
-                          title={collapsed ? `${item.label} · CMS` : undefined}
+                          title={collapsed ? `${item.label} · Payload collections` : undefined}
                         >
                           {content}
                         </a>
@@ -235,6 +242,16 @@ export function ShellFrame({ operator, issues, initialCollapsed, search, childre
             <Icon name="menu" size={20} />
           </button>
 
+          <div className={styles.place}>
+            {place?.group && <span className={styles.placeGroup}>{place.group}</span>}
+            {place?.group && (
+              <span className={styles.placeSeparator} aria-hidden="true">
+                /
+              </span>
+            )}
+            <span className={styles.placeItem}>{place?.item.label ?? "Reality 3D Admin"}</span>
+          </div>
+
           <button
             type="button"
             className={styles.searchTrigger}
@@ -243,13 +260,13 @@ export function ShellFrame({ operator, issues, initialCollapsed, search, childre
             aria-keyshortcuts="Control+K Meta+K"
           >
             <Icon name="search" size={16} />
-            <span className={styles.searchText}>Search orders, customers, designs…</span>
+            <span className={styles.searchText}>Search orders, customers, products, SKUs…</span>
             <kbd className={styles.kbd}>{mac ? "⌘ K" : "Ctrl K"}</kbd>
           </button>
 
           <div className={styles.topActions}>
             <NotificationsMenu issues={issues} />
-            <AccountMenu operator={operator} />
+            <AccountMenu operator={operator} signOut={signOut} />
           </div>
         </header>
 

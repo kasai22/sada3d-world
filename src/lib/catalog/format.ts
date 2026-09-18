@@ -78,6 +78,16 @@ export function availabilityLabel(product: Product): string {
   );
 }
 
+/**
+ * The card label (Stage 20). A product that is not launch-ready — only visible in
+ * review mode — says so first; otherwise availability, preceded by the editorial
+ * "Recommended" label when an administrator chose it. Never a sales ranking.
+ */
+export function cardBadge(product: Product): string {
+  if (product.launch && !product.launch.ready) return "Provisional · Not ready";
+  return product.recommended ? `Recommended · ${availabilityLabel(product)}` : availabilityLabel(product);
+}
+
 /** Stable technical identifier derived from the product id, e.g. PART_00001. */
 export function partId(product: Product): string {
   const digits = product.id.replace(/\D/g, "");

@@ -27,5 +27,5 @@ export interface ActivityEntry {
 
 /** What a server action tells the form that submitted it. */
 export type OpsActionResult =
-  | { ok: true; message: string }
+  | { ok: true; message: string; /** The record a create made, when it made one. */ id?: string }
   | { ok: false; message: string };

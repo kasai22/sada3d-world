@@ -2,6 +2,9 @@ import { unstable_cache } from "next/cache";
 
 import { CONTENT_TAGS } from "@/lib/content/tags";
 
+import { catalogAssets } from "./catalog-assets";
+import { categoryIndexFor, type CategoryIndex, type CategoryNode } from "./category-tree";
+import { readCategoryTree } from "./payload-categories";
 import { entryFromPayloadDoc } from "./payload-entry";
 import { applyPriceApprovals, toDomainCatalog } from "./payload-mapping";
 import type { PriceApprovalRecord } from "./commerce";
@@ -116,10 +119,13 @@ async function readPublishedCatalog(): Promise<Product[]> {
    * honour it; nothing a client sends can set it.
    */
   const byId = new Map(result.docs.map((doc) => [doc.productId, doc]));
+  // Stage 20: judged against the CMS category tree and the files verified on disk.
+  const [tree, assets] = await Promise.all([readCategoryTree(payload), catalogAssets()]);
+  const validation = { categories: tree.tree, models: assets.models, mediaFiles: assets.mediaFiles };
   const products = priced.products.map((product) => {
     const doc = byId.get(product.id);
     if (!doc) return product;
-    const assessed = entryFromPayloadDoc(doc, approvals.get(product.id) ?? []);
+    const assessed = entryFromPayloadDoc(doc, approvals.get(product.id) ?? [], new Date(), validation);
     return assessed.ok ? { ...product, launch: assessed.product.launch } : product;
   });
 
@@ -136,6 +142,21 @@ async function readPublishedCatalog(): Promise<Product[]> {
 
   // Same order as the local source; see `catalogOrder`.
   return products.sort(catalogOrder);
+}
+
+async function readPublishedCategoryTree(): Promise<CategoryNode[]> {
+  const [{ getPayload }, { default: config }] = await Promise.all([import("payload"), import("@payload-config")]);
+  const { tree, problems } = await readCategoryTree(await getPayload({ config }));
+  if (problems.length > 0) console.warn(`[sada3d] category tree: ${problems.join(" ")}`);
+  return tree;
+}
+
+const cachedCategoryTree = unstable_cache(readPublishedCategoryTree, ["sada3d-categories"], {
+  tags: [CONTENT_TAGS.catalog],
+});
+
+export async function loadPayloadCategoryIndex(): Promise<CategoryIndex> {
+  return categoryIndexFor(await cachedCategoryTree());
 }
 
 /**

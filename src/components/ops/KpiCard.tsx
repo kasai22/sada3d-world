@@ -15,6 +15,10 @@ export interface KpiCardProps {
   href?: string;
   /** A left rule for a figure that needs attention. Always paired with `detail` text. */
   signal?: "warning" | "danger";
+  /** What the figure covers — a date range, "Now" — in technical type under the label. */
+  meta?: string;
+  /** The figure is not available (e.g. not tracked); the value reads as a statement, not a number. */
+  muted?: boolean;
 }
 
 /**
@@ -22,14 +26,15 @@ export interface KpiCardProps {
  * mono, as every figure in the system is; the label says what was counted and
  * the detail says over what.
  */
-export function KpiCard({ label, value, detail, icon, href, signal }: KpiCardProps) {
+export function KpiCard({ label, value, detail, icon, href, signal, meta, muted = false }: KpiCardProps) {
   const body = (
     <>
       <span className={styles.top}>
         <span className={styles.label}>{label}</span>
         {icon && <Icon name={icon} size={16} />}
       </span>
-      <span className={styles.value}>{value}</span>
+      {meta && <span className={styles.meta}>{meta}</span>}
+      <span className={clsx(styles.value, muted && styles.mutedValue)}>{value}</span>
       {detail && <span className={styles.detail}>{detail}</span>}
     </>
   );

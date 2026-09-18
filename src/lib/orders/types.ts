@@ -154,6 +154,33 @@ export interface OrderItemSourceFile {
 }
 
 /**
+ * What a catalog line was, as the catalog described it when it was ordered
+ * (Stage 22).
+ *
+ * The dimensions revenue is reported by. A snapshot for the same reason the
+ * price is one: a product renamed, re-categorised or archived tomorrow must not
+ * move yesterday's sale. `OrderItem.name` is the product-name snapshot.
+ *
+ * Absent on custom lines (a customer's own file is not a catalog product) and
+ * on every line placed before Stage 22, whose dimensions are unknown and are
+ * never back-filled.
+ */
+export interface OrderItemCatalogSnapshot {
+  /** The catalog product id, e.g. "p-101". */
+  productId: string;
+  /** Only when the business had assigned one. */
+  sku?: string;
+  /** Leaf category value and its name at the time. */
+  categoryId: string;
+  categoryName: string;
+  /** Top-level browse category value and its name at the time. */
+  browseCategoryId: string;
+  browseCategoryName: string;
+  /** UTC ISO 8601. */
+  recordedAt: string;
+}
+
+/**
  * One thing that was bought, snapshotted at the moment it was ordered.
  *
  * A snapshot rather than a reference: the catalog will be re-priced tomorrow
@@ -183,6 +210,8 @@ export interface OrderItem {
    * from. Written once, when the order is created, and never rewritten.
    */
   sourceFile?: OrderItemSourceFile;
+  /** Stage 22: catalog lines placed since Stage 22. Written once, never rewritten. */
+  catalog?: OrderItemCatalogSnapshot;
 }
 
 /* ------------------------------------------------------------------ *

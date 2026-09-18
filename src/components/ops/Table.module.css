@@ -29,8 +29,8 @@
   background: var(--surface-panel);
   border-bottom: 1px solid var(--border-default);
   color: var(--text-muted);
-  font: var(--fw-medium) 11px/1.2 var(--font-interface);
-  letter-spacing: 0.1em;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;

@@ -1,7 +1,38 @@
-# The operations console
+# Reality 3D Admin — the business console
 
-`/ops` — where Reality 3D is run. Orders, production, designs, customers, payments
-and the exceptions that need someone.
+`/admin` — where Reality 3D is run (Stage 22.5; formerly `/ops`, the Stage 21
+Command Center). It opens on the Command Center: revenue, orders, what is
+selling, manufacturing, inventory, catalog health and "Needs your attention",
+over an explicit date range. Behind it: sales, orders, products and the product
+workspace, customers, payments, manufacturing, inventory, issues, customer
+files, analytics (revenue, product sales, material usage), the catalog (health,
+categories, materials, pricing, media) and settings.
+
+## Stage 22.5 — one admin application
+
+| Address | What it is |
+| --- | --- |
+| `/admin` | Reality 3D Admin — `app/(admin)/admin`. Sign-in at `/admin/login`; every other page is in the gated `(console)` group. |
+| `/cms` | Payload's own panel, **Advanced CMS** (`routes.admin` in `payload.config.ts`). Same users, same session. Branded through Payload's graphics, nav, dashboard and login slots, `admin.meta`, and `app/(payload)/custom.css` (theme variables only). |
+| `/ops/*` | Redirects to `/admin/*` (`/ops/production` → `/admin/manufacturing`). |
+| `/admin/collections/*`, `/admin/globals/*`, `/admin/account`, … | Payload's old deep links; redirect to `/cms/…`. See `LEGACY_REDIRECTS` in `routes.ts`. |
+
+- **Sign-in** is Payload's `login` operation (`@payloadcms/next/auth`) behind a
+  Reality 3D form — Payload's lockout and cookie; nothing is reimplemented.
+  Sign-out is Payload's `logout`.
+- **Catalog writes**: the product workspace saves name, summary, description,
+  SKU and use case as a **draft**, through Payload's local API as the signed-in
+  Payload user with `overrideAccess: false`, so every product hook and the
+  approval guard run. Approvals, price-approval records, uploads and publishing
+  open the exact document in Advanced CMS (`catalog-admin.ts`).
+- **Search** covers orders, customers, products (name, product id, SKU),
+  inventory items, customer files, production jobs and payments.
+- **Material usage** (`analytics/materials.ts`) reports custom-print lines by
+  their recorded quote material, and raw-material usage and waste from the
+  inventory ledger. Catalog lines record no material; that is shown, not guessed.
+- The Payload import map is generated: `npm run generate:importmap`.
+
+## The Stage 21 console, as it was built
 
 ```
                     OPERATOR (a Payload user)
@@ -51,6 +82,49 @@ Three checks, each in `console-guard.test.ts`:
 A signed-out visitor is sent to Payload's login with a `redirect` back into the
 console, and `safeOpsPath` keeps that redirect inside `/ops`.
 
+## Analytics (Stage 21)
+
+`analytics/` is the command centre's server-side data layer. Pages never
+aggregate; they call one of these, and every result carries its source, its
+definition, its range and when it was read (`Traced`).
+
+| Service | File | Answers |
+| --- | --- | --- |
+| RevenueService | `revenue.ts` | revenue, paid orders, AOV for a range; today / week / month / year |
+| OrderAnalyticsService | `orders.ts` | orders by status and payment, quick-filter counts, customer counts |
+| ProductAnalyticsService | `products.ts` | units, orders and line revenue per product sold; revenue by category (Stage 22) |
+| InventoryAnalyticsService | `inventory.ts` | stock summary and valuation from `lib/inventory` (Stage 22) |
+| ManufacturingAnalyticsService | `manufacturing.ts` | active jobs by stage, holds, milestones, dispatches, machine assignments |
+| Catalog health | `catalog.ts` | launch stage and readiness of every product (the launch assessment, batched) |
+| Action centre | `attention.ts` | "Needs your attention": issue kinds and catalog conditions, counted and linked |
+| Date ranges | `range.ts` | presets, custom ranges, IST business days, buckets (pure) |
+
+Definitions, shared in `analytics/sql.ts`:
+
+- **Revenue** is the recorded total of orders whose payment is `paid`, excluding
+  demonstration, cancelled and failed orders, dated by `placed_at` (there is no
+  payment timestamp). Paid orders later cancelled are reported beside revenue.
+  Mock-provider payments and provisional pricing are counted and stated.
+- **Business days** are India Standard Time (fixed UTC+05:30); the default range
+  is the current month.
+- **No margin, profit, estimate, projection or utilisation** is computed — the
+  system records no cost of goods sold and no machine time.
+- **Inventory** (Stage 22) comes from `lib/inventory`: ledger-backed balances.
+  An item with no opening balance is *not tracked* — never zero, never out of
+  stock. Inventory value is quantity × latest unit cost, and is shown only when
+  every tracked item has a cost; otherwise "unavailable".
+- **Revenue by category** (Stage 22) uses the category snapshotted on each
+  catalog line when it was ordered, over the same lines as product performance.
+  Lines placed before Stage 22 carry no category and are reported as
+  "historical category data unavailable", never assigned by name. Custom prints
+  have no category and are reported beside the categories.
+
+Cost: each figure is one aggregate query (`FILTER` clauses, `GROUP BY`), never a
+loop over rows; the analytics tests aggregate 5,000 orders. Catalog health reads
+the CMS four times whatever the catalog size and is cached for 60 seconds under
+the `catalog` content tag, so a publish refreshes it. React `cache` dedupes
+reads shared by the page and the action centre within a request.
+
 ## What a projection never carries
 
 Storage keys (`customer_designs.storage_key`, `order_items.source_storage_key`),
@@ -95,14 +169,19 @@ condition worth attention.
 | `sql.ts` | SQL fragments the read models share |
 | `orders.ts` · `designs.ts` · `customers.ts` · `payments.ts` · `production.ts` · `issues.ts` · `dashboard.ts` · `search.ts` · `system.ts` | read models |
 | `mutations.ts` | the four things an operator can change |
+| `analytics/*` | the command centre's analytics services (above) |
 
 ## What the console deliberately does not have
 
 - **Quotes.** They are calculated and never stored, so there is nothing to list.
 - **Printers.** A job records the machine it was assigned to; there is no machine
-  registry, no utilisation and no maintenance state.
-- **Material inventory, cost or reorder levels.** Materials are editorial content
-  in the CMS; price multipliers live in `lib/pricing`, in code.
+  registry, no utilisation and no maintenance state. Analytics counts active
+  jobs per assigned machine id and says why it shows no utilisation.
+- **Procurement beyond one step.** A purchase is ordered and received (or
+  cancelled); there are no purchase-order approvals, partial receipts, invoices
+  or GST. Inventory movements are append-only; a correction is an adjustment.
+- **Automatic material deduction.** Usage is recorded by an operator against a
+  job that has started printing; nothing estimates filament from geometry.
 - **Refunds or partial refunds.** The payment domain has three states, and the
   console shows three.
 - **Catalog item fulfilment.** The order service has no event that moves a
@@ -123,4 +202,10 @@ without storage keys, per-customer scoping, operator attribution, stale-page
 refusal, and money figures that exclude demonstration orders.
 
 `console-guard.test.ts` is the static check that the authorization above is
-still wired to every page, action and read.
+still wired to every page, action and read — including every analytics module —
+and that nothing outside the console imports its read models.
+
+`analytics/analytics.test.ts` covers ranges, stage grouping, catalog counting and
+the action centre's links; `analytics/persistence.test.ts` runs every service
+against PGlite (empty data, IST boundaries, exclusions, chip/list parity, a
+5,000-order table); `analytics/access.test.ts` covers who is an operator.

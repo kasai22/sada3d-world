@@ -212,6 +212,28 @@
   font: var(--type-ui);
 }
 
+/* Sign out is a form button styled as a menu row. */
+button.menuItem {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.identityRole {
+  margin-top: 4px;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
 .menuItem:hover {
   background: var(--interactive-hover-surface);
   color: var(--text-primary);

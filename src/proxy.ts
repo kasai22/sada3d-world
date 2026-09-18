@@ -61,7 +61,7 @@ export async function proxy(request: NextRequest) {
   }
 
   /*
-   * The operations console.
+   * Reality 3D Admin (/admin; the Stage 21 console).
    *
    * Its layout cannot see which page was asked for, and needs it so that
    * signing in returns an operator to the page they wanted rather than to the
@@ -138,9 +138,11 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Everything except build assets, public files and the CMS. Payload runs its
-     * own operator authentication and has nothing to do with customer sessions.
+     * Everything except build assets, public files and the CMS (/cms, Payload's
+     * admin since Stage 22.5, and /payload-api). Payload runs its own operator
+     * authentication and has nothing to do with customer sessions. /admin is
+     * matched: the branch above passes the requested page to the admin layout.
      */
-    "/((?!_next/static|_next/image|favicon\\.ico|admin|payload-api|models/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|stl|3mf|obj|glb|gltf|woff2?)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|cms|payload-api|models/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|stl|3mf|obj|glb|gltf|woff2?)$).*)",
   ],
 };

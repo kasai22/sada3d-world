@@ -7,9 +7,13 @@ import {
   type Fact,
 } from "@/content/catalog";
 
+import { PRICING_RULES } from "@/lib/pricing/rules";
+
 import { assessCommercial } from "./commerce";
+import { classRequiresSku, skuProblem } from "./sku";
 import type { Product } from "./types";
 import {
+  type ProductValidationOptions,
   validateCommercialDefinition,
   validateEntryApprovals,
   validateProduct,
@@ -47,7 +51,8 @@ export interface LaunchAssessment {
   technical: { status: DimensionStatus; reasons: string[] };
   approval: "APPROVED" | "NOT_APPROVED";
   price: "APPROVED" | "PROVISIONAL" | "QUOTE_ONLY" | "MISSING";
-  media: "APPROVED" | "MISSING";
+  /** Stage 20: PROPOSED = an image is set but its media approval is not recorded. */
+  media: "APPROVED" | "PROPOSED" | "MISSING";
   manufacturing: "APPROVED" | "NOT_APPROVED";
   commercial: "COMPLETE" | "INCOMPLETE";
   featured: "ELIGIBLE" | "NOT_ELIGIBLE" | "NOT_REQUESTED";
@@ -55,12 +60,14 @@ export interface LaunchAssessment {
 }
 
 /** The business decisions a launch requires, and the reason shown when one is not approved. */
+const SKU_PICK = (commercial: CommercialDefinition): Fact<unknown> => commercial.sku;
+
 const REQUIRED_DECISIONS: readonly {
   pick: (commercial: CommercialDefinition) => Fact<unknown>;
   missing: string;
   unapproved: string;
 }[] = [
-  { pick: (c) => c.sku, missing: "Missing SKU", unapproved: "SKU not approved" },
+  { pick: SKU_PICK, missing: "Missing SKU", unapproved: "SKU not approved" },
   { pick: (c) => c.productClass, missing: "Missing product class", unapproved: "Product class not approved" },
   { pick: (c) => c.pricingModel, missing: "Missing pricing model", unapproved: "Pricing model not approved" },
   { pick: (c) => c.customer, missing: "Missing target customer", unapproved: "Target customer not approved" },
@@ -95,6 +102,8 @@ export interface LaunchOptions {
    * the real specification is approved and a READY fixture needs it to be.
    */
   capability?: (material: string, technology: string) => CapabilityVerdict;
+  /** Stage 20: the category tree, verified models and media files a CMS product is validated against. */
+  validation?: ProductValidationOptions;
 }
 
 export function assessLaunch(
@@ -105,7 +114,7 @@ export function assessLaunch(
   const now = options.now ?? new Date();
   /* ---- technical ---- */
 
-  const technicalReasons = validateProduct(product).map((issue) => `Technical: ${issue.message}`);
+  const technicalReasons = validateProduct(product, options.validation).map((issue) => `Technical: ${issue.message}`);
   if (!entry) {
     technicalReasons.push("Technical: not in the canonical catalog");
   } else {
@@ -137,11 +146,16 @@ export function assessLaunch(
   if (price === "PROVISIONAL") reasons.push("Missing approved price (current price is provisional)");
   if (price === "MISSING") reasons.push("Missing price status");
 
-  const media = commercialState.media === "complete" ? "APPROVED" : "MISSING";
+  // Stage 20: an image that exists but is not approved is PROPOSED — named, and still blocking.
+  const media = commercialState.media === "complete" ? "APPROVED" : product.image?.src ? "PROPOSED" : "MISSING";
   if (media !== "APPROVED") {
     const required = entry?.commercial.visual.required;
     const requirement = required && "value" in required ? ` (required: ${required.value}, ${required.state})` : "";
-    reasons.push(`Missing approved image${requirement}`);
+    reasons.push(
+      media === "PROPOSED"
+        ? `Missing approved image${requirement} — ${product.image!.src} is proposed: record its media approval (reference, approver, date)`
+        : `Missing approved image${requirement}`,
+    );
   }
 
   if (!product.description?.trim()) reasons.push("Missing required commercial description");
@@ -151,8 +165,11 @@ export function assessLaunch(
   reasons.push(...capability.reasons);
 
   const decisionReasons: string[] = [];
+  const productClass = entry && "value" in entry.commercial.productClass ? entry.commercial.productClass.value : undefined;
   if (entry) {
     for (const decision of REQUIRED_DECISIONS) {
+      // Stage 20: a quote-only product has no catalog price, and needs no SKU.
+      if (decision.pick === SKU_PICK && !classRequiresSku(productClass)) continue;
       const fact = decision.pick(entry.commercial);
       if (fact.state === "APPROVED") continue;
       decisionReasons.push(
@@ -163,6 +180,27 @@ export function assessLaunch(
     }
   } else {
     decisionReasons.push("Missing commercial catalog definition");
+  }
+  /*
+   * Stage 20: class-specific requirements.
+   *   · a SKU, when present, must be well-formed
+   *   · a configurable product must define a configuration — at least one of
+   *     material, colour or print quality with two or more choices — and its
+   *     pricing mechanism (the quote engine rules) must be approved
+   */
+  const sku = entry && "value" in entry.commercial.sku ? entry.commercial.sku.value : undefined;
+  const malformed = skuProblem(sku);
+  if (malformed) decisionReasons.push(`SKU "${sku}" is malformed: ${malformed}`);
+  if (productClass === "CONFIGURABLE_PRODUCT") {
+    const choices = [product.materials?.length ?? 1, product.colors?.length ?? 1, product.qualityOptions?.length ?? 1];
+    if (!choices.some((count) => count >= 2)) {
+      decisionReasons.push("Missing configuration definition: a configurable product offers at least two materials, colours or print qualities");
+    }
+    if (PRICING_RULES.provisional) {
+      decisionReasons.push(
+        `Configurable pricing mechanism not approved: the quote engine rules (${PRICING_RULES.version}) are provisional`,
+      );
+    }
   }
   for (const question of entry?.commercial.openQuestions ?? []) {
     const answer = question.answer;

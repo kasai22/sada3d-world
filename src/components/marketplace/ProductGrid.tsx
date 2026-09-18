@@ -1,6 +1,6 @@
 import { ProductCard } from "@/components/commerce";
 import {
-  availabilityLabel,
+  cardBadge,
   formatPrice,
   priceQualifier,
   productHref,
@@ -39,7 +39,7 @@ export function ProductGrid({ products, priorityCount = 0 }: ProductGridProps) {
             price={formatPrice(product.price)}
             priceNote={priceQualifier(product)}
             // Availability, always. See availabilityLabel.
-            badge={availabilityLabel(product)}
+            badge={cardBadge(product)}
             image={product.image}
             priority={index < priorityCount}
           />

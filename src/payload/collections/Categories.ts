@@ -1,6 +1,8 @@
 import type { CollectionConfig } from "payload";
 
 import { adminsOnly, publishedOrAdmin } from "../access";
+import { enforceCategoryRules, preventOrphanedProducts } from "../category-hooks";
+import { markSource } from "../product-hooks";
 import { revalidateContent } from "../revalidate";
 
 /**
@@ -32,9 +34,11 @@ export const Categories: CollectionConfig = {
   slug: "categories",
   admin: {
     useAsTitle: "name",
-    defaultColumns: ["name", "value", "parent", "isBrowse", "_status"],
+    defaultColumns: ["name", "value", "parent", "isBrowse", "source", "_status"],
+    listSearchableFields: ["name", "value"],
     group: "Catalog",
-    description: "The category tree the marketplace filters on.",
+    description:
+      "The category tree the marketplace filters on. A published category appears in filters, breadcrumbs, the shop rail and the sitemap as soon as it has a launch-visible product — no deployment. A category with products cannot be deleted, renamed (identifier) or unpublished.",
   },
   access: {
     read: publishedOrAdmin,
@@ -44,10 +48,28 @@ export const Categories: CollectionConfig = {
   },
   versions: { drafts: true },
   hooks: {
+    beforeValidate: [markSource],
+    beforeChange: [enforceCategoryRules],
+    beforeDelete: [preventOrphanedProducts],
     afterChange: [revalidateContent("catalog")],
     afterDelete: [revalidateContent("catalog")],
   },
   fields: [
+    {
+      name: "source",
+      type: "select",
+      defaultValue: "admin",
+      options: [
+        { label: "Administrator-managed", value: "admin" },
+        { label: "Repository seed", value: "seed" },
+      ],
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description:
+          "Seed categories are kept in sync with src/content/catalog by content:import. Saving a category in the admin makes it administrator-managed; the import never overwrites or unpublishes it.",
+      },
+    },
     {
       type: "tabs",
       tabs: [

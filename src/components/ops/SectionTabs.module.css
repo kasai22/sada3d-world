@@ -1,0 +1,61 @@
+/* Underline tabs: hairline base, the Titanium Orange Line under the current one. */
+
+.tabs {
+  margin: calc(var(--spacing-2) * -1) 0 var(--spacing-5);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.list {
+  display: flex;
+  gap: var(--spacing-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tab,
+.tab:hover {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  height: 40px;
+  padding: 0 var(--spacing-3);
+  border-bottom: 0;
+  color: var(--text-muted);
+  font: var(--type-ui);
+  white-space: nowrap;
+  transition: var(--transition-control);
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.current,
+.current:hover {
+  color: var(--text-primary);
+}
+
+.current::after {
+  content: "";
+  position: absolute;
+  right: var(--spacing-3);
+  bottom: -1px;
+  left: var(--spacing-3);
+  height: 2px;
+  background: var(--gradient-orange-line, var(--orange-500));
+}
+
+.count {
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+  font-variant-numeric: tabular-nums;
+}

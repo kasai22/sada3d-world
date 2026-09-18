@@ -1,7 +1,9 @@
+import type { CategoryIndex } from "./category-tree";
 import { visibleProducts } from "./commerce";
 import { serverCatalogMode } from "./commerce-server";
 import { PRODUCTS } from "./products";
 import { relatedProducts, runCatalogQuery } from "./engine";
+import { SEED_CATEGORY_INDEX } from "./taxonomy";
 import type { CatalogQuery, CatalogResult, Product } from "./types";
 
 /**
@@ -44,6 +46,8 @@ export interface CatalogSource {
   bySlug(browseCategory: string, slug: string): Promise<Product | undefined>;
   related(product: Product, limit: number): Promise<Product[]>;
   params(): Promise<{ category: string; slug: string }[]>;
+  /** Stage 20: the category tree this source serves — seed or CMS. */
+  categories(): Promise<CategoryIndex>;
 }
 
 /**
@@ -55,14 +59,17 @@ export interface CatalogSource {
 export function catalogSourceFrom(
   name: string,
   load: () => Promise<readonly Product[]>,
+  loadCategories: () => Promise<CategoryIndex> = async () => SEED_CATEGORY_INDEX,
 ): CatalogSource {
   return {
     name,
 
     all: load,
 
+    categories: loadCategories,
+
     async query(query: CatalogQuery): Promise<CatalogResult> {
-      return runCatalogQuery(await load(), query);
+      return runCatalogQuery(await load(), query, await loadCategories());
     },
 
     async size(): Promise<number> {
@@ -153,8 +160,15 @@ export function resolveCatalogSource(): CatalogSource {
  * local catalog should never load.
  */
 function lazyPayloadSource(): CatalogSource {
-  return catalogSourceFrom("payload", async () => {
-    const { loadPayloadCatalog } = await import("./payload-source");
-    return visibleProducts(await loadPayloadCatalog(), serverCatalogMode());
-  });
+  return catalogSourceFrom(
+    "payload",
+    async () => {
+      const { loadPayloadCatalog } = await import("./payload-source");
+      return visibleProducts(await loadPayloadCatalog(), serverCatalogMode());
+    },
+    async () => {
+      const { loadPayloadCategoryIndex } = await import("./payload-source");
+      return loadPayloadCategoryIndex();
+    },
+  );
 }

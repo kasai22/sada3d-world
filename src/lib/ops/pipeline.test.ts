@@ -106,7 +106,7 @@ test("a failed payment is a high-severity issue linked to the payment section", 
 
   assert.equal(issue?.kind, "payment_failed");
   assert.equal(issue?.severity, "high");
-  assert.equal(issue?.href, "/ops/orders/S3D-000009#payment");
+  assert.equal(issue?.href, "/admin/orders/S3D-000009#payment");
 });
 
 test("an unpaid order is chased only after the grace period", () => {
@@ -239,45 +239,49 @@ test("pages are clamped and format filters are normalised", () => {
 });
 
 test("links omit empty filters and the first page", () => {
-  assert.equal(hrefWith("/ops/orders", { q: "", status: "failed", page: 1 }), "/ops/orders?status=failed");
-  assert.equal(hrefWith("/ops/orders", { status: "failed" }, { status: null, page: 3 }), "/ops/orders?page=3");
+  assert.equal(hrefWith("/admin/orders", { q: "", status: "failed", page: 1 }), "/admin/orders?status=failed");
+  assert.equal(hrefWith("/admin/orders", { status: "failed" }, { status: null, page: 3 }), "/admin/orders?page=3");
 });
 
 test("a search for LIKE metacharacters searches for the characters", () => {
   assert.equal(likePattern("50%_off\\"), "%50\\%\\_off\\\\%");
 });
 
-test("sign-in only ever returns to the console", () => {
-  assert.equal(safeOpsPath("/ops/orders?status=failed"), "/ops/orders?status=failed");
-  assert.equal(safeOpsPath("/ops"), "/ops");
+test("sign-in only ever returns to Reality 3D Admin", () => {
+  assert.equal(safeOpsPath("/admin/orders?status=failed"), "/admin/orders?status=failed");
+  assert.equal(safeOpsPath("/admin"), "/admin");
 
   for (const hostile of [
     "//evil.example",
-    "/opsx",
-    "/admin/collections/users",
-    "https://evil.example/ops",
-    "/ops/../admin",
-    "/ops/%2e%2e/admin",
-    "/ops\\evil",
-    "/ops//evil.example",
+    "/adminx",
+    "/ops/orders",
+    "/cms/collections/users",
+    "/admin/login",
+    "/admin/login?redirect=/admin",
+    "https://evil.example/admin",
+    "/admin/../admin",
+    "/admin/%2e%2e/admin",
+    "/admin\\evil",
+    "/admin//evil.example",
     42,
   ]) {
-    assert.equal(safeOpsPath(hostile), "/ops", String(hostile));
+    assert.equal(safeOpsPath(hostile), "/admin", String(hostile));
   }
 
-  assert.equal(operatorLoginHref("/ops/production"), "/admin/login?redirect=%2Fops%2Fproduction");
+  assert.equal(operatorLoginHref("/admin/manufacturing"), "/admin/login?redirect=%2Fadmin%2Fmanufacturing");
 });
 
-test("only console requests carry a return path, and a hostile one is discarded", () => {
-  assert.equal(opsPathOf("/ops"), "/ops");
-  assert.equal(opsPathOf("/ops/orders/S3D-000184", "?status=failed"), "/ops/orders/S3D-000184?status=failed");
+test("only admin requests carry a return path, and a hostile one is discarded", () => {
+  assert.equal(opsPathOf("/admin"), "/admin");
+  assert.equal(opsPathOf("/admin/orders/S3D-000184", "?status=failed"), "/admin/orders/S3D-000184?status=failed");
 
-  // Not the console: no header, nothing to come back to.
+  // Not the admin: no header, nothing to come back to.
   assert.equal(opsPathOf("/shop"), null);
-  assert.equal(opsPathOf("/opsx"), null);
-  assert.equal(opsPathOf("/admin"), null);
+  assert.equal(opsPathOf("/adminx"), null);
+  assert.equal(opsPathOf("/ops"), null, "the old console address is a redirect, not an admin page");
+  assert.equal(opsPathOf("/cms"), null, "Payload's panel is not Reality 3D Admin");
 
   // A console path that is not safe falls back to the console home.
-  assert.equal(opsPathOf("/ops/../admin"), "/ops");
-  assert.equal(opsPathOf("/ops//evil.example"), "/ops");
+  assert.equal(opsPathOf("/admin/../admin"), "/admin");
+  assert.equal(opsPathOf("/admin//evil.example"), "/admin");
 });

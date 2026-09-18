@@ -80,6 +80,8 @@ export function toOrderItems(
   cart: PricedCart,
   reference: string,
   files: ReadonlyMap<string, OrderItemSourceFile> = new Map(),
+  /** Stage 22: when the catalog dimensions were read, which is the order's placement time. */
+  recordedAt: string = new Date().toISOString(),
 ): OrderItem[] {
   return cart.lines.map((priced, index) => {
     const sourceFile =
@@ -99,6 +101,20 @@ export function toOrderItems(
       // manufacturing job is created, below.
       fulfillmentStatus: "pending" as const,
       ...(sourceFile ? { sourceFile } : {}),
+      // Stage 22: the catalog's identity for the product, as it is at ordering.
+      ...(priced.line.type === "catalog" && priced.product
+        ? {
+            catalog: {
+              productId: priced.product.id,
+              ...(priced.product.sku ? { sku: priced.product.sku } : {}),
+              categoryId: priced.product.categoryId,
+              categoryName: priced.product.categoryName,
+              browseCategoryId: priced.product.browseCategoryId,
+              browseCategoryName: priced.product.browseCategoryName,
+              recordedAt,
+            },
+          }
+        : {}),
     };
   });
 }
@@ -269,7 +285,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   }
 
   const placedAt = new Date().toISOString();
-  const items = toOrderItems(priced, reference, manufacturingFiles.files);
+  const items = toOrderItems(priced, reference, manufacturingFiles.files, placedAt);
 
   const payload = {
     reference,

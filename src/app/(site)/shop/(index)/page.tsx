@@ -11,7 +11,7 @@ import {
   parseQuery,
   type SearchParams,
 } from "@/lib/catalog/params";
-import { catalogSize, getBrowseCategories, queryCatalog } from "@/lib/catalog/query";
+import { catalogSize, getBrowseCategoryLinks, queryCatalog } from "@/lib/catalog/query";
 import styles from "../shop.module.css";
 
 const DESCRIPTION =
@@ -64,7 +64,7 @@ export default async function ShopPage({
           description={DESCRIPTION}
         />
 
-        <CategoryRail categories={await getBrowseCategories()} counts={railCounts} />
+        <CategoryRail categories={await getBrowseCategoryLinks()} counts={railCounts} />
 
         <MarketplaceView query={query} result={result} pathname="/shop" />
       </div>

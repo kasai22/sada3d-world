@@ -7,6 +7,17 @@
   --ops-sidebar-collapsed: 64px;
   --ops-topbar-height: 56px;
 
+  /*
+   * Stage 22.6 (ADMIN_UX_AUDIT A-01, A-02). The admin is dense, so its secondary
+   * text is small and everywhere. The storefront's steel (#6C737C) is 3.85:1 on
+   * a card — below AA for small text — so the admin reads its muted text one step
+   * lighter (5.8:1 on a card, 5.4:1 raised), and its technical captions at the
+   * 12px label size instead of 11px. Scoped to the admin; the storefront is
+   * unchanged.
+   */
+  --text-muted: #8a919b;
+  --type-technical-sm: var(--fw-regular) var(--fs-label) / var(--lh-technical) var(--font-technical);
+
   display: grid;
   grid-template-columns: var(--ops-sidebar-width) minmax(0, 1fr);
   min-height: 100dvh;
@@ -60,7 +71,8 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   color: var(--text-accent);
-  font: var(--fw-semibold) 15px/1 var(--font-display);
+  font: var(--fw-semibold) 12px/1 var(--font-display);
+  letter-spacing: 0.04em;
 }
 
 .brandText {
@@ -81,6 +93,9 @@
 }
 
 .brandProduct {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font: var(--type-technical-sm);
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
@@ -310,6 +325,31 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
+/* Where you are: group / page. The page h1 below says it in full. */
+.place {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  margin-right: var(--spacing-2);
+  white-space: nowrap;
+}
+
+.placeGroup,
+.placeSeparator {
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.placeItem {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+  font: var(--type-ui);
+}
+
 .searchTrigger {
   display: flex;
   align-items: center;
@@ -357,6 +397,14 @@
   margin-left: auto;
 }
 
+.searchTrigger {
+  margin-left: auto;
+}
+
+.searchTrigger + .topActions {
+  margin-left: var(--spacing-3);
+}
+
 .main {
   flex: 1 1 auto;
   width: 100%;
@@ -364,6 +412,16 @@
   margin: 0 auto;
   padding: var(--spacing-6) var(--spacing-7) var(--spacing-10);
   outline: none;
+}
+
+/*
+ * One vertical rhythm for every admin page (ADMIN_UX_AUDIT A-03): each block a
+ * page renders — header, tabs, filters, figures, panels — sits 20px below the
+ * previous one. Zero specificity, so a component that sets its own margin
+ * (the tabs tuck under the header) still wins; adjacent margins collapse.
+ */
+:where(.main > * + *) {
+  margin-top: var(--spacing-5);
 }
 
 /* ------------------------------------------------------------------ *
@@ -420,7 +478,9 @@
 }
 
 @media (max-width: 767px) {
-  .kbd {
+  .kbd,
+  .placeGroup,
+  .placeSeparator {
     display: none;
   }
 

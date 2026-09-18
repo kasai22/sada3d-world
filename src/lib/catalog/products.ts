@@ -1,6 +1,7 @@
 import { CATALOG_ENTRIES } from "@/content/catalog";
 
 import { assessLaunch } from "./launch";
+import { categoryLabel } from "./taxonomy";
 import { summarize } from "./payload-entry";
 import { catalogOrder, type Product } from "./types";
 import { validateCatalog } from "./validation";
@@ -26,5 +27,14 @@ import { validateCatalog } from "./validation";
  * an entry the importer would have refused to publish.
  */
 export const PRODUCTS: readonly Product[] = validateCatalog(CATALOG_ENTRIES)
-  .publishable.map((entry) => ({ ...entry.product, launch: summarize(assessLaunch(entry, entry.product)) }))
+  .publishable.map((entry) => ({
+    ...entry.product,
+    // Stage 22: a SKU the business stated, for order-line snapshots. A proposed or missing one is not a SKU.
+    ...((entry.commercial.sku.state === "APPROVED" || entry.commercial.sku.state === "KNOWN") && entry.commercial.sku.value
+      ? { sku: entry.commercial.sku.value }
+      : {}),
+    ...(categoryLabel(entry.product.category) ? { categoryLabel: categoryLabel(entry.product.category) } : {}),
+    ...(categoryLabel(entry.product.browseCategory) ? { browseCategoryLabel: categoryLabel(entry.product.browseCategory) } : {}),
+    launch: summarize(assessLaunch(entry, entry.product)),
+  }))
   .sort(catalogOrder);

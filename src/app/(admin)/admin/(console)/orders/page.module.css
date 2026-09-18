@@ -1,0 +1,30 @@
+.count {
+  color: var(--text-muted);
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-technical);
+  text-transform: uppercase;
+}
+
+.quiet {
+  color: var(--text-muted);
+  font: var(--type-body-sm);
+}
+
+.clear,
+.clear:hover {
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font: var(--type-ui);
+}
+
+/* The row is the link; this only says so. */
+.open {
+  color: var(--text-muted);
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+tr:hover .open {
+  color: var(--text-accent);
+}

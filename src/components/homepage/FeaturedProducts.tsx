@@ -2,7 +2,7 @@ import { Button } from "@/components/core";
 import { ProductCard } from "@/components/commerce";
 import { SectionHeading } from "@/components/structure";
 import {
-  availabilityLabel,
+  cardBadge,
   formatPrice,
   priceQualifier,
   productHref,
@@ -68,7 +68,7 @@ export async function FeaturedProducts() {
               priceNote={priceQualifier(product)}
               // The badge states availability from the catalog field, so a
               // made-to-order part is never labelled as stock.
-              badge={availabilityLabel(product)}
+              badge={cardBadge(product)}
               image={product.image}
             />
           ))}

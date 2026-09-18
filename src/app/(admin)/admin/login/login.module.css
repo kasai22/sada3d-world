@@ -1,0 +1,147 @@
+/* Reality 3D Admin sign-in. Void page, one graphite panel, one orange rule. */
+
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--spacing-8) var(--gutter-mobile, 16px);
+  background:
+    linear-gradient(var(--border-subtle) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px) 0 0 / 48px 48px,
+    var(--surface-page);
+  background-blend-mode: normal;
+}
+
+.panel {
+  width: min(100%, 420px);
+  padding: var(--spacing-7) var(--spacing-6) var(--spacing-6);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elevation-overlay);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-accent);
+  font: var(--fw-semibold) 15px/1 var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.brandName {
+  font: var(--fw-semibold) 17px/1 var(--font-display);
+  letter-spacing: 0.18em;
+  color: var(--text-primary);
+}
+
+.accent {
+  color: var(--text-accent);
+}
+
+.tagline {
+  font: var(--type-technical-sm);
+  color: var(--text-muted);
+}
+
+.rule {
+  width: 48px;
+  height: 2px;
+  margin: var(--spacing-6) 0 var(--spacing-5);
+  background: var(--gradient-orange-line, var(--orange-500));
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  font: var(--type-technical-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.title {
+  margin: 0 0 8px;
+  font: var(--type-h3);
+  color: var(--text-primary);
+}
+
+.lead {
+  margin: 0 0 var(--spacing-5);
+  font: var(--type-body-sm);
+  color: var(--text-secondary);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.error,
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 var(--spacing-4);
+  padding: 10px 12px;
+  border-radius: var(--radius-card);
+  font: var(--type-body-sm);
+}
+
+.error {
+  margin: 0;
+  background: var(--status-danger-surface);
+  border: 1px solid rgba(255, 77, 77, 0.45);
+  color: var(--text-primary);
+}
+
+.error > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--status-danger);
+}
+
+.notice {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+
+.notice > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--text-accent);
+}
+
+.notice a,
+.footer a {
+  color: var(--text-link);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: var(--spacing-6);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border-subtle);
+  font: var(--type-technical-sm);
+  color: var(--text-muted);
+}

@@ -66,6 +66,12 @@
   letter-spacing: var(--ls-body);
 }
 
+/* The shell draws the focus state (above); the global focus ring would draw a
+   second one inside it. */
+.control:focus-visible {
+  box-shadow: none;
+}
+
 .control::placeholder {
   color: var(--text-muted);
 }

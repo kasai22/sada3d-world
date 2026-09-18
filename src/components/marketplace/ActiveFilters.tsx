@@ -8,13 +8,16 @@ import {
   hasActiveFilters,
   removeFacet,
 } from "@/lib/catalog/params";
-import { facetLabel } from "@/lib/catalog/taxonomy";
+import { categoryIndexFor, type CategoryNode } from "@/lib/catalog/category-tree";
+import { SEED_CATEGORY_INDEX, facetLabel } from "@/lib/catalog/taxonomy";
 import type { CatalogQuery } from "@/lib/catalog/types";
 import styles from "./ActiveFilters.module.css";
 
 export interface ActiveFiltersProps {
   query: CatalogQuery;
   pathname: string;
+  /** Stage 20: the served category tree, so a CMS category chip shows its name. */
+  categories?: readonly CategoryNode[];
 }
 
 const FACET_TITLE: Record<string, string> = {
@@ -33,8 +36,9 @@ const FACET_TITLE: Record<string, string> = {
  * works with no client JavaScript and each removal is a real, shareable
  * address.
  */
-export function ActiveFilters({ query, pathname }: ActiveFiltersProps) {
+export function ActiveFilters({ query, pathname, categories }: ActiveFiltersProps) {
   if (!hasActiveFilters(query)) return null;
+  const index = categories ? categoryIndexFor(categories) : SEED_CATEGORY_INDEX;
 
   const chips = activeFilters(query);
 
@@ -57,9 +61,9 @@ export function ActiveFilters({ query, pathname }: ActiveFiltersProps) {
           key={`${facet}:${value}`}
           tone="accent"
           removeHref={buildHref(pathname, removeFacet(query, facet, value))}
-          removeLabel={`Remove filter ${FACET_TITLE[facet]} ${facetLabel(facet, value)}`}
+          removeLabel={`Remove filter ${FACET_TITLE[facet]} ${facetLabel(facet, value, index)}`}
         >
-          {FACET_TITLE[facet]}: {facetLabel(facet, value)}
+          {FACET_TITLE[facet]}: {facetLabel(facet, value, index)}
         </Tag>
       ))}
 

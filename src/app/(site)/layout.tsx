@@ -1,5 +1,5 @@
 import { Footer, Header } from "@/components/navigation";
-import { getBrowseCategories } from "@/lib/catalog/query";
+import { getBrowseCategoryLinks } from "@/lib/catalog/query";
 import styles from "./layout.module.css";
 
 /**
@@ -23,7 +23,7 @@ export default async function SiteLayout({
         {children}
       </main>
 
-      <Footer browseCategories={await getBrowseCategories()} />
+      <Footer browseCategories={await getBrowseCategoryLinks()} />
     </div>
   );
 }

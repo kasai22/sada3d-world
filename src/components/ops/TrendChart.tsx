@@ -6,15 +6,32 @@ import clsx from "clsx";
 import styles from "./TrendChart.module.css";
 
 export interface TrendPoint {
-  /** `YYYY-MM-DD`, UTC. */
+  /** `YYYY-MM-DD` (a calendar day), or `YYYY-MM` when bucketed by month. */
   day: string;
   value: number;
 }
 
 const DAY_LABEL = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", timeZone: "UTC" });
+const MONTH_LABEL = new Intl.DateTimeFormat("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
+const COUNT = new Intl.NumberFormat("en-IN");
+const RUPEES = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+const COMPACT = new Intl.NumberFormat("en-IN", { notation: "compact", maximumFractionDigits: 1 });
 
 function dayLabel(day: string): string {
-  return DAY_LABEL.format(new Date(`${day}T00:00:00.000Z`));
+  return day.length === 7
+    ? MONTH_LABEL.format(new Date(`${day}-01T00:00:00.000Z`))
+    : DAY_LABEL.format(new Date(`${day}T00:00:00.000Z`));
+}
+
+export type TrendFormat = "count" | "inr";
+
+function formatValue(value: number, format: TrendFormat): string {
+  return format === "inr" ? RUPEES.format(value) : COUNT.format(value);
+}
+
+function formatTick(value: number, format: TrendFormat): string {
+  const text = value >= 1000 ? COMPACT.format(value) : String(value);
+  return format === "inr" ? `₹${text}` : text;
 }
 
 /** A clean top for the axis and at most four ticks: 0, step, 2·step … */
@@ -41,11 +58,20 @@ export function TrendChart({
   data,
   label,
   unit,
+  format = "count",
+  zone = "UTC",
+  currentLabel = "Today",
 }: {
   data: readonly TrendPoint[];
   label: string;
   /** Singular and plural, e.g. ["order", "orders"]. */
   unit: readonly [string, string];
+  /** How values and ticks read. Money is whole rupees. */
+  format?: TrendFormat;
+  /** The calendar the buckets are in, for the table header. */
+  zone?: string;
+  /** The last bucket's axis label, or null when the series does not end at the current period. */
+  currentLabel?: string | null;
 }) {
   const [cursor, setCursor] = useState(data.length - 1);
   const [shown, setShown] = useState<number | null>(null);
@@ -53,8 +79,11 @@ export function TrendChart({
 
   const { top, ticks } = scale(Math.max(0, ...data.map((point) => point.value)));
   const total = data.reduce((sum, point) => sum + point.value, 0);
+  const monthly = data[0]?.day.length === 7;
   const describe = (point: TrendPoint) =>
-    `${dayLabel(point.day)}: ${point.value} ${point.value === 1 ? unit[0] : unit[1]}`;
+    format === "inr"
+      ? `${dayLabel(point.day)}: ${formatValue(point.value, format)}`
+      : `${dayLabel(point.day)}: ${point.value} ${point.value === 1 ? unit[0] : unit[1]}`;
 
   function move(event: KeyboardEvent<HTMLDivElement>) {
     const last = data.length - 1;
@@ -82,21 +111,22 @@ export function TrendChart({
   return (
     <figure className={styles.figure}>
       <figcaption className="u-visually-hidden">
-        {label}: {total} {total === 1 ? unit[0] : unit[1]} in {data.length} days.
+        {label}: {format === "inr" ? formatValue(total, format) : `${total} ${total === 1 ? unit[0] : unit[1]}`} in{" "}
+        {data.length} {monthly ? "months" : "days"}.
       </figcaption>
 
       <div className={styles.plot}>
         <div className={styles.axis} aria-hidden="true">
           {ticks.map((tick) => (
             <div key={tick} className={styles.gridLine} style={{ bottom: `${(tick / top) * 100}%` }}>
-              <span className={styles.tick}>{tick}</span>
+              <span className={styles.tick}>{formatTick(tick, format)}</span>
             </div>
           ))}
         </div>
 
         <div className={styles.bars} role="group" aria-label={`${label}. Use the arrow keys to read each day.`} onKeyDown={move}>
           {data.map((point, index) => {
-            const today = index === data.length - 1;
+            const today = currentLabel !== null && index === data.length - 1;
             return (
               <div
                 key={point.day}
@@ -121,7 +151,7 @@ export function TrendChart({
                 />
                 {shown === index && active && (
                   <span className={styles.tooltip} aria-hidden="true">
-                    <strong className={styles.tooltipValue}>{active.value}</strong>
+                    <strong className={styles.tooltipValue}>{formatValue(active.value, format)}</strong>
                     <span className={styles.tooltipLabel}>{dayLabel(active.day)}</span>
                   </span>
                 )}
@@ -134,7 +164,11 @@ export function TrendChart({
       <div className={styles.xAxis} aria-hidden="true">
         {data.map((point, index) => (
           <span key={point.day} className={styles.xLabel}>
-            {labelled.has(index) ? (index === data.length - 1 ? "Today" : dayLabel(point.day)) : ""}
+            {labelled.has(index)
+              ? index === data.length - 1 && currentLabel !== null
+                ? currentLabel
+                : dayLabel(point.day)
+              : ""}
           </span>
         ))}
       </div>
@@ -145,7 +179,9 @@ export function TrendChart({
           <caption className="u-visually-hidden">{label}</caption>
           <thead>
             <tr>
-              <th scope="col">Day (UTC)</th>
+              <th scope="col">
+                {monthly ? "Month" : "Day"} ({zone})
+              </th>
               <th scope="col">{unit[1]}</th>
             </tr>
           </thead>
@@ -153,7 +189,7 @@ export function TrendChart({
             {data.map((point) => (
               <tr key={point.day}>
                 <td>{dayLabel(point.day)}</td>
-                <td>{point.value}</td>
+                <td>{formatValue(point.value, format)}</td>
               </tr>
             ))}
           </tbody>

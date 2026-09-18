@@ -12,7 +12,10 @@ import {
 } from "@/content/catalog";
 import { ROADMAP, capabilities, type CapabilityKind, type CapabilityStatus } from "@/content/catalog/capabilities";
 import type { PriceApprovalRecord } from "@/lib/catalog/commerce";
+import { catalogAssets } from "@/lib/catalog/catalog-assets";
+import { readCategoryTree } from "@/lib/catalog/payload-categories";
 import { entryFromPayloadDoc } from "@/lib/catalog/payload-entry";
+import { launchStage, type LaunchStage } from "@/payload/workflow";
 import type { Product as PayloadProduct } from "@/payload-types";
 import type { Product } from "@/lib/catalog/types";
 import { validateCatalog, type ValidationIssue } from "@/lib/catalog/validation";
@@ -70,6 +73,12 @@ export interface VerificationReport {
   unmappable: string[];
   /** Stage 19.9: invalid entries in src/content/catalog/roadmap.json. Blocking. */
   roadmapIssues: string[];
+  /** Stage 20: every CMS product by derived launch stage. */
+  stages: Record<LaunchStage, string[]>;
+  /** Stage 20: published categories left out of the tree (orphaned, cycles, bad identifiers). */
+  categoryProblems: string[];
+  /** Stage 20: model files under public/models that failed verification (blocking only for a product that uses one). */
+  rejectedModels: { url: string; reason: string }[];
   inventory: InventoryDifference[];
   blocking: number;
   parity: boolean;
@@ -134,17 +143,28 @@ export async function verifyContent(
     ]);
   }
 
+  // Stage 20: CMS products are judged against the CMS category tree and the files verified on disk.
+  const [categoryTree, assets] = await Promise.all([readCategoryTree(payload), catalogAssets()]);
+  const validation = { categories: categoryTree.tree, models: assets.models, mediaFiles: assets.mediaFiles };
+
   const entries: CatalogEntry[] = [];
   const unmappable: string[] = [];
+  const stages: Record<LaunchStage, string[]> = { "NOT READY": [], "READY FOR REVIEW": [], APPROVED: [], "LAUNCH READY": [] };
   for (const doc of populated) {
-    const result = entryFromPayloadDoc(doc, approvalsByProduct.get(doc.productId) ?? []);
-    if (result.ok) entries.push(result.entry);
-    else unmappable.push(`${result.productId}: ${result.reason}`);
+    const result = entryFromPayloadDoc(doc, approvalsByProduct.get(doc.productId) ?? [], new Date(), validation);
+    if (result.ok) {
+      entries.push(result.entry);
+      const reasons = [...result.launch.launch.reasons, ...(doc._status === "published" ? [] : ["Not published"])];
+      stages[launchStage(reasons, doc)].push(String(doc.productId));
+    } else {
+      unmappable.push(`${result.productId}: ${result.reason}`);
+    }
   }
   const publishedIds = new Set(published.map((product) => product.id));
   const readiness = auditLaunchReadiness(
     entries.filter((entry) => publishedIds.has(entry.product.id)).map((entry) => entry.product),
     entries,
+    { validation },
   );
 
   /* ---- approved media must exist as files ---- */
@@ -156,9 +176,10 @@ export async function verifyContent(
 
   /* ---- categories and materials, as the public sees them ---- */
 
+  // Stage 20: administrator-managed categories are the business's own; parity covers the seed only.
   const publicCategories = (
     await payload.find({ collection: "categories", depth: 1, pagination: false, overrideAccess: false })
-  ).docs as unknown as Doc[];
+  ).docs.filter((doc) => (doc as { source?: string }).source !== "admin") as unknown as Doc[];
 
   const categories = compareCategories(
     planCategories()
@@ -251,10 +272,14 @@ export async function verifyContent(
     storedProducts.filter((doc) => doc.source !== "admin"),
     (doc) => String(doc.productId),
   );
+  const storedCategories = await all("categories");
+  const adminCategories = new Set(storedCategories.filter((doc) => doc.source === "admin").map((doc) => String(doc.value)));
   check(
     "categories",
-    planCategories().map((row) => ({ key: row.value, status: row.status })),
-    await all("categories"),
+    planCategories()
+      .filter((row) => !adminCategories.has(row.value))
+      .map((row) => ({ key: row.value, status: row.status })),
+    storedCategories.filter((doc) => doc.source !== "admin"),
     (doc) => String(doc.value),
   );
   check(
@@ -375,6 +400,9 @@ export async function verifyContent(
     missingMediaFiles,
     unmappable,
     roadmapIssues,
+    stages,
+    categoryProblems: categoryTree.problems,
+    rejectedModels: [...assets.rejectedModels],
     blocking,
     parity,
     ok: blocking === 0 && parity,
@@ -438,6 +466,7 @@ export function launchSummary(report: VerificationReport): string[] {
       ` · launch limitations missing: ${m.limitations.missingForLaunch.join(", ") || "none"}`,
     ...capabilitySummary(),
     `Media:            ${r.media.missing === 0 && products > 0 ? "COMPLETE" : "BLOCKED"} — ${r.media.complete} approved · ${r.media.missing} missing`,
+    `Launch stages:    ${(["NOT READY", "READY FOR REVIEW", "APPROVED", "LAUNCH READY"] as const).map((stage) => `${stage} ${report.stages[stage].length}`).join(" · ")}`,
     `Catalog size:     ${r.catalog.defined} defined · ${r.catalog.published} published · ${r.catalog.launchReady} launch-ready / ${r.catalog.target} target (gap ${r.catalog.gap})`,
     `Featured:         ${r.featured.eligible.length} eligible · ${r.featured.blocked.length} flagged but blocked`,
     `Pricing:          ${r.pricing.approved} approved · ${r.pricing.provisional} provisional · ${r.pricing.quoteOnly} quote-only · ${r.pricing.missing} missing`,
@@ -487,6 +516,8 @@ export function printVerification(report: VerificationReport, log = console.log,
   }
   for (const file of report.missingMediaFiles) error(`  BLOCKING approved image file missing: public${file}`);
   for (const issue of report.roadmapIssues) error(`  BLOCKING invalid roadmap entry: ${issue}`);
+  for (const problem of report.categoryProblems) error(`  category not in the tree: ${problem}`);
+  for (const model of report.rejectedModels) error(`  model file not verified: public${model.url} — ${model.reason}`);
   for (const line of report.unmappable) error(`  BLOCKING unmappable CMS product: ${line}`);
 
   for (const entry of report.inventory) {

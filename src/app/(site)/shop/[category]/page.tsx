@@ -12,8 +12,7 @@ import {
   parseQuery,
   type SearchParams,
 } from "@/lib/catalog/params";
-import { getBrowseCategories, queryCatalog } from "@/lib/catalog/query";
-import { categoryLabel } from "@/lib/catalog/taxonomy";
+import { getBrowseCategoryLinks, queryCatalog } from "@/lib/catalog/query";
 import { categoryHref } from "@/lib/routes";
 import styles from "../shop.module.css";
 
@@ -31,7 +30,7 @@ const DESCRIPTIONS: Record<string, string> = {
 
 /** The categories with parts at build time. */
 export async function generateStaticParams() {
-  return (await getBrowseCategories()).map((category) => ({ category }));
+  return (await getBrowseCategoryLinks()).map((link) => ({ category: link.value }));
 }
 
 /**
@@ -57,12 +56,13 @@ export async function generateMetadata({
   // Rejected here rather than in the component: the shop segment has a loading
   // boundary, so by the time the component runs the shell has streamed with a
   // 200 and the status can no longer be set.
-  if (!(await getBrowseCategories()).includes(category)) notFound();
+  const link = (await getBrowseCategoryLinks()).find((entry) => entry.value === category);
+  if (!link) notFound();
 
-  const label = categoryLabel(category) ?? category;
+  const label = link.label;
 
   const query = parseQuery(await searchParams);
-  const description = DESCRIPTIONS[category] ?? `${label} parts, made to order.`;
+  const description = link.description ?? DESCRIPTIONS[category] ?? `${label} parts, made to order.`;
 
   return {
     title: label,
@@ -89,10 +89,11 @@ export default async function CategoryPage({
 
   // Only real browse categories resolve; anything else is a 404 rather than an
   // empty results page.
-  const categories = await getBrowseCategories();
-  if (!categories.includes(category)) notFound();
+  const categories = await getBrowseCategoryLinks();
+  const link = categories.find((entry) => entry.value === category);
+  if (!link) notFound();
 
-  const label = categoryLabel(category) ?? category;
+  const label = link.label;
   const pathname = categoryHref(category);
 
   // scopeCategory, not the category facet: the path constrains the results but
@@ -109,7 +110,7 @@ export default async function CategoryPage({
           crumbs={[{ label: "Shop", href: "/shop" }, { label }]}
           eyebrow={`${result.total} ${result.total === 1 ? "part" : "parts"}`}
           title={label}
-          description={DESCRIPTIONS[category] ?? `${label} parts, made to order.`}
+          description={link.description ?? DESCRIPTIONS[category] ?? `${label} parts, made to order.`}
         />
 
         <CategoryRail active={category} categories={categories} counts={railCounts} />

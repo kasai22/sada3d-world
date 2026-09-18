@@ -36,6 +36,27 @@
       "when": 1789132353793,
       "tag": "0004_ops_console_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789559492495,
+      "tag": "0005_stage_22_inventory_sales_dimensions",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789629683179,
+      "tag": "0006_stage_22_6_inventory_consumables",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789649803352,
+      "tag": "0007_stage_22_7_product_consumption",
+      "breakpoints": true
     }
   ]
 }

@@ -13,7 +13,7 @@ import { adminFieldOnly } from "./access";
  * One computation per document per request, shared by all the fields.
  */
 
-type StatusKey = "launch" | "technical" | "price" | "media" | "manufacturing" | "commercial" | "reasons";
+type StatusKey = "launch" | "technical" | "price" | "media" | "manufacturing" | "commercial" | "reasons" | "stage" | "panel" | "readiness";
 
 async function statusFor(req: PayloadRequest, id: number) {
   const cache = req.context as Record<string, unknown>;
@@ -53,6 +53,26 @@ const statusField = (name: string, key: StatusKey, label: string, description: s
 
 export const LAUNCH_STATUS_FIELDS: Field[] = [
   statusField(
+    "launchStage",
+    "stage",
+    "Launch stage",
+    "NOT READY → READY FOR REVIEW (every prerequisite passes; approve it) → APPROVED (publish it) → LAUNCH READY. Derived on the server; no checkbox moves it.",
+  ),
+  {
+    name: "readinessPanel",
+    label: "Readiness",
+    type: "textarea",
+    virtual: true,
+    access: { read: adminFieldOnly, create: () => false, update: () => false },
+    admin: {
+      readOnly: true,
+      rows: 26,
+      description: "Each section passes (✓) or lists what blocks it (✕), with where to fix it. The same assessment as content:verify -- --require-launch.",
+    },
+    hooks: { afterRead: [hook("panel")] },
+  },
+  statusField("readiness", "readiness", "Readiness summary", "Compact form of the panel above, shown in the product list."),
+  statusField(
     "launchStatus",
     "launch",
     "Launch status",
@@ -60,12 +80,12 @@ export const LAUNCH_STATUS_FIELDS: Field[] = [
   ),
   statusField("technicalStatus", "technical", "Technical status", "PASS or BLOCKING: record validity, approval evidence, unsupported combinations."),
   statusField("priceStatusLabel", "price", "Price status", "APPROVED requires a price approval in effect whose amount equals the price."),
-  statusField("mediaStatus", "media", "Media status", "APPROVED requires a product photo or approved render of the actual product."),
+  statusField("mediaStatus", "media", "Media status", "MISSING (no image) → PROPOSED (image set, media approval not recorded) → APPROVED (photo or approved render of the actual product, approved)."),
   statusField("manufacturingStatus", "manufacturing", "Manufacturing status", "The material on its process must be approved capability (src/content/catalog/manufacturing.ts)."),
   statusField("commercialStatus", "commercial", "Commercial decisions", "SKU, class, pricing model, customer, use case, copy and visual requirement must be APPROVED."),
   {
     name: "launchReasons",
-    label: "Why this product cannot launch",
+    label: "Every blocking reason (plain list)",
     type: "textarea",
     virtual: true,
     access: { read: adminFieldOnly, create: () => false, update: () => false },

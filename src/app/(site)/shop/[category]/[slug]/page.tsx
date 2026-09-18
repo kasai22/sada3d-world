@@ -50,11 +50,12 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
 
   if (!product) notFound();
 
-  const description = product.description ?? product.summary;
+  // Stage 20: the administrator's SEO fields when set; otherwise product facts.
+  const description = product.seo?.description ?? product.description ?? product.summary;
   const path = productHref(product);
 
   return {
-    title: product.name,
+    title: product.seo?.title ?? product.name,
     description,
     alternates: { canonical: path },
     openGraph: {
@@ -85,7 +86,7 @@ export default async function ProductPage({ params }: RouteParams) {
     name: product.name,
     description: product.description ?? product.summary,
     sku: partId(product),
-    category: categoryLabel(product.category),
+    category: product.categoryLabel ?? categoryLabel(product.category),
     material: product.material.toUpperCase(),
     brand: { "@type": "Brand", name: SITE.name },
     url: new URL(productHref(product), siteUrl()).toString(),
@@ -120,7 +121,7 @@ export default async function ProductPage({ params }: RouteParams) {
           items={[
             { label: "Shop", href: "/shop" },
             {
-              label: categoryLabel(product.browseCategory) ?? product.browseCategory,
+              label: product.browseCategoryLabel ?? categoryLabel(product.browseCategory) ?? product.browseCategory,
               href: categoryHref(product.browseCategory),
             },
             { label: product.name },

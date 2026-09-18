@@ -12,7 +12,7 @@ import {
   MaterialsShowcase,
 } from "@/components/homepage";
 import { homeCategories } from "@/content/home";
-import { getBrowseCategories } from "@/lib/catalog/query";
+import { getBrowseCategoryLinks } from "@/lib/catalog/query";
 import { serializeJsonForScript } from "@/lib/security/serialize";
 import { SITE, siteUrl } from "@/lib/site";
 
@@ -70,7 +70,7 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonForScript(structuredData) }}
       />
       <Hero />
-      <CreateCategories categories={homeCategories(await getBrowseCategories())} />
+      <CreateCategories categories={homeCategories(await getBrowseCategoryLinks())} />
       <CustomManufacturing />
       <Industries />
       <MaterialsShowcase />

@@ -23,6 +23,8 @@ interface Option {
 const GROUP_ICON: Record<string, IconName> = {
   Orders: "clipboard",
   Customers: "users",
+  Products: "box",
+  Inventory: "boxes",
   Designs: "file-box",
   Production: "factory",
   Payments: "wallet",
@@ -34,7 +36,7 @@ const COMMANDS: readonly Option[] = NAV_GROUPS.flatMap((group) =>
     id: `go:${item.href}`,
     group: "Go to",
     label: item.label,
-    detail: item.external ? "Content CMS" : group.label,
+    detail: item.external ? "Payload collections" : (group.label ?? "Reality 3D Admin"),
     href: item.href,
     external: item.external === true,
   })),
@@ -192,7 +194,7 @@ export function CommandMenu({ onClose, search }: { onClose: () => void; search: 
             aria-activedescendant={options.length > 0 ? optionId(activeIndex) : undefined}
             aria-autocomplete="list"
             aria-label="Search orders, customers, designs, jobs and payments"
-            placeholder="Search orders, customers, designs, jobs, payments…"
+            placeholder="Search orders, customers, products, SKUs, inventory…"
             autoComplete="off"
             spellCheck={false}
             value={query}

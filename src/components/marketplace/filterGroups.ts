@@ -49,11 +49,13 @@ export interface BuildFilterGroupsOptions {
    * the tree there would list every sibling category at zero.
    */
   includeCategory?: boolean;
+  /** Stage 20: the served category tree (CatalogResult.categories). Defaults to the seed. */
+  categoryTree?: readonly TaxonomyNode[];
 }
 
 export function buildFilterGroups(
   facets: CatalogFacets,
-  { includeCategory = true }: BuildFilterGroupsOptions = {},
+  { includeCategory = true, categoryTree = CATEGORY_TREE }: BuildFilterGroupsOptions = {},
 ): FilterGroup[] {
   return [
     ...(includeCategory
@@ -61,7 +63,7 @@ export function buildFilterGroups(
           {
             key: "category",
             label: "Category",
-            options: toNodes(CATEGORY_TREE, facets.category),
+            options: toNodes(categoryTree, facets.category),
           },
         ]
       : []),

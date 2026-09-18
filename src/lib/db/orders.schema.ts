@@ -261,9 +261,32 @@ export const orderItems = pgTable(
     sourceAnalysisIdentity: text("source_analysis_identity"),
     /** The machine-readable configuration the quote was produced for. */
     sourceConfiguration: jsonb("source_configuration"),
+    /*
+     * ---- Stage 22: sales dimensions, snapshotted at ordering ----
+     *
+     * What a catalog line was, as the catalog described it when the order was
+     * placed: the product's stable id, its SKU if the business had assigned one,
+     * and its category (leaf and browse root) with their names. `name` above is
+     * already the product-name snapshot. Insert-only, like the file snapshot.
+     *
+     * NULL on every line placed before Stage 22, and on custom lines, which are
+     * not catalog products. Nothing back-fills them: a historical line's category
+     * is unknown, and analytics reports it as unknown.
+     */
+    productId: text("product_id"),
+    productSku: text("product_sku"),
+    categoryId: text("category_id"),
+    categoryName: text("category_name"),
+    browseCategoryId: text("browse_category_id"),
+    browseCategoryName: text("browse_category_name"),
+    /** When the dimensions were recorded; NULL means the line predates them. */
+    dimensionsRecordedAt: timestamp("dimensions_recorded_at", { withTimezone: true }),
   },
   (table) => [
     index("order_items_order_idx").on(table.orderReference),
+    // Stage 22: product and category analytics.
+    index("order_items_product_idx").on(table.productId),
+    index("order_items_category_idx").on(table.categoryId),
     /*
      * The storage sweep asks "does any order still need this object" before it
      * removes one. That question has to be cheap, and it has to be asked of the

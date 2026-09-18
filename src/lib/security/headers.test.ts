@@ -117,10 +117,10 @@ test("every path gets the base headers, and the policy skips only Payload's path
 
   // The source is a path-to-regexp pattern; its regex part must exclude exactly these.
   const pattern = new RegExp(`^/${/\((\(\?![^)]*\)\.\*)\)/.exec(csp.source)?.[1] ?? "$^"}$`);
-  for (const path of ["/", "/shop", "/account/orders", "/api/checkout"]) {
+  for (const path of ["/", "/shop", "/account/orders", "/api/checkout", "/admin", "/admin/orders", "/admin/login"]) {
     assert.match(path, pattern, `${path} should carry the policy`);
   }
-  for (const path of ["/admin", "/admin/collections/users", "/payload-api/users"]) {
+  for (const path of ["/cms", "/cms/collections/users", "/payload-api/users"]) {
     assert.doesNotMatch(path, pattern, `${path} should not carry the policy`);
   }
 });

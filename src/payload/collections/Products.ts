@@ -18,6 +18,8 @@ import { adminsOnly, publishedOrAdmin } from "../access";
 import { LAUNCH_STATUS_FIELDS } from "../launch-status";
 import { revalidateContent } from "../revalidate";
 import { capabilityProblems, checkProductWrite, type ProductWrite } from "../workflow";
+import { skuProblem } from "../../lib/catalog/sku";
+import { SALES_CLAIM } from "../../lib/catalog/merchandising";
 
 /**
  * Enforces the product workflow on every save — in the admin, through the API
@@ -71,6 +73,7 @@ const enforceWorkflow: CollectionBeforeChangeHook = async ({ data, originalDoc, 
     userName: (req.user as { name?: string } | null | undefined)?.name ?? null,
     today: new Date().toISOString().slice(0, 10),
     effectiveApprovedAmount,
+    creating: !originalDoc,
   });
 
   if (result.errors.length > 0) {
@@ -79,6 +82,8 @@ const enforceWorkflow: CollectionBeforeChangeHook = async ({ data, originalDoc, 
 
   return {
     ...data,
+    // Stage 20: an emptied SKU is stored as no SKU, so two products without one never collide on the unique index.
+    ...(typeof data.sku === "string" && data.sku.trim() === "" ? { sku: null } : {}),
     ...(result.data.approval ? { approval: result.data.approval } : {}),
     ...(result.data.commercialApproval ? { commercialApproval: result.data.commercialApproval } : {}),
     ...(result.data.visual ? { visual: result.data.visual } : {}),
@@ -129,10 +134,25 @@ export const Products: CollectionConfig = {
   slug: "products",
   admin: {
     useAsTitle: "name",
-    defaultColumns: ["name", "productId", "approvalStatus", "priceStatus", "launchStatus", "source", "_status"],
+    defaultColumns: [
+      "name",
+      "sku",
+      "category",
+      "material",
+      "productClass",
+      "price",
+      "mediaStatus",
+      "approvalStatus",
+      "launchStage",
+      "readiness",
+      "featured",
+      "updatedAt",
+    ],
+    // Category, material, class and approval status are available as list filters.
+    listSearchableFields: ["name", "sku", "slug", "productId"],
     group: "Catalog",
     description:
-      "Administrator-managed catalog (Stage 19.8). Create, edit, approve and feature products here. A product cannot launch until every gate on its Launch status tab passes. Unpublish to withdraw; do not delete.",
+      "The Reality 3D catalog. Create a product here — it starts as a draft — then add its category, manufacturing, material, commercial definition, SKU, price and media; submit it (Proposed) and approve it when its Launch status reads READY FOR REVIEW; publish it. No deployment is needed. Unpublish to withdraw; do not delete.",
   },
   access: {
     read: publishedOrAdmin,
@@ -182,8 +202,9 @@ export const Products: CollectionConfig = {
               unique: true,
               index: true,
               admin: {
+                disableBulkEdit: true,
                 description:
-                  'Stable identifier, e.g. "p-101". Carts and saved items refer to this. Never change it on a live product, and never reuse a retired one.',
+                  'Stable identifier, assigned automatically for a new product (e.g. "p-104"). Carts and saved items refer to this. Never change it on a live product, and never reuse a retired one.',
               },
             },
             {
@@ -193,6 +214,7 @@ export const Products: CollectionConfig = {
               unique: true,
               index: true,
               admin: {
+                disableBulkEdit: true,
                 description:
                   "URL segment. Changing it breaks every existing link to this part.",
               },
@@ -217,9 +239,11 @@ export const Products: CollectionConfig = {
               unique: true,
               index: true,
               admin: {
+                disableBulkEdit: true,
                 description:
-                  "Assigned by the business, never generated. Counts as approved only with the commercial approval record.",
+                  'Assigned by the business, never generated. Uppercase letters and digits in hyphen-joined groups, 3–32 characters (e.g. "RG-GEAR-024"). Unique. Required for standard and configurable products, not for quote-only. Counts as approved only with the commercial approval record.',
               },
+              validate: (value: string | null | undefined) => skuProblem(value) ?? true,
             },
           ],
         },
@@ -418,8 +442,9 @@ export const Products: CollectionConfig = {
               required: true,
               min: 0,
               admin: {
+                disableBulkEdit: true,
                 description:
-                  "Whole rupees. Zero means the part is quoted from the customer's own geometry and cannot be added to a cart.",
+                  "Whole rupees. Zero means the part is quoted from the customer's own geometry and cannot be added to a cart. Entering a figure does not approve it: it stays provisional until a price approval is recorded.",
               },
             },
             {
@@ -433,6 +458,7 @@ export const Products: CollectionConfig = {
               required: true,
               defaultValue: "provisional",
               admin: {
+                disableBulkEdit: true,
                 description:
                   "Approved requires a record under Price approvals in effect today whose amount equals the price; the save is refused otherwise. Provisional prices are labelled as such on the storefront and cannot be charged in launch mode. Quote only requires a price of 0.",
               },
@@ -452,7 +478,7 @@ export const Products: CollectionConfig = {
                 { label: "Configurable", value: "CONFIGURABLE" },
                 { label: "Quote only", value: "QUOTE_ONLY" },
               ],
-              admin: { description: "Counts as approved only with the commercial approval record (Approval tab)." },
+              admin: { description: "Fixed (a catalog price), Configurable (priced from the customer's choices) or Quote only (no catalog price). Counts as approved only with the commercial approval record (Approval tab)." },
             },
             {
               name: "productClass",
@@ -462,7 +488,10 @@ export const Products: CollectionConfig = {
                 { label: "Configurable product", value: "CONFIGURABLE_PRODUCT" },
                 { label: "Quote-only product", value: "QUOTE_ONLY_PRODUCT" },
               ],
-              admin: { description: "Counts as approved only with the commercial approval record (Approval tab)." },
+              admin: {
+                description:
+                  "Standard: a defined part at a catalog price (needs SKU and approved price). Configurable: needs SKU, at least two material, colour or quality choices, and an approved pricing mechanism. Quote only: no SKU or fixed price required. Custom manufacturing is a service, not a catalog product. Counts as approved only with the commercial approval record.",
+              },
             },
             {
               name: "availability",
@@ -485,7 +514,7 @@ export const Products: CollectionConfig = {
               relationTo: "media",
               admin: {
                 description:
-                  "A published Media document marked photo or render. Media has no storage adapter yet, so until one is attached use Visual below.",
+                  "Not the canonical media association. Payload Media has no storage adapter, so uploads cannot be stored; use Visual below, which carries the media approval.",
               },
             },
             {
@@ -493,7 +522,7 @@ export const Products: CollectionConfig = {
               type: "group",
               admin: {
                 description:
-                  "An approved photo or render committed to the repository under /catalog/<slug>/. Used when no Media image is set.",
+                  "The product's canonical image: a real photograph or an approved render of this product, committed under public/catalog/<slug>/. Media status: MISSING (no image) → PROPOSED (image set) → APPROVED (media approval recorded).",
               },
               fields: [
                 { name: "src", type: "text", admin: { description: "e.g. /catalog/spur-gear-24t/front.jpg" } },
@@ -502,14 +531,15 @@ export const Products: CollectionConfig = {
                   name: "kind",
                   type: "select",
                   options: [
-                    { label: "Product photo", value: "photo" },
-                    { label: "Approved render", value: "render" },
+                    { label: "Photograph — a real photo of the product", value: "photo" },
+                    { label: "Approved render — generated from the product's own model", value: "render" },
                   ],
                 },
                 {
                   name: "approval",
                   type: "group",
                   admin: {
+                    disableBulkEdit: true,
                     description:
                       "Required for the image to count as approved media. Records who confirmed that it truly shows this product. A file existing is not an approval.",
                   },
@@ -555,10 +585,17 @@ export const Products: CollectionConfig = {
               type: "group",
               admin: {
                 description:
-                  "A mesh the 3D viewer can render. Leave empty and the card falls back to the placeholder stage.",
+                  "A verified model file under public/models/ (STL, OBJ or GLB). It is checked on the server: it must parse as a closed mesh (or valid glTF) and fit the approved 256 × 256 × 256 mm build volume — otherwise the Launch status says why. Leave empty for a product without a model.",
               },
               fields: [
-                { name: "url", type: "text" },
+                {
+                  name: "url",
+                  type: "text",
+                  validate: (value: string | null | undefined) =>
+                    !value || /^\/models\/[a-z0-9]+(?:-[a-z0-9]+)*\.(stl|obj|glb|gltf)$/.test(value)
+                      ? true
+                      : 'A model path looks like "/models/part-name.stl": lowercase, hyphenated, under /models/.',
+                },
                 {
                   name: "format",
                   type: "select",
@@ -577,11 +614,19 @@ export const Products: CollectionConfig = {
               label: false,
               admin: {
                 description:
-                  "Optional. The product page falls back to the name and the description when these are empty, which is what it does today.",
+                  "Optional. Used for the product page title and meta description; the page falls back to the name and description. Product facts only — the same unsupported-claim rules as the copy apply, and launch is blocked by a claim.",
               },
               fields: [
-                { name: "title", type: "text" },
-                { name: "description", type: "textarea" },
+                {
+                  name: "title",
+                  type: "text",
+                  admin: { description: "Search results usually show about 60 characters; the brand is appended." },
+                },
+                {
+                  name: "description",
+                  type: "textarea",
+                  admin: { description: "Search results usually show about 160 characters. Guidance, not a rule." },
+                },
                 { name: "ogImage", type: "upload", relationTo: "media" },
               ],
             },
@@ -589,7 +634,8 @@ export const Products: CollectionConfig = {
         },
         {
           label: "Approval",
-          description: "Draft → Proposed → Provisional → Approved. Approval is refused until every prerequisite on the Launch status tab passes.",
+          description:
+            "Draft → Proposed (submitted for approval) → READY FOR REVIEW (shown on Launch status when every prerequisite passes) → Approved → Published. Approval is refused until every prerequisite passes, and cannot be bulk-edited.",
           fields: [
             {
               name: "approvalStatus",
@@ -604,6 +650,7 @@ export const Products: CollectionConfig = {
                 { label: "Archived — withdrawn", value: "archived" },
               ],
               admin: {
+                disableBulkEdit: true,
                 description:
                   "Business approval, separate from publishing. Draft and archived products cannot be published. Only approved products appear on the launch storefront and can be purchased.",
               },
@@ -612,6 +659,7 @@ export const Products: CollectionConfig = {
               name: "approval",
               type: "group",
               admin: {
+                disableBulkEdit: true,
                 description: "Required to approve. Approver and date are filled from the signed-in operator and today when left empty.",
               },
               fields: [
@@ -623,7 +671,10 @@ export const Products: CollectionConfig = {
             {
               name: "commercialApproval",
               type: "group",
-              admin: { description: "Approves the commercial definition: SKU, product class, pricing model, target customers, use case, copy and visual requirement. Without it those values stay PROPOSED." },
+              admin: {
+                disableBulkEdit: true,
+                description: "Approves the commercial definition: SKU, product class, pricing model, target customers, use case, copy and visual requirement. Without it those values stay PROPOSED.",
+              },
               fields: [
                 { name: "reference", type: "text", admin: { description: "Where the decision is recorded." } },
                 { name: "approvedBy", type: "text" },
@@ -634,7 +685,7 @@ export const Products: CollectionConfig = {
               name: "openQuestions",
               type: "array",
               labels: { singular: "Open business question", plural: "Open business questions" },
-              admin: { description: "Questions that must be answered YES, with a reference, before launch." },
+              admin: { disableBulkEdit: true, description: "Questions that must be answered YES, with a reference, before launch." },
               fields: [
                 { name: "questionId", type: "text", required: true },
                 { name: "question", type: "textarea", required: true },
@@ -666,7 +717,8 @@ export const Products: CollectionConfig = {
         },
         {
           label: "Featured",
-          description: "Administrator-selected. Honoured only for launch-ready products; never labelled best seller.",
+          description:
+            "Editorial merchandising. Featured and Recommended are administrator choices, not sales rankings: no Best Seller label exists, and none can be typed.",
           fields: [
             {
               name: "featured",
@@ -678,9 +730,20 @@ export const Products: CollectionConfig = {
               },
             },
             {
+              name: "recommended",
+              type: "checkbox",
+              defaultValue: false,
+              admin: {
+                description:
+                  'Show a "Recommended" label. An editorial choice — not a sales ranking. Shown only where the product itself is shown (launch mode: launch-ready products only).',
+              },
+            },
+            {
               name: "badge",
               type: "text",
-              admin: { description: 'Small corner label, e.g. "New". Ration these.' },
+              admin: { description: 'Small label, e.g. "New". Sales-ranking claims ("Best seller", "Most popular", "#1") are refused.' },
+              validate: (value: string | null | undefined) =>
+                value && SALES_CLAIM.test(value) ? "A badge cannot claim a sales ranking: no sales data supports one. Use Featured or Recommended." : true,
             },
           ],
         },

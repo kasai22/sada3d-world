@@ -86,9 +86,11 @@ export const markSource: CollectionBeforeValidateHook = ({ data, req, context })
  * the save is refused and rolled back with every reason. There is no override:
  * move the product back to provisional to edit it freely.
  */
-export const enforceApprovalPrerequisites: CollectionAfterChangeHook = async ({ doc, req, context }) => {
+export const enforceApprovalPrerequisites: CollectionAfterChangeHook = async ({ doc, req }) => {
   if (doc?.approvalStatus !== "approved") return doc;
-  if ((context as Record<string, unknown> | undefined)?.launchStatusNested) return doc;
+  // Stage 20: no early return on a context flag. The launch computation performs
+  // no writes, so it cannot re-enter this hook — and a request-wide flag would let
+  // a second approval in the same request (a bulk update) skip this check.
 
   const { computeLaunchStatus } = await import("../lib/content/launch-admin");
   const status = await computeLaunchStatus(req.payload, doc.id as number, req);

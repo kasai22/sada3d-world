@@ -20,6 +20,9 @@ export function printImportSummary(summary: ImportSummary): boolean {
   console.log(line("products", summary.products));
   console.log(`  price approvals: ${summary.priceApprovalsCreated} created (append-only; never updated or deleted)`);
   console.log(
+    `  admin categories: ${summary.adminManagedCategories.length} left untouched${summary.adminManagedCategories.length ? ` (${summary.adminManagedCategories.join(", ")})` : ""}`,
+  );
+  console.log(
     `  admin-managed:   ${summary.adminManaged.length} product(s) left untouched${summary.adminManaged.length ? ` (${summary.adminManaged.join(", ")})` : ""}`,
   );
 

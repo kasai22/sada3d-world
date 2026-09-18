@@ -192,7 +192,7 @@ export async function readActivity(
         at: iso(at),
         title,
         detail: `${design.name} · ${design.format}`,
-        href: `/ops/designs/${encodeURIComponent(design.id)}`,
+        href: `/admin/designs/${encodeURIComponent(design.id)}`,
         demo: false,
       };
     }),

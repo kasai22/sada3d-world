@@ -1,18 +1,22 @@
 import { and, desc, eq, ilike, isNotNull, or } from "drizzle-orm";
 
 import { getDatabase } from "@/lib/db/client";
-import { customerDesigns, customers, manufacturingJobs, orderItems, orders } from "@/lib/db/schema";
+import { customerDesigns, customers, inventoryItems, manufacturingJobs, orderItems, orders } from "@/lib/db/schema";
+import { ITEM_TYPE_LABEL, STOCK_STATUS_LABEL, stockStatus, fromNumeric } from "@/lib/inventory/rules";
 import { ORDER_STATUS_LABEL } from "@/lib/orders/types";
 
 import { DESIGN_STORAGE_LABEL, MANUFACTURING_STATE_LABEL, PAYMENT_STATE_LABEL } from "./labels";
 import type { OperatorSession } from "./operator";
 import { jobAnchor, orderHref } from "./pipeline";
+import { getCatalogHealth, productWorkspaceHref } from "./analytics/catalog";
 import { likePattern } from "./query";
 
 /**
  * Global search, for the command menu.
  *
- * Five small reads, five results each, run together. Every result is a label, a
+ * Small reads, five results each, run together (Stage 22.5 adds products —
+ * matched in the cached catalog read, by name, product id or SKU — and
+ * inventory items). Every result is a label, a
  * line of context and a console link — enough to recognise the record and open
  * it, and nothing that would be a problem on a shared screen beyond what the
  * record's own page shows.
@@ -24,7 +28,7 @@ export const SEARCH_MIN_LENGTH = 2;
 export const SEARCH_MAX_LENGTH = 64;
 const PER_GROUP = 5;
 
-export type SearchGroup = "Orders" | "Customers" | "Designs" | "Production" | "Payments";
+export type SearchGroup = "Orders" | "Customers" | "Products" | "Inventory" | "Designs" | "Production" | "Payments";
 
 export interface SearchResult {
   id: string;
@@ -40,14 +44,16 @@ export function normaliseSearch(raw: unknown): string | null {
   return text.length >= SEARCH_MIN_LENGTH && text.length <= SEARCH_MAX_LENGTH ? text : null;
 }
 
-export async function searchOps(_operator: OperatorSession, raw: unknown): Promise<SearchResult[]> {
+export async function searchOps(operator: OperatorSession, raw: unknown): Promise<SearchResult[]> {
   const text = normaliseSearch(raw);
   if (!text) return [];
 
   const db = await getDatabase();
   const pattern = likePattern(text);
 
-  const [orderRows, customerRows, accountRows, designRows, jobRows, paymentRows] = await Promise.all([
+  const needle = text.toLowerCase();
+
+  const [orderRows, customerRows, accountRows, designRows, jobRows, paymentRows, catalog, stockRows] = await Promise.all([
     db
       .select({
         reference: orders.reference,
@@ -132,6 +138,29 @@ export async function searchOps(_operator: OperatorSession, raw: unknown): Promi
       .where(ilike(orders.paymentSessionId, pattern))
       .orderBy(desc(orders.updatedAt))
       .limit(PER_GROUP),
+
+    getCatalogHealth(operator),
+
+    db
+      .select({
+        id: inventoryItems.id,
+        name: inventoryItems.name,
+        sku: inventoryItems.sku,
+        itemType: inventoryItems.itemType,
+        current: inventoryItems.currentQuantity,
+        reorderLevel: inventoryItems.reorderLevel,
+      })
+      .from(inventoryItems)
+      .where(
+        or(
+          ilike(inventoryItems.name, pattern),
+          ilike(inventoryItems.sku, pattern),
+          ilike(inventoryItems.material, pattern),
+          ilike(inventoryItems.productId, pattern),
+        ),
+      )
+      .orderBy(inventoryItems.name)
+      .limit(PER_GROUP),
   ]);
 
   const results: SearchResult[] = [];
@@ -155,7 +184,7 @@ export async function searchOps(_operator: OperatorSession, raw: unknown): Promi
       group: "Customers",
       label: customer.contactName,
       detail: `${customer.contactEmail} · ${customer.customerId}`,
-      href: `/ops/customers/${encodeURIComponent(customer.customerId)}`,
+      href: `/admin/customers/${encodeURIComponent(customer.customerId)}`,
     });
   }
   for (const account of accountRows) {
@@ -166,7 +195,31 @@ export async function searchOps(_operator: OperatorSession, raw: unknown): Promi
       group: "Customers",
       label: account.id,
       detail: "Account",
-      href: `/ops/customers/${encodeURIComponent(account.id)}`,
+      href: `/admin/customers/${encodeURIComponent(account.id)}`,
+    });
+  }
+
+  const products = catalog.products
+    .filter((row) => [row.name, row.productId, row.sku ?? ""].some((value) => value.toLowerCase().includes(needle)))
+    .slice(0, PER_GROUP);
+  for (const product of products) {
+    results.push({
+      id: `product:${product.id}`,
+      group: "Products",
+      label: product.name,
+      detail: [product.productId.toUpperCase(), product.sku, product.stage.toLowerCase()].filter(Boolean).join(" · "),
+      href: productWorkspaceHref(product.id),
+    });
+  }
+
+  for (const item of stockRows) {
+    const status = stockStatus({ current: fromNumeric(item.current), reorderLevel: fromNumeric(item.reorderLevel), targetStock: null });
+    results.push({
+      id: `inventory:${item.id}`,
+      group: "Inventory",
+      label: item.name,
+      detail: [ITEM_TYPE_LABEL[item.itemType], item.sku, STOCK_STATUS_LABEL[status]].filter(Boolean).join(" · "),
+      href: `/admin/inventory?item=${encodeURIComponent(item.id)}#item`,
     });
   }
 
@@ -176,7 +229,7 @@ export async function searchOps(_operator: OperatorSession, raw: unknown): Promi
       group: "Designs",
       label: design.name,
       detail: `${design.format} · ${DESIGN_STORAGE_LABEL[design.state]}`,
-      href: `/ops/designs/${encodeURIComponent(design.id)}`,
+      href: `/admin/designs/${encodeURIComponent(design.id)}`,
     });
   }
 

@@ -5,8 +5,8 @@ import { SITE } from "@/lib/site";
 import styles from "./Footer.module.css";
 
 export interface FooterProps {
-  /** Browse categories of the served catalog, from getBrowseCategories(). */
-  browseCategories: readonly string[];
+  /** Browse categories of the served catalog, with labels, from getBrowseCategoryLinks(). */
+  browseCategories: readonly { value: string; label: string }[];
 }
 
 export function Footer({ browseCategories }: FooterProps) {

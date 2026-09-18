@@ -300,7 +300,7 @@ function sourceFiles(root: string): string[] {
 
 /**
  * Customer-facing source. The ops console and the API are excluded: neither is
- * part of the storefront, and /ops has its own not-found handling.
+ * part of the storefront, and /admin has its own not-found handling.
  */
 const STOREFRONT = [
   join(app, "(site)"),
@@ -409,7 +409,7 @@ test("the sitemap lists nothing that is behind an identity", async () => {
   const paths = (await sitemap()).map((entry) => new URL(entry.url).pathname);
 
   for (const path of paths) {
-    for (const prefix of ["/account", "/cart", "/checkout", "/orders", "/ops", "/admin", "/api"]) {
+    for (const prefix of ["/account", "/cart", "/checkout", "/orders", "/ops", "/admin", "/cms", "/api"]) {
       assert.ok(
         !path.startsWith(prefix),
         `the sitemap offers ${path} to crawlers, and it is not public content`,
@@ -422,7 +422,7 @@ test("robots disallows every private surface and points at the sitemap", async (
   const { rules, sitemap: sitemapUrl } = robots();
   const disallow = Array.isArray(rules) ? [] : [rules.disallow ?? []].flat();
 
-  for (const prefix of ["/ops", "/account", "/cart", "/checkout", "/orders", "/admin"]) {
+  for (const prefix of ["/ops", "/account", "/cart", "/checkout", "/orders", "/admin", "/cms"]) {
     assert.ok(
       disallow.some((entry) => entry.startsWith(prefix)),
       `robots.txt does not disallow ${prefix}`,

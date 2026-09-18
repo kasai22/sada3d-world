@@ -55,10 +55,10 @@ export function ProductHero({ product }: ProductHeroProps) {
             href={categoryHref(product.browseCategory)}
             className={styles.categoryLink}
           >
-            {categoryLabel(product.browseCategory)}
+            {product.browseCategoryLabel ?? categoryLabel(product.browseCategory)}
           </Link>
           <span aria-hidden="true">/</span>
-          {categoryLabel(product.category)}
+          {product.categoryLabel ?? categoryLabel(product.category)}
         </p>
 
         <h1 className={styles.name}>{product.name}</h1>
